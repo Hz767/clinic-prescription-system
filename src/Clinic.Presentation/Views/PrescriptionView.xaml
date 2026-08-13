@@ -312,21 +312,26 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="体重:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
                             <TextBox Grid.Column="1" Text="{Binding PatientWeight, Converter={StaticResource DecimalInput}, UpdateSourceTrigger=PropertyChanged}"
-                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Padding="4,1"/>
+                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Padding="4,1"
+                                     PreviewTextInput="NumericOnly_PreviewTextInput"/>
                             <TextBlock Grid.Column="2" Text="kg" VerticalAlignment="Center" FontSize="11" Foreground="#6B7280"/>
                             <TextBlock Grid.Column="4" Text="体温:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
                             <TextBox Grid.Column="5" Text="{Binding PatientTemperature, Converter={StaticResource DecimalInput}, UpdateSourceTrigger=PropertyChanged}"
-                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Padding="4,1"/>
+                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Padding="4,1"
+                                     PreviewTextInput="NumericOnly_PreviewTextInput"/>
                             <TextBlock Grid.Column="6" Text="°C" VerticalAlignment="Center" FontSize="11" Foreground="#6B7280"/>
                             <TextBlock Grid.Column="8" Text="血压:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
                             <TextBox Grid.Column="9" Text="{Binding PatientSystolicBP, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Padding="4,1"/>
+                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Padding="4,1"
+                                     PreviewTextInput="NumericOnly_PreviewTextInput"/>
                             <TextBlock Grid.Column="10" Text="/" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11"/>
                             <TextBox Grid.Column="11" Text="{Binding PatientDiastolicBP, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Margin="2,0,0,0" Padding="4,1"/>
+                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Margin="2,0,0,0" Padding="4,1"
+                                     PreviewTextInput="NumericOnly_PreviewTextInput"/>
                             <TextBlock Grid.Column="13" Text="心率:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
                             <TextBox Grid.Column="14" Text="{Binding PatientHeartRate, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Width="55" Padding="4,1"/>
+                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Width="55" Padding="4,1"
+                                     PreviewTextInput="NumericOnly_PreviewTextInput"/>
                         </Grid>
 
                         <!-- 正常参考范围提示 -->

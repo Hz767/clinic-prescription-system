@@ -97,4 +97,30 @@ public partial class PrescriptionView : UserControl
         // 刷新 DataGrid 以显示更新后的 Qty 和 Subtotal
         ItemsDataGrid.Items.Refresh();
     }
+
+    /// <summary>
+    /// 体征输入框按键过滤：仅允许数字、小数点和退格/删除等控制键。
+    /// 阻止字母、符号（+、-、逗号等）和中文输入。
+    /// </summary>
+    private void NumericOnly_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        // 仅允许数字和小数点
+        foreach (char c in e.Text)
+        {
+            if (!char.IsDigit(c) && c != '.')
+            {
+                e.Handled = true;
+                return;
+            }
+        }
+
+        // 限制只能有一个小数点
+        if (sender is TextBox tb && e.Text.Contains('.'))
+        {
+            if (tb.Text.Contains('.'))
+            {
+                e.Handled = true;
+            }
+        }
+    }
 }

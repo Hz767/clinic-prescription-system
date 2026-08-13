@@ -5,20 +5,21 @@ namespace Clinic.Presentation.Converters;
 
 /// <summary>
 /// decimal? 与 string 之间的双向转换器。
-/// 允许输入过程中的临时无效状态（如"36."或"36.5"正在输入），
-/// 转换失败时返回 Binding.DoNothing 而非抛出异常，让用户继续输入。
+/// 始终使用 InvariantCulture（"." 小数点），不依赖 WPF 传入的 culture 参数。
+/// 仅允许数字和小数点，不支持正负号或逗号。
+/// 输入过程中的临时状态（如"36."）返回 Binding.DoNothing 保持当前值。
 /// </summary>
 public class DecimalInputConverter : IValueConverter
 {
-    /// <summary>decimal? → string（显示用）</summary>
+    /// <summary>decimal? → string（显示用），始终用 "." 小数点</summary>
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is decimal d)
-            return d.ToString(culture ?? CultureInfo.CurrentCulture);
+            return d.ToString(CultureInfo.InvariantCulture);
         return string.Empty;
     }
 
-    /// <summary>string → decimal?（输入用），转换失败返回 DoNothing</summary>
+    /// <summary>string → decimal?（输入用），仅接受数字和 "." 小数点</summary>
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is not string s)
@@ -30,19 +31,15 @@ public class DecimalInputConverter : IValueConverter
         if (string.IsNullOrEmpty(s))
             return null;
 
-        // 尝试转换，成功则返回 decimal 值
-        if (decimal.TryParse(s, culture ?? CultureInfo.CurrentCulture, out var result))
+        // 用 InvariantCulture 解析（"." 小数点），避免区域设置导致解析失败
+        if (decimal.TryParse(s, CultureInfo.InvariantCulture, out var result))
             return result;
 
-        // 允许以下临时输入状态：不以失败覆盖源值
-        // - "36." （正在输入小数）
-        // - "+" "-" （正负号）
-        // - "." （仅小数点）
-        // - "36," （逗号分隔，某些区域设置）
-        if (s == "." || s == "," || s == "-" || s == "+" || s.EndsWith('.') || s.EndsWith(','))
+        // 允许临时输入状态："." 或 "36." （正在输入小数点）
+        if (s == "." || s.EndsWith('.'))
             return Binding.DoNothing;
 
-        // 其他无效输入也不阻塞，返回 DoNothing 保持上一个值
+        // 其他无效输入（含字母、符号、逗号等）不更新源值
         return Binding.DoNothing;
     }
 }
