@@ -1,0 +1,54 @@
+# ── .NET 构建产物 ──
+**/bin/
+**/obj/
+**/Debug/
+**/Release/
+
+# ── 用户特定文件 ──
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vspscc
+*.vssscc
+
+# ── Visual Studio / Rider ──
+.vs/
+.idea/
+*.DS_Store
+
+# ── NuGet ──
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+
+# ── 运行时数据（不纳入版本控制） ──
+*.db
+*.db-shm
+*.db-wal
+clinic.db
+
+# ── 备份文件 ──
+Backups/
+*.zip
+
+# ── 日志文件 ──
+*.log
+crash_*.log
+run-*.log
+test_*.txt
+
+# ── PDF 输出（运行时生成） ──
+Pdf/
+
+# ── 临时文件 ──
+*.tmp
+*.bak
+*.cache
+*~
+
+# ── 交付报告（构建产物） ──
+clinic-delivery-report/
+clinic-test-report/
+.trae-html-share-packages/

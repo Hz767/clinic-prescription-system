@@ -1,0 +1,89 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ================================================================ -->
+    <!-- Clinic Prescription System - Color Palette                        -->
+    <!-- Design System: Clinical Clarity                                   -->
+    <!-- ================================================================ -->
+
+    <!-- Primary: Medical Teal -->
+    <Color x:Key="PrimaryColor">#0D9488</Color>
+    <Color x:Key="PrimaryLightColor">#14B8A6</Color>
+    <Color x:Key="PrimaryDarkColor">#0F766E</Color>
+    <Color x:Key="PrimaryBgColor">#F0FDFA</Color>
+
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="PrimaryLightBrush" Color="{StaticResource PrimaryLightColor}"/>
+    <SolidColorBrush x:Key="PrimaryDarkBrush" Color="{StaticResource PrimaryDarkColor}"/>
+    <SolidColorBrush x:Key="PrimaryBgBrush" Color="{StaticResource PrimaryBgColor}"/>
+    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#0F766E"/>
+
+    <!-- Secondary: Trust Blue -->
+    <SolidColorBrush x:Key="SecondaryBrush" Color="#2563EB"/>
+    <SolidColorBrush x:Key="SecondaryLightBrush" Color="#3B82F6"/>
+    <SolidColorBrush x:Key="SecondaryDarkBrush" Color="#1D4ED8"/>
+    <SolidColorBrush x:Key="SecondaryBgBrush" Color="#EFF6FF"/>
+
+    <!-- Semantic: Success -->
+    <SolidColorBrush x:Key="SuccessBrush" Color="#059669"/>
+    <SolidColorBrush x:Key="SuccessBgBrush" Color="#D1FAE5"/>
+    <SolidColorBrush x:Key="SuccessDarkBrush" Color="#065F46"/>
+
+    <!-- Semantic: Warning -->
+    <SolidColorBrush x:Key="WarningBrush" Color="#D97706"/>
+    <SolidColorBrush x:Key="WarningBgBrush" Color="#FEF3C7"/>
+    <SolidColorBrush x:Key="WarningDarkBrush" Color="#92400E"/>
+
+    <!-- Semantic: Error -->
+    <SolidColorBrush x:Key="ErrorBrush" Color="#DC2626"/>
+    <SolidColorBrush x:Key="ErrorBgBrush" Color="#FEE2E2"/>
+    <SolidColorBrush x:Key="ErrorDarkBrush" Color="#991B1B"/>
+
+    <!-- Semantic: Info -->
+    <SolidColorBrush x:Key="InfoBrush" Color="#0284C7"/>
+    <SolidColorBrush x:Key="InfoBgBrush" Color="#E0F2FE"/>
+    <SolidColorBrush x:Key="InfoDarkBrush" Color="#075985"/>
+
+    <!-- Accent -->
+    <SolidColorBrush x:Key="AccentBrush" Color="#E11D48"/>
+    <SolidColorBrush x:Key="AccentBgBrush" Color="#FECDD3"/>
+
+    <!-- Neutral: Gray Scale -->
+    <SolidColorBrush x:Key="Gray50Brush" Color="#F9FAFB"/>
+    <SolidColorBrush x:Key="Gray100Brush" Color="#F3F4F6"/>
+    <SolidColorBrush x:Key="Gray200Brush" Color="#E5E7EB"/>
+    <SolidColorBrush x:Key="Gray300Brush" Color="#D1D5DB"/>
+    <SolidColorBrush x:Key="Gray400Brush" Color="#9CA3AF"/>
+    <SolidColorBrush x:Key="Gray500Brush" Color="#6B7280"/>
+    <SolidColorBrush x:Key="Gray600Brush" Color="#4B5563"/>
+    <SolidColorBrush x:Key="Gray700Brush" Color="#374151"/>
+    <SolidColorBrush x:Key="Gray800Brush" Color="#1F2937"/>
+    <SolidColorBrush x:Key="Gray900Brush" Color="#111827"/>
+
+    <!-- Surface -->
+    <SolidColorBrush x:Key="SurfaceBrush" Color="White"/>
+    <SolidColorBrush x:Key="SurfaceDarkBrush" Color="#F3F4F6"/>
+    <SolidColorBrush x:Key="SidebarBrush" Color="#F3F4F6"/>
+    <SolidColorBrush x:Key="SidebarBorderBrush" Color="#E5E7EB"/>
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#1F2937"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#4B5563"/>
+    <SolidColorBrush x:Key="TextMutedBrush" Color="#6B7280"/>
+    <SolidColorBrush x:Key="TextDisabledBrush" Color="#9CA3AF"/>
+    <SolidColorBrush x:Key="TextOnPrimaryBrush" Color="White"/>
+
+    <!-- Border -->
+    <SolidColorBrush x:Key="BorderDefaultBrush" Color="#D1D5DB"/>
+    <SolidColorBrush x:Key="BorderLightBrush" Color="#E5E7EB"/>
+    <SolidColorBrush x:Key="BorderFocusBrush" Color="#14B8A6"/>
+
+    <!-- Shadow -->
+    <SolidColorBrush x:Key="ShadowBrush" Color="#000000"/>
+
+    <!-- AI Panel Colors -->
+    <SolidColorBrush x:Key="AiPanelBgBrush" Color="#F0F9FF"/>
+    <SolidColorBrush x:Key="AiPanelBorderBrush" Color="#BAE6FD"/>
+    <SolidColorBrush x:Key="AiPanelTextBrush" Color="#0369A1"/>
+
+</ResourceDictionary>

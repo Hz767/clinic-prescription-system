@@ -1,0 +1,366 @@
+<UserControl x:Class="Clinic.Presentation.Views.BillingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Clinic.Presentation.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:BillingViewModel}"
+             Background="White">
+    <UserControl.Resources>
+        <conv:NullToCollapsedConverter x:Key="NullToCollapsed"
+                                        xmlns:conv="clr-namespace:Clinic.Presentation.Converters"/>
+        <conv:InverseBooleanConverter x:Key="InverseBool"
+                                       xmlns:conv="clr-namespace:Clinic.Presentation.Converters"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis"
+                                        xmlns:conv="clr-namespace:Clinic.Presentation.Converters"/>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="16"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="16"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="16"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- IsBusy 全局加载指示器 -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal"
+                        Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+                <ProgressBar IsIndeterminate="True" Width="120" Height="4"
+                             HorizontalAlignment="Left"/>
+                <TextBlock Text="处理中..." FontSize="12"
+                           Foreground="{StaticResource PrimaryBrush}"
+                           VerticalAlignment="Center" Margin="8,0,0,0"/>
+            </StackPanel>
+
+            <!-- 1. 收费表单 -->
+            <Border Grid.Row="2" Style="{StaticResource CardBorder}"
+                    Visibility="{Binding CanBill, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="收费登记" Style="{StaticResource TextSectionHeader}" Margin="0,0,0,12"/>
+
+                    <!-- 待收费处方信息卡片（从处方页面跳转时显示） -->
+                    <Border Background="#F0FDF4" CornerRadius="6" Padding="12,10" Margin="0,0,0,12"
+                            BorderBrush="#A7F3D0" BorderThickness="1"
+                            Visibility="{Binding HasPendingPrescription, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="待收费处方" FontWeight="SemiBold" FontSize="12" Foreground="#0D9488" Margin="0,0,0,6"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="处方编号：" FontSize="11" Foreground="#6B7280" Margin="0,0,0,2"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PendingPrescriptionNo, Mode=OneWay}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                                <TextBlock Grid.Row="0" Grid.Column="3" Text="金额：" FontSize="11" Foreground="#6B7280" Margin="0,0,4,0"/>
+                                <TextBlock Grid.Row="0" Grid.Column="4" Text="{Binding PendingAmount, Mode=OneWay}" FontSize="13" FontWeight="Bold" Foreground="#DC2626"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="患者姓名：" FontSize="11" Foreground="#6B7280" Margin="0,0,0,2"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PendingPatientName, Mode=OneWay}" FontSize="11" FontWeight="SemiBold" Foreground="#0D9488" Margin="0,0,0,2"/>
+                                <TextBlock Grid.Row="1" Grid.Column="3" Text="状态：" FontSize="11" Foreground="#6B7280" Margin="0,0,4,0"/>
+                                <TextBlock Grid.Row="1" Grid.Column="4" Text="{Binding PendingStatusText, Mode=OneWay}" FontSize="11" Margin="0,0,0,2"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="诊断：" FontSize="11" Foreground="#6B7280"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="4" Text="{Binding PendingDiagnosis, Mode=OneWay}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="120"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="12"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 处方 ID -->
+                        <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource TextLabel}" Text="处方 ID"
+                                   VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBox Grid.Row="0" Grid.Column="1"
+                                 Text="{Binding PrescriptionIdInput, UpdateSourceTrigger=PropertyChanged}"
+                                 VerticalContentAlignment="Center"/>
+
+                        <!-- 收费方式 -->
+                        <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource TextLabel}" Text="收费方式"
+                                   VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <ComboBox Grid.Row="2" Grid.Column="1"
+                                  SelectedIndex="{Binding PaymentMethod}">
+                            <ComboBoxItem Content="现金"/>
+                            <ComboBoxItem Content="POS"/>
+                        </ComboBox>
+
+                        <!-- 金额 -->
+                        <TextBlock Grid.Row="2" Grid.Column="3" Style="{StaticResource TextLabel}" Text="金额（元）"
+                                   VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBox Grid.Row="2" Grid.Column="4"
+                                 Text="{Binding AmountInput, UpdateSourceTrigger=PropertyChanged}"
+                                 VerticalContentAlignment="Center"/>
+
+                        <!-- POS 序列号（仅 POS 显示） -->
+                        <TextBlock Grid.Row="4" Grid.Column="0" Style="{StaticResource TextLabel}" Text="POS 序列号"
+                                   VerticalAlignment="Center" Margin="0,0,12,0"
+                                   Visibility="{Binding IsPos, Converter={StaticResource BoolToVis}}"/>
+                        <TextBox Grid.Row="4" Grid.Column="1"
+                                 Text="{Binding PosSerialNo, UpdateSourceTrigger=PropertyChanged}"
+                                 VerticalContentAlignment="Center"
+                                 Visibility="{Binding IsPos, Converter={StaticResource BoolToVis}}"/>
+
+                        <!-- 备注 -->
+                        <TextBlock Grid.Row="6" Grid.Column="0" Style="{StaticResource TextLabel}" Text="备注"
+                                   VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="4"
+                                 Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <!-- 按钮 -->
+                        <Button Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="5"
+                                Command="{Binding RecordPaymentCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                                Style="{StaticResource BtnPrimaryLg}"
+                                HorizontalAlignment="Right">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource IconCash}" Fill="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="确认收费" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <!-- 消息区 -->
+                    <StackPanel Margin="0,12,0,0">
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   Style="{StaticResource TextError}"
+                                   Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsed}}"/>
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   Style="{StaticResource TextSuccess}"
+                                   Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- 2. 药师审核 -->
+            <Border Grid.Row="4" Style="{StaticResource CardBorder}"
+                    Visibility="{Binding CanReview, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="处方审核（《处方管理办法》要求，个人诊所医生可自审）" Style="{StaticResource TextSectionHeader}" Margin="0,0,0,12"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="12"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 处方 ID -->
+                        <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource TextLabel}" Text="处方 ID"
+                                   VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBox Grid.Row="0" Grid.Column="1"
+                                 Text="{Binding ReviewPrescriptionIdInput, UpdateSourceTrigger=PropertyChanged}"
+                                 VerticalContentAlignment="Center"/>
+                        <Button Grid.Row="0" Grid.Column="3"
+                                Command="{Binding AiPreReviewCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                                Style="{StaticResource BtnPrimary}"
+                                Content="智能预审"/>
+
+                        <!-- 智能预审结果（仅 HasAiReviewResult 为 True 时显示） -->
+                        <TextBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4"
+                                 Text="{Binding AiReviewResult}"
+                                 IsReadOnly="True"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 MinHeight="60"
+                                 Visibility="{Binding HasAiReviewResult, Converter={StaticResource BoolToVis}}"/>
+
+                        <!-- 审核备注 -->
+                        <TextBlock Grid.Row="4" Grid.Column="0" Style="{StaticResource TextLabel}" Text="审核备注"
+                                   VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3"
+                                 Text="{Binding ReviewNote, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <!-- 确认审核按钮 -->
+                        <Button Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4"
+                                Command="{Binding ReviewPrescriptionCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                                Style="{StaticResource BtnPrimaryLg}"
+                                HorizontalAlignment="Right">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="确认审核" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <!-- 消息区 -->
+                    <StackPanel Margin="0,12,0,0">
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   Style="{StaticResource TextError}"
+                                   Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsed}}"/>
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   Style="{StaticResource TextSuccess}"
+                                   Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- 3. 日结报表 -->
+            <Border Grid.Row="6" Style="{StaticResource CardBorder}">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,12">
+                        <TextBlock Text="日结报表" Style="{StaticResource TextSectionHeader}"
+                                   VerticalAlignment="Center"/>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource TextBodySmall}" Text="日期：" VerticalAlignment="Center"/>
+                            <DatePicker SelectedDate="{Binding ReportDate}"
+                                        Margin="8,0,12,0" Width="140"/>
+                            <Button Content="查询"
+                                    Command="{Binding LoadDailyReportCommand}"
+                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                                    Style="{StaticResource BtnPrimary}"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- 报表数据卡片 -->
+                    <Grid Margin="0,4,0,0"
+                          Visibility="{Binding HasReportData, Converter={StaticResource BoolToVis}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- 处方数 -->
+                        <Border Grid.Column="0" Style="{StaticResource StatCardBorder}" Background="{StaticResource SuccessBgBrush}" Margin="0,0,8,0">
+                            <StackPanel Margin="12,10" HorizontalAlignment="Center">
+                                <TextBlock Text="处方数" Style="{StaticResource TextCaption}"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding ReportPrescriptionCount}"
+                                           FontSize="{StaticResource FontSizeTitle}" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"
+                                           HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 总金额 -->
+                        <Border Grid.Column="1" Style="{StaticResource StatCardBorder}" Background="{StaticResource SecondaryBgBrush}" Margin="0,0,8,0">
+                            <StackPanel Margin="12,10" HorizontalAlignment="Center">
+                                <TextBlock Text="总金额" Style="{StaticResource TextCaption}"
+                                           HorizontalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                    <TextBlock Text="¥" FontSize="14" Foreground="{StaticResource SecondaryBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding ReportTotalAmount, StringFormat=F2}"
+                                               FontSize="{StaticResource FontSizeTitle}" FontWeight="Bold" Foreground="{StaticResource SecondaryBrush}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 现金 -->
+                        <Border Grid.Column="2" Style="{StaticResource StatCardBorder}" Background="{StaticResource WarningBgBrush}" Margin="0,0,8,0">
+                            <StackPanel Margin="12,10" HorizontalAlignment="Center">
+                                <TextBlock Text="现金" Style="{StaticResource TextCaption}"
+                                           HorizontalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                    <TextBlock Text="¥" FontSize="14" Foreground="{StaticResource WarningBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding ReportCashAmount, StringFormat=F2}"
+                                               FontSize="{StaticResource FontSizeTitle}" FontWeight="Bold" Foreground="{StaticResource WarningBrush}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- POS -->
+                        <Border Grid.Column="3" Style="{StaticResource StatCardBorder}" Background="#F5F3FF">
+                            <StackPanel Margin="12,10" HorizontalAlignment="Center">
+                                <TextBlock Text="POS" Style="{StaticResource TextCaption}"
+                                           HorizontalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                    <TextBlock Text="¥" FontSize="14" Foreground="#7C3AED" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding ReportPosAmount, StringFormat=F2}"
+                                               FontSize="{StaticResource FontSizeTitle}" FontWeight="Bold" Foreground="#7C3AED"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- 4. 收费流水查询 -->
+            <Border Grid.Row="8" Style="{StaticResource CardBorder}">
+                <StackPanel>
+                    <TextBlock Text="收费流水查询" Style="{StaticResource TextSectionHeader}" Margin="0,0,0,12"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Style="{StaticResource TextBodySmall}" Text="从 " VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <DatePicker SelectedDate="{Binding HistoryFromDate}" Width="140" Margin="0,0,8,0"/>
+                        <TextBlock Style="{StaticResource TextBodySmall}" Text="到 " VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <DatePicker SelectedDate="{Binding HistoryToDate}" Width="140" Margin="0,0,8,0"/>
+                        <Button Content="查询"
+                                Command="{Binding LoadPaymentHistoryCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                                Style="{StaticResource BtnPrimary}"/>
+                    </StackPanel>
+                    <DataGrid ItemsSource="{Binding PaymentHistory}"
+                              SelectedItem="{Binding SelectedPaymentRecord}"
+                              GridLinesVisibility="Horizontal"
+                              MaxHeight="300"
+                              VerticalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="流水号" Binding="{Binding Id}" Width="60"/>
+                            <DataGridTextColumn Header="处方编号" Binding="{Binding PrescriptionNo}" Width="120"/>
+                            <DataGridTextColumn Header="收费方式" Binding="{Binding MethodText}" Width="80"/>
+                            <DataGridTextColumn Header="金额" Binding="{Binding Amount, StringFormat=C}" Width="80"/>
+                            <DataGridTextColumn Header="收费时间" Binding="{Binding OccurredAt, StringFormat=yyyy-MM-dd HH:mm}" Width="140"/>
+                            <DataGridTextColumn Header="POS序列号" Binding="{Binding PosSerialNo}" Width="120"/>
+                            <DataGridTextColumn Header="备注" Binding="{Binding Note}" Width="*"/>
+                            <DataGridTextColumn Header="冲正" Binding="{Binding IsReversal}" Width="50"/>
+                            <!-- 退费按钮列（仅非冲正记录可见） -->
+                            <DataGridTemplateColumn Header="操作" Width="70">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="退费"
+                                                Style="{StaticResource BtnDanger}"
+                                                FontSize="11" Padding="8,2"
+                                                Command="{Binding DataContext.RefundCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Visibility="{Binding IsReversal, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

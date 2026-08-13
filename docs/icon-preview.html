@@ -1,0 +1,419 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鍥炬爣棰勮 鈥?涓汉璇婃墍澶勬柟绯荤粺</title>
+<style>
+:root {
+    --teal-600: #0D9488;
+    --teal-50: #F0FDFA;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-500: #6B7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "Microsoft YaHei UI", "Segoe UI", sans-serif; background: #F9FAFB; color: var(--gray-800); }
+.header { background: linear-gradient(135deg, #0D9488, #0F766E); color: white; padding: 32px 24px; }
+.header h1 { font-size: 24px; margin-bottom: 4px; }
+.header p { font-size: 14px; opacity: 0.85; }
+.header .stats { display: flex; gap: 24px; margin-top: 16px; }
+.header .stat { background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 6px; font-size: 13px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.section { margin-bottom: 48px; }
+.section-title { font-size: 20px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; padding-bottom: 8px; border-bottom: 3px solid var(--teal-600); display: inline-block; }
+.section-desc { font-size: 13px; color: var(--gray-500); margin-bottom: 16px; }
+.icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 12px; }
+.icon-card { background: white; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: all 0.15s ease; cursor: pointer; }
+.icon-card:hover { border-color: var(--teal-600); background: var(--teal-50); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.icon-card svg { width: 32px; height: 32px; color: var(--gray-700); }
+.icon-card:hover svg { color: var(--teal-600); }
+.icon-card .icon-label { font-size: 10px; color: var(--gray-500); text-align: center; word-break: break-all; line-height: 1.3; }
+.icon-card .icon-key { font-size: 9px; color: var(--gray-400); font-family: monospace; }
+.tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--gray-200); margin-bottom: 24px; }
+.tab { padding: 8px 20px; font-size: 14px; color: var(--gray-500); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; font-weight: 500; }
+.tab.active { color: var(--teal-600); border-bottom-color: var(--teal-600); }
+.search-bar { width: 100%; padding: 10px 16px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 14px; margin-bottom: 16px; font-family: inherit; outline: none; }
+.search-bar:focus { border-color: var(--teal-600); }
+.footer { text-align: center; padding: 32px; color: var(--gray-400); font-size: 12px; }
+.usage-card { background: white; border: 1px solid var(--gray-200); border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+.usage-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--gray-700); }
+.usage-card code { background: var(--gray-100); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--teal-600); }
+.usage-card p { font-size: 13px; color: var(--gray-500); margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>鍥炬爣璧勬簮棰勮</h1>
+    <p>Tabler Icons v3.46 (MIT) 鈥?涓汉璇婃墍澶勬柟绯荤粺</p>
+    <div class="stats">
+        <div class="stat">Outline: 79 鍥炬爣</div>
+        <div class="stat">Filled: 42 鍥炬爣</div>
+        <div class="stat">鎬昏: 121 SVG 鏂囦欢</div>
+    </div>
+</div>
+
+<div class="container">
+
+<div class="usage-card">
+    <h3>浣跨敤鏂瑰紡</h3>
+    <p>1. XAML 璧勬簮寮曠敤: <code>&lt;Path Data="{StaticResource IconSearch}" .../&gt;</code></p>
+    <p>2. 璧勬簮瀛楀吀鏂囦欢: <code>Assets/IconDictionary.xaml</code> (79涓猈PF Geometry璧勬簮)</p>
+    <p>3. SVG 鍘熷鏂囦欢: <code>Assets/Icons/outline/</code> 鍜?<code>Assets/Icons/filled/</code></p>
+    <p>4. 璁稿彲璇? MIT (鍏嶈垂鍟嗙敤) | 鏉ユ簮: github.com/tabler/tabler-icons</p>
+</div>
+
+<input type="text" class="search-bar" id="searchInput" placeholder="鎼滅储鍥炬爣鍚嶇О..." oninput="filterIcons()">
+
+<div class="section">
+    <h2 class="section-title">Outline 鍥炬爣</h2>
+    <p class="section-desc">79 涓嚎鎬у浘鏍?鈥?閫傚悎瀵艰埅銆佹寜閽€佸伐鍏锋爮</p>
+    <div class="icon-grid" id="outlineGrid">        <div class="icon-card" data-name="activity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8l4 -16l3 8h4" /></svg><div class="icon-label">activity</div><div class="icon-key">IconActivity</div></div>
+        <div class="icon-card" data-name="alert-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+  <path d="M12 8v4" />
+  <path d="M12 16h.01" /></svg><div class="icon-label">alert-circle</div><div class="icon-key">IconAlertCircle</div></div>
+        <div class="icon-card" data-name="alert-triangle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4" />
+  <path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0" />
+  <path d="M12 16h.01" /></svg><div class="icon-label">alert-triangle</div><div class="icon-key">IconAlertTriangle</div></div>
+        <div class="icon-card" data-name="bandage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 12l0 .01" />
+  <path d="M10 12l0 .01" />
+  <path d="M12 10l0 .01" />
+  <path d="M12 14l0 .01" />
+  <path d="M4.5 12.5l8 -8a4.94 4.94 0 0 1 7 7l-8 8a4.94 4.94 0 0 1 -7 -7" /></svg><div class="icon-label">bandage</div><div class="icon-key">IconBandage</div></div>
+        <div class="icon-card" data-name="bed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path d="M22 17v-3h-20" />
+  <path d="M2 8v9" />
+  <path d="M12 14h10v-2a3 3 0 0 0 -3 -3h-7v5" /></svg><div class="icon-label">bed</div><div class="icon-key">IconBed</div></div>
+        <div class="icon-card" data-name="brain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 13a3.5 3.5 0 0 0 -3.5 3.5v1a3.5 3.5 0 0 0 7 0v-1.8" />
+  <path d="M8.5 13a3.5 3.5 0 0 1 3.5 3.5v1a3.5 3.5 0 0 1 -7 0v-1.8" />
+  <path d="M17.5 16a3.5 3.5 0 0 0 0 -7h-.5" />
+  <path d="M19 9.3v-2.8a3.5 3.5 0 0 0 -7 0" />
+  <path d="M6.5 16a3.5 3.5 0 0 1 0 -7h.5" />
+  <path d="M5 9.3v-2.8a3.5 3.5 0 0 1 7 0v10" /></svg><div class="icon-label">brain</div><div class="icon-key">IconBrain</div></div>
+        <div class="icon-card" data-name="building-hospital"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l18 0" />
+  <path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16" />
+  <path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4" />
+  <path d="M10 9l4 0" />
+  <path d="M12 7l0 4" /></svg><div class="icon-label">building-hospital</div><div class="icon-key">IconBuildingHospital</div></div>
+        <div class="icon-card" data-name="calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12" />
+  <path d="M16 3v4" />
+  <path d="M8 3v4" />
+  <path d="M4 11h16" />
+  <path d="M11 15h1" />
+  <path d="M12 15v3" /></svg><div class="icon-label">calendar</div><div class="icon-key">IconCalendar</div></div>
+        <div class="icon-card" data-name="calendar-clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 21h-4.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v3" />
+  <path d="M16 3v4" />
+  <path d="M8 3v4" />
+  <path d="M4 11h10" />
+  <path d="M14 18a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+  <path d="M18 16.5v1.5l.5 .5" /></svg><div class="icon-label">calendar-clock</div><div class="icon-key">IconCalendarClock</div></div>
+        <div class="icon-card" data-name="calendar-event"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12" />
+  <path d="M16 3l0 4" />
+  <path d="M8 3l0 4" />
+  <path d="M4 11l16 0" />
+  <path d="M8 15h2v2h-2l0 -2" /></svg><div class="icon-label">calendar-event</div><div class="icon-key">IconCalendarEvent</div></div>
+        <div class="icon-card" data-name="calendar-stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <path d="M18 14v4h4" />
+  <path d="M14 18a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" /></svg><div class="icon-label">calendar-stats</div><div class="icon-key">IconCalendarStats</div></div>
+        <div class="icon-card" data-name="capsule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 6 -6a6 6 0 0 1 6 6v6a6 6 0 0 1 -6 6a6 6 0 0 1 -6 -6l0 -6" /></svg><div class="icon-label">capsule</div><div class="icon-key">IconCapsule</div></div>
+        <div class="icon-card" data-name="cash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" />
+  <path d="M7 10a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1l0 -8" />
+  <path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg><div class="icon-label">cash</div><div class="icon-key">IconCash</div></div>
+        <div class="icon-card" data-name="certificate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+  <path d="M13 17.5v4.5l2 -1.5l2 1.5v-4.5" />
+  <path d="M10 19h-5a2 2 0 0 1 -2 -2v-10c0 -1.1 .9 -2 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -1 1.73" />
+  <path d="M6 9l12 0" />
+  <path d="M6 12l3 0" />
+  <path d="M6 15l2 0" /></svg><div class="icon-label">certificate</div><div class="icon-key">IconCertificate</div></div>
+        <div class="icon-card" data-name="chart-bar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -6" />
+  <path d="M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -10" />
+  <path d="M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -14" />
+  <path d="M4 20h14" /></svg><div class="icon-label">chart-bar</div><div class="icon-key">IconChartBar</div></div>
+        <div class="icon-card" data-name="chart-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19l16 0" />
+  <path d="M4 15l4 -6l4 2l4 -5l4 4" /></svg><div class="icon-label">chart-line</div><div class="icon-key">IconChartLine</div></div>
+        <div class="icon-card" data-name="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5l10 -10" /></svg><div class="icon-label">check</div><div class="icon-key">IconCheck</div></div>
+        <div class="icon-card" data-name="chevron-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6l6 6" /></svg><div class="icon-label">chevron-left</div><div class="icon-key">IconChevronLeft</div></div>
+        <div class="icon-card" data-name="chevron-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6l-6 6" /></svg><div class="icon-label">chevron-right</div><div class="icon-key">IconChevronRight</div></div>
+        <div class="icon-card" data-name="circle-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+  <path d="M9 12l2 2l4 -4" /></svg><div class="icon-label">circle-check</div><div class="icon-key">IconCircleCheck</div></div>
+        <div class="icon-card" data-name="clipboard-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+  <path d="M9 5a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2" />
+  <path d="M9 14l2 2l4 -4" /></svg><div class="icon-label">clipboard-check</div><div class="icon-key">IconClipboardCheck</div></div>
+        <div class="icon-card" data-name="clipboard-list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+  <path d="M9 5a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2" />
+  <path d="M9 12l.01 0" />
+  <path d="M13 12l2 0" />
+  <path d="M9 16l.01 0" />
+  <path d="M13 16l2 0" /></svg><div class="icon-label">clipboard-list</div><div class="icon-key">IconClipboardList</div></div>
+        <div class="icon-card" data-name="clipboard-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+  <path d="M9 5a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2" />
+  <path d="M9 12h6" />
+  <path d="M9 16h6" /></svg><div class="icon-label">clipboard-text</div><div class="icon-key">IconClipboardText</div></div>
+        <div class="icon-card" data-name="clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+  <path d="M12 7v5l3 3" /></svg><div class="icon-label">clock</div><div class="icon-key">IconClock</div></div>
+        <div class="icon-card" data-name="coin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+  <path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1" />
+  <path d="M12 7v10" /></svg><div class="icon-label">coin</div><div class="icon-key">IconCoin</div></div>
+        <div class="icon-card" data-name="credit-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3l0 -8" />
+  <path d="M3 10l18 0" />
+  <path d="M7 15l.01 0" />
+  <path d="M11 15l2 0" /></svg><div class="icon-label">credit-card</div><div class="icon-key">IconCreditCard</div></div>
+        <div class="icon-card" data-name="database"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a8 3 0 1 0 16 0a8 3 0 1 0 -16 0" />
+  <path d="M4 6v6a8 3 0 0 0 16 0v-6" />
+  <path d="M4 12v6a8 3 0 0 0 16 0v-6" /></svg><div class="icon-label">database</div><div class="icon-key">IconDatabase</div></div>
+        <div class="icon-card" data-name="database-export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6c0 1.657 3.582 3 8 3s8 -1.343 8 -3s-3.582 -3 -8 -3s-8 1.343 -8 3" />
+  <path d="M4 6v6c0 1.657 3.582 3 8 3c1.118 0 2.183 -.086 3.15 -.241" />
+  <path d="M20 12v-6" />
+  <path d="M4 12v6c0 1.657 3.582 3 8 3c.157 0 .312 -.002 .466 -.005" />
+  <path d="M16 19h6" />
+  <path d="M19 16l3 3l-3 3" /></svg><div class="icon-label">database-export</div><div class="icon-key">IconDatabaseExport</div></div>
+        <div class="icon-card" data-name="database-import"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6c0 1.657 3.582 3 8 3s8 -1.343 8 -3s-3.582 -3 -8 -3s-8 1.343 -8 3" />
+  <path d="M4 6v6c0 1.657 3.582 3 8 3c.856 0 1.68 -.05 2.454 -.144m5.546 -2.856v-6" />
+  <path d="M4 12v6c0 1.657 3.582 3 8 3c.171 0 .341 -.002 .51 -.006" />
+  <path d="M19 22v-6" />
+  <path d="M22 19l-3 -3l-3 3" /></svg><div class="icon-label">database-import</div><div class="icon-key">IconDatabaseImport</div></div>
+        <div class="icon-card" data-name="device-floppy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+  <path d="M10 14a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path d="M14 4l0 4l-6 0l0 -4" /></svg><div class="icon-label">device-floppy</div><div class="icon-key">IconDeviceFloppy</div></div>
+        <div class="icon-card" data-name="download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+  <path d="M7 11l5 5l5 -5" />
+  <path d="M12 4l0 12" /></svg><div class="icon-label">download</div><div class="icon-key">IconDownload</div></div>
+        <div class="icon-card" data-name="edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+  <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" />
+  <path d="M16 5l3 3" /></svg><div class="icon-label">edit</div><div class="icon-key">IconEdit</div></div>
+        <div class="icon-card" data-name="eye"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+  <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg><div class="icon-label">eye</div><div class="icon-key">IconEye</div></div>
+        <div class="icon-card" data-name="file-invoice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" />
+  <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" />
+  <path d="M9 7l1 0" />
+  <path d="M9 13l6 0" />
+  <path d="M13 17l2 0" /></svg><div class="icon-label">file-invoice</div><div class="icon-key">IconFileInvoice</div></div>
+        <div class="icon-card" data-name="file-report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 17a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+  <path d="M17 13v4h4" />
+  <path d="M12 3v4a1 1 0 0 0 1 1h4" />
+  <path d="M11.5 21h-6.5a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v2m0 3v4" /></svg><div class="icon-label">file-report</div><div class="icon-key">IconFileReport</div></div>
+        <div class="icon-card" data-name="file-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" />
+  <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" />
+  <path d="M9 9l1 0" />
+  <path d="M9 13l6 0" />
+  <path d="M9 17l6 0" /></svg><div class="icon-label">file-text</div><div class="icon-key">IconFileText</div></div>
+        <div class="icon-card" data-name="fingerprint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.9 7a8 8 0 0 1 1.1 5v1a6 6 0 0 0 .8 3" />
+  <path d="M8 11a4 4 0 0 1 8 0v1a10 10 0 0 0 2 6" />
+  <path d="M12 11v2a14 14 0 0 0 2.5 8" />
+  <path d="M8 15a18 18 0 0 0 1.8 6" />
+  <path d="M4.9 19a22 22 0 0 1 -.9 -7v-1a8 8 0 0 1 12 -6.95" /></svg><div class="icon-label">fingerprint</div><div class="icon-key">IconFingerprint</div></div>
+        <div class="icon-card" data-name="first-aid-kit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2" />
+  <path d="M4 10a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -8" />
+  <path d="M10 14h4" />
+  <path d="M12 12v4" /></svg><div class="icon-label">first-aid-kit</div><div class="icon-key">IconFirstAidKit</div></div>
+        <div class="icon-card" data-name="heart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572" /></svg><div class="icon-label">heart</div><div class="icon-key">IconHeart</div></div>
+        <div class="icon-card" data-name="heartbeat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 13.572l-7.5 7.428l-2.896 -2.868m-6.117 -8.104a5 5 0 0 1 9.013 -3.022a5 5 0 1 1 7.5 6.572" />
+  <path d="M3 13h2l2 3l2 -6l1 3h3" /></svg><div class="icon-label">heartbeat</div><div class="icon-key">IconHeartbeat</div></div>
+        <div class="icon-card" data-name="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8l0 4l2 2" />
+  <path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" /></svg><div class="icon-label">history</div><div class="icon-key">IconHistory</div></div>
+        <div class="icon-card" data-name="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l-2 0l9 -9l9 9l-2 0" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg><div class="icon-label">home</div><div class="icon-key">IconHome</div></div>
+        <div class="icon-card" data-name="id-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6a3 3 0 0 1 3 -3h8a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-8a3 3 0 0 1 -3 -3l0 -12" />
+  <path d="M10 13a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path d="M10 6h4" />
+  <path d="M9 18h6" /></svg><div class="icon-label">id-badge</div><div class="icon-key">IconIdBadge</div></div>
+        <div class="icon-card" data-name="info-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+  <path d="M12 9h.01" />
+  <path d="M11 12h1v4h1" /></svg><div class="icon-label">info-circle</div><div class="icon-key">IconInfoCircle</div></div>
+        <div class="icon-card" data-name="key"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0" />
+  <path d="M15 9h.01" /></svg><div class="icon-label">key</div><div class="icon-key">IconKey</div></div>
+        <div class="icon-card" data-name="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6" />
+  <path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" />
+  <path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg><div class="icon-label">lock</div><div class="icon-key">IconLock</div></div>
+        <div class="icon-card" data-name="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
+  <path d="M9 12h12l-3 -3" />
+  <path d="M18 15l3 -3" /></svg><div class="icon-label">logout</div><div class="icon-key">IconLogout</div></div>
+        <div class="icon-card" data-name="medical-cross"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3a1 1 0 0 1 1 1v4.535l3.928 -2.267a1 1 0 0 1 1.366 .366l1 1.732a1 1 0 0 1 -.366 1.366l-3.927 2.268l3.927 2.269a1 1 0 0 1 .366 1.366l-1 1.732a1 1 0 0 1 -1.366 .366l-3.928 -2.269v4.536a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-4.536l-3.928 2.268a1 1 0 0 1 -1.366 -.366l-1 -1.732a1 1 0 0 1 .366 -1.366l3.927 -2.268l-3.927 -2.268a1 1 0 0 1 -.366 -1.366l1 -1.732a1 1 0 0 1 1.366 -.366l3.928 2.267v-4.535a1 1 0 0 1 1 -1h2" /></svg><div class="icon-label">medical-cross</div><div class="icon-key">IconMedicalCross</div></div>
+        <div class="icon-card" data-name="microscope"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21h14" />
+  <path d="M6 18h2" />
+  <path d="M7 18v3" />
+  <path d="M9 11l3 3l6 -6l-3 -3l-6 6" />
+  <path d="M10.5 12.5l-1.5 1.5" />
+  <path d="M17 3l3 3" />
+  <path d="M12 21a6 6 0 0 0 3.715 -10.712" /></svg><div class="icon-label">microscope</div><div class="icon-key">IconMicroscope</div></div>
+        <div class="icon-card" data-name="package"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" />
+  <path d="M12 12l8 -4.5" />
+  <path d="M12 12l0 9" />
+  <path d="M12 12l-8 -4.5" />
+  <path d="M16 5.25l-8 4.5" /></svg><div class="icon-label">package</div><div class="icon-key">IconPackage</div></div>
+        <div class="icon-card" data-name="phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2" /></svg><div class="icon-label">phone</div><div class="icon-key">IconPhone</div></div>
+        <div class="icon-card" data-name="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l8 -8a4.94 4.94 0 0 1 7 7l-8 8a4.94 4.94 0 0 1 -7 -7" />
+  <path d="M8.5 8.5l7 7" /></svg><div class="icon-label">pill</div><div class="icon-key">IconPill</div></div>
+        <div class="icon-card" data-name="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l0 14" />
+  <path d="M5 12l14 0" /></svg><div class="icon-label">plus</div><div class="icon-key">IconPlus</div></div>
+        <div class="icon-card" data-name="prescription"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19v-16h4.5a4.5 4.5 0 1 1 0 9h-4.5" />
+  <path d="M19 21l-9 -9" />
+  <path d="M13 21l6 -6" /></svg><div class="icon-label">prescription</div><div class="icon-key">IconPrescription</div></div>
+        <div class="icon-card" data-name="printer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" />
+  <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" />
+  <path d="M7 15a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2l0 -4" /></svg><div class="icon-label">printer</div><div class="icon-key">IconPrinter</div></div>
+        <div class="icon-card" data-name="receipt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2m4 -14h6m-6 4h6m-2 4h2" /></svg><div class="icon-label">receipt</div><div class="icon-key">IconReceipt</div></div>
+        <div class="icon-card" data-name="receipt-refund"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2" />
+  <path d="M15 14v-2a2 2 0 0 0 -2 -2h-4l2 -2m0 4l-2 -2" /></svg><div class="icon-label">receipt-refund</div><div class="icon-key">IconReceiptRefund</div></div>
+        <div class="icon-card" data-name="receipt-tax"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l6 -6" />
+  <path d="M9 8.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0" fill="currentColor" />
+  <path d="M14 13.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0" fill="currentColor" />
+  <path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2" /></svg><div class="icon-label">receipt-tax</div><div class="icon-key">IconReceiptTax</div></div>
+        <div class="icon-card" data-name="refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+  <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg><div class="icon-label">refresh</div><div class="icon-key">IconRefresh</div></div>
+        <div class="icon-card" data-name="report-money"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+  <path d="M9 5a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2" />
+  <path d="M14 11h-2.5a1.5 1.5 0 0 0 0 3h1a1.5 1.5 0 0 1 0 3h-2.5" />
+  <path d="M12 17v1m0 -8v1" /></svg><div class="icon-label">report-money</div><div class="icon-key">IconReportMoney</div></div>
+        <div class="icon-card" data-name="restore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.06 13a9 9 0 1 0 .49 -4.087" />
+  <path d="M3 4.001v5h5" />
+  <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /></svg><div class="icon-label">restore</div><div class="icon-key">IconRestore</div></div>
+        <div class="icon-card" data-name="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+  <path d="M21 21l-6 -6" /></svg><div class="icon-label">search</div><div class="icon-key">IconSearch</div></div>
+        <div class="icon-card" data-name="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" />
+  <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg><div class="icon-label">settings</div><div class="icon-key">IconSettings</div></div>
+        <div class="icon-card" data-name="shield"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3" /></svg><div class="icon-label">shield</div><div class="icon-key">IconShield</div></div>
+        <div class="icon-card" data-name="shield-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.46 20.846a12 12 0 0 1 -7.96 -14.846a12 12 0 0 0 8.5 -3a12 12 0 0 0 8.5 3a12 12 0 0 1 -.09 7.06" />
+  <path d="M15 19l2 2l4 -4" /></svg><div class="icon-label">shield-check</div><div class="icon-key">IconShieldCheck</div></div>
+        <div class="icon-card" data-name="stethoscope"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h-1a2 2 0 0 0 -2 2v3.5a5.5 5.5 0 0 0 11 0v-3.5a2 2 0 0 0 -2 -2h-1" />
+  <path d="M8 15a6 6 0 1 0 12 0v-3" />
+  <path d="M11 3v2" />
+  <path d="M6 3v2" />
+  <path d="M18 10a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /></svg><div class="icon-label">stethoscope</div><div class="icon-key">IconStethoscope</div></div>
+        <div class="icon-card" data-name="test-pipe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 8.04l-12.122 12.124a2.857 2.857 0 1 1 -4.041 -4.04l12.122 -12.124" />
+  <path d="M7 13h8" />
+  <path d="M19 15l1.5 1.6a2 2 0 1 1 -3 0l1.5 -1.6" />
+  <path d="M15 3l6 6" /></svg><div class="icon-label">test-pipe</div><div class="icon-key">IconTestPipe</div></div>
+        <div class="icon-card" data-name="thermometer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5a2.828 2.828 0 0 1 0 4l-8 8h-4v-4l8 -8a2.828 2.828 0 0 1 4 0" />
+  <path d="M16 7l-1.5 -1.5" />
+  <path d="M13 10l-1.5 -1.5" />
+  <path d="M10 13l-1.5 -1.5" />
+  <path d="M7 17l-3 3" /></svg><div class="icon-label">thermometer</div><div class="icon-key">IconThermometer</div></div>
+        <div class="icon-card" data-name="trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l16 0" />
+  <path d="M10 11l0 6" />
+  <path d="M14 11l0 6" />
+  <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+  <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg><div class="icon-label">trash</div><div class="icon-key">IconTrash</div></div>
+        <div class="icon-card" data-name="trending-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6 -6l4 4l8 -8" />
+  <path d="M14 7l7 0l0 7" /></svg><div class="icon-label">trending-up</div><div class="icon-key">IconTrendingUp</div></div>
+        <div class="icon-card" data-name="upload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+  <path d="M7 9l5 -5l5 5" />
+  <path d="M12 4l0 12" /></svg><div class="icon-label">upload</div><div class="icon-key">IconUpload</div></div>
+        <div class="icon-card" data-name="user"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /></svg><div class="icon-label">user</div><div class="icon-key">IconUser</div></div>
+        <div class="icon-card" data-name="user-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+  <path d="M9 10a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+  <path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855" /></svg><div class="icon-label">user-circle</div><div class="icon-key">IconUserCircle</div></div>
+        <div class="icon-card" data-name="user-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+  <path d="M16 19h6" />
+  <path d="M19 16v6" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4" /></svg><div class="icon-label">user-plus</div><div class="icon-key">IconUserPlus</div></div>
+        <div class="icon-card" data-name="users"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+  <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  <path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg><div class="icon-label">users</div><div class="icon-key">IconUsers</div></div>
+        <div class="icon-card" data-name="user-shield"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21v-2a4 4 0 0 1 4 -4h2" />
+  <path d="M22 16c0 4 -2.5 6 -3.5 6s-3.5 -2 -3.5 -6c1 0 2.5 -.5 3.5 -1.5c1 1 2.5 1.5 3.5 1.5" />
+  <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /></svg><div class="icon-label">user-shield</div><div class="icon-key">IconUserShield</div></div>
+        <div class="icon-card" data-name="vaccine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4" />
+  <path d="M19 5l-4.5 4.5" />
+  <path d="M11.5 6.5l6 6" />
+  <path d="M16.5 11.5l-6.5 6.5h-4v-4l6.5 -6.5" />
+  <path d="M7.5 12.5l1.5 1.5" />
+  <path d="M10.5 9.5l1.5 1.5" />
+  <path d="M3 21l3 -3" /></svg><div class="icon-label">vaccine</div><div class="icon-key">IconVaccine</div></div>
+        <div class="icon-card" data-name="wallet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12" />
+  <path d="M20 12v4h-4a2 2 0 0 1 0 -4h4" /></svg><div class="icon-label">wallet</div><div class="icon-key">IconWallet</div></div>
+        <div class="icon-card" data-name="x"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6l-12 12" />
+  <path d="M6 6l12 12" /></svg><div class="icon-label">x</div><div class="icon-key">IconX</div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-title">Filled 鍥炬爣</h2>
+    <p class="section-desc">42 涓疄蹇冨浘鏍?鈥?閫傚悎寮鸿皟鐘舵€併€佺┖鐘舵€併€佸紩瀵兼彁绀?/p>
+    <div class="icon-grid" id="filledGrid">        <div class="icon-card" data-name="alert-circle"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2c5.523 0 10 4.477 10 10a10 10 0 0 1 -19.995 .324l-.005 -.324l.004 -.28c.148 -5.393 4.566 -9.72 9.996 -9.72zm.01 13l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -8a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" /></svg><div class="icon-label">alert-circle</div><div class="icon-key">IconAlertCircle</div></div>
+        <div class="icon-card" data-name="alert-triangle"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" /></svg><div class="icon-label">alert-triangle</div><div class="icon-key">IconAlertTriangle</div></div>
+        <div class="icon-card" data-name="bandage"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.207 3.793a5.95 5.95 0 0 1 .179 8.228l-.179 .186l-8 8a5.95 5.95 0 0 1 -8.593 -8.228l.179 -.186l8 -8a5.95 5.95 0 0 1 8.414 0zm-8.207 9.207a1 1 0 0 0 -1 1l.007 .127a1 1 0 0 0 1.993 -.117l-.007 -.127a1 1 0 0 0 -.993 -.883zm2 -2a1 1 0 0 0 -1 1l.007 .127a1 1 0 0 0 1.993 -.117l-.007 -.127a1 1 0 0 0 -.993 -.883zm-4 0a1 1 0 0 0 -1 1l.007 .127a1 1 0 0 0 1.993 -.117l-.007 -.127a1 1 0 0 0 -.993 -.883zm2 -2a1 1 0 0 0 -1 1l.007 .127a1 1 0 0 0 1.993 -.117l-.007 -.127a1 1 0 0 0 -.993 -.883z" /></svg><div class="icon-label">bandage</div><div class="icon-key">IconBandage</div></div>
+        <div class="icon-card" data-name="bed"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 6a1 1 0 0 1 .993 .883l.007 .117v6h6v-5a1 1 0 0 1 .883 -.993l.117 -.007h8a3 3 0 0 1 2.995 2.824l.005 .176v8a1 1 0 0 1 -1.993 .117l-.007 -.117v-3h-16v3a1 1 0 0 1 -1.993 .117l-.007 -.117v-11a1 1 0 0 1 1 -1z" />
+  <path d="M7 8a2 2 0 1 1 -1.995 2.15l-.005 -.15l.005 -.15a2 2 0 0 1 1.995 -1.85z" /></svg><div class="icon-label">bed</div><div class="icon-key">IconBed</div></div>
+        <div class="icon-card" data-name="calendar"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M16 2a1 1 0 0 1 .993 .883l.007 .117v1h1a3 3 0 0 1 2.995 2.824l.005 .176v12a3 3 0 0 1 -2.824 2.995l-.176 .005h-12a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-12a3 3 0 0 1 2.824 -2.995l.176 -.005h1v-1a1 1 0 0 1 1.993 -.117l.007 .117v1h6v-1a1 1 0 0 1 1 -1zm3 7h-14v9.625c0 .705 .386 1.286 .883 1.366l.117 .009h12c.513 0 .936 -.53 .993 -1.215l.007 -.16v-9.625z" />
+  <path d="M12 12a1 1 0 0 1 .993 .883l.007 .117v3a1 1 0 0 1 -1.993 .117l-.007 -.117v-2a1 1 0 0 1 -.117 -1.993l.117 -.007h1z" /></svg><div class="icon-label">calendar</div><div class="icon-key">IconCalendar</div></div>
+        <div class="icon-card" data-name="calendar-event"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M16 2a1 1 0 0 1 .993 .883l.007 .117v1h1a3 3 0 0 1 2.995 2.824l.005 .176v12a3 3 0 0 1 -2.824 2.995l-.176 .005h-12a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-12a3 3 0 0 1 2.824 -2.995l.176 -.005h1v-1a1 1 0 0 1 1.993 -.117l.007 .117v1h6v-1a1 1 0 0 1 1 -1m3 8h-14v8.625c0 .705 .386 1.286 .883 1.366l.117 .009h12c.513 0 .936 -.53 .993 -1.215l.007 -.16zm-9 4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1z" /></svg><div class="icon-label">calendar-event</div><div class="icon-key">IconCalendarEvent</div></div>
+        <div class="icon-card" data-name="capsule"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l-.243 .004a7.004 7.004 0 0 0 -6.757 6.996v6a7 7 0 0 0 7 7l.243 -.004a7.004 7.004 0 0 0 6.757 -6.996v-6a7 7 0 0 0 -7 -7z" /></svg><div class="icon-label">capsule</div><div class="icon-key">IconCapsule</div></div>
+        <div class="icon-card" data-name="check"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.707 6.293a1 1 0 0 1 0 1.414l-10 10a1 1 0 0 1 -1.414 0l-5 -5a1 1 0 0 1 1.414 -1.414l4.293 4.293l9.293 -9.293a1 1 0 0 1 1.414 0" /></svg><div class="icon-label">check</div><div class="icon-key">IconCheck</div></div>
+        <div class="icon-card" data-name="chevron-right"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M9.707 5.293l6 6a1 1 0 0 1 0 1.414l-6 6a1 1 0 1 1 -1.414 -1.414l5.293 -5.293l-5.293 -5.293a1 1 0 0 1 1.414 -1.414" /></svg><div class="icon-label">chevron-right</div><div class="icon-key">IconChevronRight</div></div>
+        <div class="icon-card" data-name="circle-check"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-1.293 5.953a1 1 0 0 0 -1.32 -.083l-.094 .083l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.403 1.403l.083 .094l2 2l.094 .083a1 1 0 0 0 1.226 0l.094 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" /></svg><div class="icon-label">circle-check</div><div class="icon-key">IconCircleCheck</div></div>
+        <div class="icon-card" data-name="clipboard-check"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17.997 4.17a3 3 0 0 1 2.003 2.83v12a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 2.003 -2.83a4 4 0 0 0 3.997 3.83h4a4 4 0 0 0 3.98 -3.597zm-3.704 7.123l-3.293 3.292l-1.293 -1.292a1 1 0 1 0 -1.414 1.414l2 2a1 1 0 0 0 1.414 0l4 -4a1 1 0 0 0 -1.414 -1.414m-.293 -9.293a2 2 0 1 1 0 4h-4a2 2 0 1 1 0 -4z" /></svg><div class="icon-label">clipboard-check</div><div class="icon-key">IconClipboardCheck</div></div>
+        <div class="icon-card" data-name="clipboard-list"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17.997 4.17a3 3 0 0 1 2.003 2.83v12a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 2.003 -2.83a4 4 0 0 0 3.997 3.83h4a4 4 0 0 0 3.98 -3.597zm-8.987 10.83h-.01a1 1 0 0 0 -.117 1.993l.127 .007a1 1 0 0 0 0 -2m5.99 0h-2a1 1 0 0 0 0 2h2a1 1 0 0 0 0 -2m-5.99 -4h-.01a1 1 0 0 0 -.117 1.993l.127 .007a1 1 0 0 0 0 -2m5.99 0h-2a1 1 0 0 0 0 2h2a1 1 0 0 0 0 -2m-1 -9a2 2 0 1 1 0 4h-4a2 2 0 1 1 0 -4z" /></svg><div class="icon-label">clipboard-list</div><div class="icon-key">IconClipboardList</div></div>
+        <div class="icon-card" data-name="clipboard-text"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17.997 4.17a3 3 0 0 1 2.003 2.83v12a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 2.003 -2.83a4 4 0 0 0 3.997 3.83h4a4 4 0 0 0 3.98 -3.597zm-2.997 10.83h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m0 -4h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m-1 -9a2 2 0 1 1 0 4h-4a2 2 0 1 1 0 -4z" /></svg><div class="icon-label">clipboard-text</div><div class="icon-key">IconClipboardText</div></div>
+        <div class="icon-card" data-name="clock"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-5 2.66a1 1 0 0 0 -.993 .883l-.007 .117v5l.009 .131a1 1 0 0 0 .197 .477l.087 .1l3 3l.094 .082a1 1 0 0 0 1.226 0l.094 -.083l.083 -.094a1 1 0 0 0 0 -1.226l-.083 -.094l-2.707 -2.708v-4.585l-.007 -.117a1 1 0 0 0 -.993 -.883z" /></svg><div class="icon-label">clock</div><div class="icon-key">IconClock</div></div>
+        <div class="icon-card" data-name="coin"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17 3.34a10 10 0 1 1 -15 8.66l.005 -.324a10 10 0 0 1 14.995 -8.336zm-5 2.66a1 1 0 0 0 -1 1a3 3 0 1 0 0 6v2a1.024 1.024 0 0 1 -.866 -.398l-.068 -.101a1 1 0 0 0 -1.732 .998a3 3 0 0 0 2.505 1.5h.161a1 1 0 0 0 .883 .994l.117 .007a1 1 0 0 0 1 -1l.176 -.005a3 3 0 0 0 -.176 -5.995v-2c.358 -.012 .671 .14 .866 .398l.068 .101a1 1 0 0 0 1.732 -.998a3 3 0 0 0 -2.505 -1.501h-.161a1 1 0 0 0 -1 -1zm1 7a1 1 0 0 1 0 2v-2zm-2 -4v2a1 1 0 0 1 0 -2z" /></svg><div class="icon-label">coin</div><div class="icon-key">IconCoin</div></div>
+        <div class="icon-card" data-name="credit-card"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M22 10v6a4 4 0 0 1 -4 4h-12a4 4 0 0 1 -4 -4v-6h20zm-14.99 4h-.01a1 1 0 1 0 .01 2a1 1 0 0 0 0 -2m5.99 0h-2a1 1 0 0 0 0 2h2a1 1 0 0 0 0 -2zm5 -10a4 4 0 0 1 4 4h-20a4 4 0 0 1 4 -4h12z" /></svg><div class="icon-label">credit-card</div><div class="icon-key">IconCreditCard</div></div>
+        <div class="icon-card" data-name="database"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 15.731c1.968 1.507 5.234 2.269 9 2.269c3.76 0 7.025 -.76 9 -2.252v2.252c0 2.425 -3.895 3.936 -8.693 3.998l-.307 .002c-4.938 0 -9 -1.523 -9 -4z" />
+  <path d="M3 9.731c1.968 1.507 5.234 2.269 9 2.269c3.76 0 7.025 -.76 9 -2.252v2.252c0 2.477 -4.062 4 -9 4c-4.798 0 -8.77 -1.438 -8.979 -3.795l-.016 -.101l-.005 -.104z" />
+  <path d="M12 2c1.041 0 2.044 .068 2.977 .198l.469 .071q .84 .14 1.586 .348l.44 .131l.075 .024a11 11 0 0 1 .805 .3l.199 .086q .535 .242 .967 .53q .165 .11 .313 .225a3.8 3.8 0 0 1 .669 .668l.091 .128q .07 .105 .129 .211l.07 .139q .163 .35 .2 .73l.01 .211c0 2.477 -4.062 4 -9 4c-4.798 0 -8.77 -1.438 -8.979 -3.795a1 1 0 0 1 -.021 -.205l.005 -.104l.016 -.1c.205 -2.306 4.01 -3.733 8.667 -3.794z" /></svg><div class="icon-label">database</div><div class="icon-key">IconDatabase</div></div>
+        <div class="icon-card" data-name="device-floppy"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M16 3a1 1 0 0 1 .707 .293l4 4a1 1 0 0 1 .293 .707v10a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h1v4a1 1 0 0 0 .883 .993l.117 .007h6a1 1 0 0 0 1 -1v-4zm-4 8a2.995 2.995 0 0 0 -2.995 2.898a1 1 0 0 0 -.005 .102a3 3 0 1 0 3 -3m1 -8v3h-4v-3z" /></svg><div class="icon-label">device-floppy</div><div class="icon-key">IconDeviceFloppy</div></div>
+        <div class="icon-card" data-name="download"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 16a1 1 0 0 1 1 1v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-2a1 1 0 0 1 2 0v2a1 1 0 0 0 1 1h12a1 1 0 0 0 1 -1v-2a1 1 0 0 1 1 -1m-8 -13a1 1 0 0 1 1 1v9.585l3.293 -3.292a1 1 0 0 1 1.414 1.414l-5 5a1 1 0 0 1 -.09 .08l.09 -.08a1 1 0 0 1 -.674 .292l-.033 .001h-.032l-.054 -.004l.086 .004a1 1 0 0 1 -.617 -.213a1 1 0 0 1 -.09 -.08l-5 -5a1 1 0 0 1 1.414 -1.414l3.293 3.292v-9.585a1 1 0 0 1 1 -1" /></svg><div class="icon-label">download</div><div class="icon-key">IconDownload</div></div>
+        <div class="icon-card" data-name="edit"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 7a1 1 0 0 1 -1 1h-1a1 1 0 0 0 -1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1 -1v-1a1 1 0 0 1 2 0v1a3 3 0 0 1 -3 3h-9a3 3 0 0 1 -3 -3v-9a3 3 0 0 1 3 -3h1a1 1 0 0 1 1 1" />
+  <path d="M14.596 5.011l4.392 4.392l-6.28 6.303a1 1 0 0 1 -.708 .294h-3a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 .294 -.708zm6.496 -2.103a3.097 3.097 0 0 1 .165 4.203l-.164 .18l-.693 .694l-4.387 -4.387l.695 -.69a3.1 3.1 0 0 1 4.384 0" /></svg><div class="icon-label">edit</div><div class="icon-key">IconEdit</div></div>
+        <div class="icon-card" data-name="eye"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 4c4.29 0 7.863 2.429 10.665 7.154l.22 .379l.045 .1l.03 .083l.014 .055l.014 .082l.011 .1v.11l-.014 .111a.992 .992 0 0 1 -.026 .11l-.039 .108l-.036 .075l-.016 .03c-2.764 4.836 -6.3 7.38 -10.555 7.499l-.313 .004c-4.396 0 -8.037 -2.549 -10.868 -7.504a1 1 0 0 1 0 -.992c2.831 -4.955 6.472 -7.504 10.868 -7.504zm0 5a3 3 0 1 0 0 6a3 3 0 0 0 0 -6" /></svg><div class="icon-label">eye</div><div class="icon-key">IconEye</div></div>
+        <div class="icon-card" data-name="file-invoice"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm4 15h-2a1 1 0 0 0 0 2h2a1 1 0 0 0 0 -2m0 -4h-8a1 1 0 0 0 0 2h8a1 1 0 0 0 0 -2m-7 -7h-1a1 1 0 1 0 0 2h1a1 1 0 1 0 0 -2" />
+  <path d="M19 7h-4l-.001 -4.001z" /></svg><div class="icon-label">file-invoice</div><div class="icon-key">IconFileInvoice</div></div>
+        <div class="icon-card" data-name="file-text"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm3 14h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m0 -4h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m-5 -4h-1a1 1 0 1 0 0 2h1a1 1 0 0 0 0 -2" />
+  <path d="M19 7h-4l-.001 -4.001z" /></svg><div class="icon-label">file-text</div><div class="icon-key">IconFileText</div></div>
+        <div class="icon-card" data-name="heart"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6.979 3.074a6 6 0 0 1 4.988 1.425l.037 .033l.034 -.03a6 6 0 0 1 4.733 -1.44l.246 .036a6 6 0 0 1 3.364 10.008l-.18 .185l-.048 .041l-7.45 7.379a1 1 0 0 1 -1.313 .082l-.094 -.082l-7.493 -7.422a6 6 0 0 1 3.176 -10.215z" /></svg><div class="icon-label">heart</div><div class="icon-key">IconHeart</div></div>
+        <div class="icon-card" data-name="home"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12.707 2.293l9 9c.63 .63 .184 1.707 -.707 1.707h-1v6a3 3 0 0 1 -3 3h-1v-7a3 3 0 0 0 -2.824 -2.995l-.176 -.005h-2a3 3 0 0 0 -3 3v7h-1a3 3 0 0 1 -3 -3v-6h-1c-.89 0 -1.337 -1.077 -.707 -1.707l9 -9a1 1 0 0 1 1.414 0m.293 11.707a1 1 0 0 1 1 1v7h-4v-7a1 1 0 0 1 .883 -.993l.117 -.007z" /></svg><div class="icon-label">home</div><div class="icon-key">IconHome</div></div>
+        <div class="icon-card" data-name="info-circle"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2c5.523 0 10 4.477 10 10a10 10 0 0 1 -19.995 .324l-.005 -.324l.004 -.28c.148 -5.393 4.566 -9.72 9.996 -9.72zm0 9h-1l-.117 .007a1 1 0 0 0 0 1.986l.117 .007v3l.007 .117a1 1 0 0 0 .876 .876l.117 .007h1l.117 -.007a1 1 0 0 0 .876 -.876l.007 -.117l-.007 -.117a1 1 0 0 0 -.764 -.857l-.112 -.02l-.117 -.006v-3l-.007 -.117a1 1 0 0 0 -.876 -.876l-.117 -.007zm.01 -3l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007z" /></svg><div class="icon-label">info-circle</div><div class="icon-key">IconInfoCircle</div></div>
+        <div class="icon-card" data-name="key"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M14.52 2c1.029 0 2.015 .409 2.742 1.136l3.602 3.602a3.877 3.877 0 0 1 0 5.483l-2.643 2.643a3.88 3.88 0 0 1 -4.941 .452l-.105 -.078l-5.882 5.883a3 3 0 0 1 -1.68 .843l-.22 .027l-.221 .009h-1.172c-1.014 0 -1.867 -.759 -1.991 -1.823l-.009 -.177v-1.172c0 -.704 .248 -1.386 .73 -1.96l.149 -.161l.414 -.414a1 1 0 0 1 .707 -.293h1v-1a1 1 0 0 1 .883 -.993l.117 -.007h1v-1a1 1 0 0 1 .206 -.608l.087 -.1l1.468 -1.469l-.076 -.103a3.9 3.9 0 0 1 -.678 -1.963l-.007 -.236c0 -1.029 .409 -2.015 1.136 -2.742l2.643 -2.643a3.88 3.88 0 0 1 2.741 -1.136m.495 5h-.02a2 2 0 1 0 0 4h.02a2 2 0 1 0 0 -4" /></svg><div class="icon-label">key</div><div class="icon-key">IconKey</div></div>
+        <div class="icon-card" data-name="lock"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2a5 5 0 0 1 5 5v3a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3v-3a5 5 0 0 1 5 -5m0 12a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m0 -10a3 3 0 0 0 -3 3v3h6v-3a3 3 0 0 0 -3 -3" /></svg><div class="icon-label">lock</div><div class="icon-key">IconLock</div></div>
+        <div class="icon-card" data-name="medical-cross"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11 2l-.15 .005a2 2 0 0 0 -1.85 1.995v2.803l-2.428 -1.401a2 2 0 0 0 -2.732 .732l-1 1.732l-.073 .138a2 2 0 0 0 .805 2.594l2.427 1.402l-2.427 1.402a2 2 0 0 0 -.732 2.732l1 1.732l.083 .132a2 2 0 0 0 2.649 .6l2.428 -1.402v2.804a2 2 0 0 0 2 2h2l.15 -.005a2 2 0 0 0 1.85 -1.995v-2.804l2.428 1.403a2 2 0 0 0 2.732 -.732l1 -1.732l.073 -.138a2 2 0 0 0 -.805 -2.594l-2.428 -1.403l2.428 -1.402a2 2 0 0 0 .732 -2.732l-1 -1.732l-.083 -.132a2 2 0 0 0 -2.649 -.6l-2.428 1.4v-2.802a2 2 0 0 0 -2 -2h-2z" /></svg><div class="icon-label">medical-cross</div><div class="icon-key">IconMedicalCross</div></div>
+        <div class="icon-card" data-name="microscope"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M15.707 4.293l3 3a1 1 0 0 1 0 1.414l-1.553 1.555a7 7 0 0 1 -.256 9.74l2.102 -.002a1 1 0 0 1 0 2h-14a1 1 0 0 1 0 -2h1v-1a1 1 0 0 1 0 -2h2a1 1 0 0 1 0 2v1h4a5 5 0 0 0 3.737 -8.323l-3.03 3.03a1 1 0 0 1 -1.414 0l-.793 -.792l-.793 .792a1 1 0 1 1 -1.414 -1.414l.792 -.793l-.792 -.793a1 1 0 0 1 0 -1.414l6 -6a1 1 0 0 1 1.414 0m2 -2l3 3a1 1 0 1 1 -1.414 1.414l-3 -3a1 1 0 1 1 1.414 -1.414" /></svg><div class="icon-label">microscope</div><div class="icon-key">IconMicroscope</div></div>
+        <div class="icon-card" data-name="phone"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M9 3a1 1 0 0 1 .877 .519l.051 .11l2 5a1 1 0 0 1 -.313 1.16l-.1 .068l-1.674 1.004l.063 .103a10 10 0 0 0 3.132 3.132l.102 .062l1.005 -1.672a1 1 0 0 1 1.113 -.453l.115 .039l5 2a1 1 0 0 1 .622 .807l.007 .121v4c0 1.657 -1.343 3 -3.06 2.998c-8.579 -.521 -15.418 -7.36 -15.94 -15.998a3 3 0 0 1 2.824 -2.995l.176 -.005h4z" /></svg><div class="icon-label">phone</div><div class="icon-key">IconPhone</div></div>
+        <div class="icon-card" data-name="pill"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.207 3.793a5.95 5.95 0 0 1 0 8.414l-8 8a5.95 5.95 0 0 1 -8.414 -8.414l8 -8a5.95 5.95 0 0 1 8.414 0m-7 1.414l-4.294 4.293l5.586 5.586l4.294 -4.292a3.95 3.95 0 1 0 -5.586 -5.586" /></svg><div class="icon-label">pill</div><div class="icon-key">IconPill</div></div>
+        <div class="icon-card" data-name="plus"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 4a1 1 0 0 1 1 1v6h6a1 1 0 0 1 0 2h-6v6a1 1 0 0 1 -2 0v-6h-6a1 1 0 0 1 0 -2h6v-6a1 1 0 0 1 1 -1" /></svg><div class="icon-label">plus</div><div class="icon-key">IconPlus</div></div>
+        <div class="icon-card" data-name="receipt"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17 2a3 3 0 0 1 3 3v16a1 1 0 0 1 -1.555 .832l-2.318 -1.545l-1.42 1.42a1 1 0 0 1 -1.32 .083l-.094 -.083l-1.293 -1.292l-1.293 1.292a1 1 0 0 1 -1.32 .083l-.094 -.083l-1.421 -1.42l-2.317 1.545l-.019 .012l-.054 .03l-.028 .017l-.054 .023l-.05 .023l-.049 .015l-.06 .019l-.052 .009l-.057 .011l-.084 .006l-.026 .003h-.022l-.049 -.003h-.039l-.013 -.003h-.016l-.041 -.008l-.038 -.005l-.015 -.005l-.018 -.002l-.034 -.011l-.04 -.01l-.019 -.007l-.015 -.004l-.029 -.013l-.04 -.015l-.021 -.011l-.013 -.005l-.028 -.016l-.036 -.018l-.014 -.01l-.018 -.01l-.038 -.027l-.022 -.014l-.01 -.009l-.02 -.014l-.045 -.041l-.012 -.008l-.024 -.024l-.035 -.039l-.02 -.02l-.007 -.011l-.011 -.012l-.032 -.045l-.02 -.025l-.012 -.019l-.03 -.054l-.017 -.028l-.023 -.054l-.023 -.05a1 1 0 0 1 -.034 -.108l-.01 -.057l-.01 -.053l-.009 -.132v-16a3 3 0 0 1 3 -3zm-2 12h-2a1 1 0 0 0 0 2h2a1 1 0 0 0 0 -2m0 -4h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m0 -4h-6a1 1 0 1 0 0 2h6a1 1 0 0 0 0 -2" /></svg><div class="icon-label">receipt</div><div class="icon-key">IconReceipt</div></div>
+        <div class="icon-card" data-name="report-money"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17.997 4.17a3 3 0 0 1 2.003 2.83v12a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 2.003 -2.83a4 4 0 0 0 3.997 3.83h4a4 4 0 0 0 3.98 -3.597zm-5.997 5.83a1 1 0 0 0 -1 1v.05a2.5 2.5 0 0 0 .5 4.95h1a.5 .5 0 1 1 0 1h-2.5a1 1 0 0 0 0 2h1a1 1 0 0 0 2 0v-.05a2.5 2.5 0 0 0 -.5 -4.95h-1a.5 .5 0 1 1 0 -1h2.5a1 1 0 0 0 0 -2h-1a1 1 0 0 0 -1 -1m2 -8a2 2 0 1 1 0 4h-4a2 2 0 1 1 0 -4z" /></svg><div class="icon-label">report-money</div><div class="icon-key">IconReportMoney</div></div>
+        <div class="icon-card" data-name="search"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M14 3.072a8 8 0 0 1 2.32 11.834l5.387 5.387a1 1 0 0 1 -1.414 1.414l-5.388 -5.387a8 8 0 1 1 -.905 -13.249" /></svg><div class="icon-label">search</div><div class="icon-key">IconSearch</div></div>
+        <div class="icon-card" data-name="settings"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M14.647 4.081a.724 .724 0 0 0 1.08 .448c2.439 -1.485 5.23 1.305 3.745 3.744a.724 .724 0 0 0 .447 1.08c2.775 .673 2.775 4.62 0 5.294a.724 .724 0 0 0 -.448 1.08c1.485 2.439 -1.305 5.23 -3.744 3.745a.724 .724 0 0 0 -1.08 .447c-.673 2.775 -4.62 2.775 -5.294 0a.724 .724 0 0 0 -1.08 -.448c-2.439 1.485 -5.23 -1.305 -3.745 -3.744a.724 .724 0 0 0 -.447 -1.08c-2.775 -.673 -2.775 -4.62 0 -5.294a.724 .724 0 0 0 .448 -1.08c-1.485 -2.439 1.305 -5.23 3.744 -3.745a.722 .722 0 0 0 1.08 -.447c.673 -2.775 4.62 -2.775 5.294 0zm-2.647 4.919a3 3 0 1 0 0 6a3 3 0 0 0 0 -6" /></svg><div class="icon-label">settings</div><div class="icon-key">IconSettings</div></div>
+        <div class="icon-card" data-name="shield"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.884 2.007l.114 -.007l.118 .007l.059 .008l.061 .013l.111 .034a.993 .993 0 0 1 .217 .112l.104 .082l.255 .218a11 11 0 0 0 7.189 2.537l.342 -.01a1 1 0 0 1 1.005 .717a13 13 0 0 1 -9.208 16.25a1 1 0 0 1 -.502 0a13 13 0 0 1 -9.209 -16.25a1 1 0 0 1 1.005 -.717a11 11 0 0 0 7.531 -2.527l.263 -.225l.096 -.075a.993 .993 0 0 1 .217 -.112l.112 -.034a.97 .97 0 0 1 .119 -.021z" /></svg><div class="icon-label">shield</div><div class="icon-key">IconShield</div></div>
+        <div class="icon-card" data-name="shield-check"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.998 2l.118 .007l.059 .008l.061 .013l.111 .034a.993 .993 0 0 1 .217 .112l.104 .082l.255 .218a11 11 0 0 0 7.189 2.537l.342 -.01a1 1 0 0 1 1.005 .717a13 13 0 0 1 -9.208 16.25a1 1 0 0 1 -.502 0a13 13 0 0 1 -9.209 -16.25a1 1 0 0 1 1.005 -.717a11 11 0 0 0 7.531 -2.527l.263 -.225l.096 -.075a.993 .993 0 0 1 .217 -.112l.112 -.034a.97 .97 0 0 1 .119 -.021l.115 -.007zm3.71 7.293a1 1 0 0 0 -1.415 0l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.32 1.497l2 2l.094 .083a1 1 0 0 0 1.32 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" /></svg><div class="icon-label">shield-check</div><div class="icon-key">IconShieldCheck</div></div>
+        <div class="icon-card" data-name="trash"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 6a1 1 0 0 1 .117 1.993l-.117 .007h-.081l-.919 11a3 3 0 0 1 -2.824 2.995l-.176 .005h-8c-1.598 0 -2.904 -1.249 -2.992 -2.75l-.005 -.167l-.923 -11.083h-.08a1 1 0 0 1 -.117 -1.993l.117 -.007zm-10 4a1 1 0 0 0 -1 1v6a1 1 0 0 0 2 0v-6a1 1 0 0 0 -1 -1m4 0a1 1 0 0 0 -1 1v6a1 1 0 0 0 2 0v-6a1 1 0 0 0 -1 -1" />
+  <path d="M14 2a2 2 0 0 1 2 2a1 1 0 0 1 -1.993 .117l-.007 -.117h-4l-.007 .117a1 1 0 0 1 -1.993 -.117a2 2 0 0 1 1.85 -1.995l.15 -.005z" /></svg><div class="icon-label">trash</div><div class="icon-key">IconTrash</div></div>
+        <div class="icon-card" data-name="user"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2a5 5 0 1 1 -5 5l.005 -.217a5 5 0 0 1 4.995 -4.783z" />
+  <path d="M14 14a5 5 0 0 1 5 5v1a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-1a5 5 0 0 1 5 -5h4z" /></svg><div class="icon-label">user</div><div class="icon-key">IconUser</div></div>
+        <div class="icon-card" data-name="x"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6.707 5.293l5.293 5.292l5.293 -5.292a1 1 0 0 1 1.414 1.414l-5.292 5.293l5.292 5.293a1 1 0 0 1 -1.414 1.414l-5.293 -5.292l-5.293 5.292a1 1 0 1 1 -1.414 -1.414l5.292 -5.293l-5.292 -5.293a1 1 0 0 1 1.414 -1.414" /></svg><div class="icon-label">x</div><div class="icon-key">IconX</div></div>
+    </div>
+</div>
+
+</div>
+
+<div class="footer">
+    <p>涓汉璇婃墍澶勬柟绯荤粺 鈥?鍥炬爣璧勬簮棰勮 | Tabler Icons v3.46 (MIT License)</p>
+    <p>鍏?121 涓?SVG 鍥炬爣 | 79 涓?WPF Geometry 璧勬簮</p>
+</div>
+
+<script>
+function filterIcons() {
+    var query = document.getElementById('searchInput').value.toLowerCase();
+    var cards = document.querySelectorAll('.icon-card');
+    cards.forEach(function(card) {
+        var name = card.getAttribute('data-name').toLowerCase();
+        if (name.indexOf(query) !== -1) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
+
+</body>
+</html>
