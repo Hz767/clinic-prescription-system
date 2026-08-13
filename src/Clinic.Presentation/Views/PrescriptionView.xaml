@@ -311,13 +311,13 @@
                                 <ColumnDefinition Width="55"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="体重:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
-                            <TextBox Grid.Column="1" Text="{Binding PatientWeight, Converter={StaticResource DecimalInput}, UpdateSourceTrigger=PropertyChanged}"
+                            <TextBox Grid.Column="1" Text="{Binding PatientWeight, Converter={StaticResource DecimalInput}, UpdateSourceTrigger=LostFocus}"
                                      VerticalContentAlignment="Center" FontSize="11" Height="24" Padding="4,1"
                                      InputMethod.IsInputMethodEnabled="False"
                                      PreviewTextInput="NumericOnly_PreviewTextInput"/>
                             <TextBlock Grid.Column="2" Text="kg" VerticalAlignment="Center" FontSize="11" Foreground="#6B7280"/>
                             <TextBlock Grid.Column="4" Text="体温:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
-                            <TextBox Grid.Column="5" Text="{Binding PatientTemperature, Converter={StaticResource DecimalInput}, UpdateSourceTrigger=PropertyChanged}"
+                            <TextBox Grid.Column="5" Text="{Binding PatientTemperature, Converter={StaticResource DecimalInput}, UpdateSourceTrigger=LostFocus}"
                                      VerticalContentAlignment="Center" FontSize="11" Height="24" Padding="4,1"
                                      InputMethod.IsInputMethodEnabled="False"
                                      PreviewTextInput="NumericOnly_PreviewTextInput"/>
@@ -854,7 +854,7 @@
                                 <DataGridTextColumn Header="规格" Binding="{Binding Spec}" Width="60" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="剂量" Width="40">
                                     <DataGridTextColumn.Binding>
-                                        <Binding Path="Dose" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource DecimalInput}"/>
+                                        <Binding Path="Dose" UpdateSourceTrigger="LostFocus" Converter="{StaticResource DecimalInput}"/>
                                     </DataGridTextColumn.Binding>
                                 </DataGridTextColumn>
                                 <DataGridComboBoxColumn Header="单位" Width="40"
@@ -869,7 +869,7 @@
                                 <DataGridTextColumn Header="天" Binding="{Binding DurationDays, UpdateSourceTrigger=PropertyChanged}" Width="35"/>
                                 <DataGridTextColumn Header="数量" Width="40">
                                     <DataGridTextColumn.Binding>
-                                        <Binding Path="Qty" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource DecimalInput}"/>
+                                        <Binding Path="Qty" UpdateSourceTrigger="LostFocus" Converter="{StaticResource DecimalInput}"/>
                                     </DataGridTextColumn.Binding>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn Header="金额" Binding="{Binding Subtotal, StringFormat=F2}" Width="50" IsReadOnly="True"/>
