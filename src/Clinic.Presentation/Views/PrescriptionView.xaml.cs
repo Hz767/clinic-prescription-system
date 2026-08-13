@@ -99,24 +99,13 @@ public partial class PrescriptionView : UserControl
     }
 
     /// <summary>
-    /// 体征输入框按键过滤：仅允许数字、小数点和退格/删除等控制键。
+    /// 体征输入框按键过滤：仅允许数字和小数点。
     /// 阻止字母、符号（+、-、逗号等）和中文输入。
+    /// IME 已通过 InputMethod.IsInputMethodEnabled=False 禁用，
+    /// 小数点键始终产生 "." 无需拦截按键。
     /// </summary>
     private void NumericOnly_PreviewTextInput(object sender, TextCompositionEventArgs e)
     {
-        // 中文输入法下句号"。"转为小数点"."
-        if (e.Text == "。")
-        {
-            if (sender is TextBox tb && !tb.Text.Contains('.'))
-            {
-                int caretIndex = tb.CaretIndex;
-                tb.Text = tb.Text.Insert(caretIndex, ".");
-                tb.CaretIndex = caretIndex + 1;
-            }
-            e.Handled = true;
-            return;
-        }
-
         // 仅允许数字和小数点
         foreach (char c in e.Text)
         {
@@ -128,36 +117,10 @@ public partial class PrescriptionView : UserControl
         }
 
         // 限制只能有一个小数点
-        if (sender is TextBox tb2 && e.Text.Contains('.'))
+        if (sender is TextBox tb && e.Text.Contains('.'))
         {
-            if (tb2.Text.Contains('.'))
+            if (tb.Text.Contains('.'))
             {
-                e.Handled = true;
-            }
-        }
-    }
-
-    /// <summary>
-    /// 拦截小数点按键，防止中文输入法将"."转为"。"。
-    /// 在 IME 处理之前手动插入小数点。
-    /// </summary>
-    private void NumericOnly_PreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.OemPeriod || e.Key == Key.Decimal)
-        {
-            if (sender is TextBox tb)
-            {
-                // 已有小数点则阻止
-                if (tb.Text.Contains('.'))
-                {
-                    e.Handled = true;
-                    return;
-                }
-
-                // 手动插入小数点，绕过 IME
-                int caretIndex = tb.CaretIndex;
-                tb.Text = tb.Text.Insert(caretIndex, ".");
-                tb.CaretIndex = caretIndex + 1;
                 e.Handled = true;
             }
         }
