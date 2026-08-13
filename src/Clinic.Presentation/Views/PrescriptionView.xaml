@@ -14,6 +14,8 @@
                                         xmlns:conv="clr-namespace:Clinic.Presentation.Converters"/>
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibility"
                                         xmlns:conv="clr-namespace:Clinic.Presentation.Converters"/>
+        <conv:DecimalInputConverter x:Key="DecimalInput"
+                                     xmlns:conv="clr-namespace:Clinic.Presentation.Converters"/>
         <x:Array x:Key="DoseUnits" Type="sys:String"
                  xmlns:sys="clr-namespace:System;assembly=System.Runtime">
             <sys:String>片</sys:String>
@@ -309,11 +311,11 @@
                                 <ColumnDefinition Width="55"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="体重:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
-                            <TextBox Grid.Column="1" Text="{Binding PatientWeight, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
+                            <TextBox Grid.Column="1" Text="{Binding PatientWeight, Converter={StaticResource DecimalInput}, UpdateSourceTrigger=PropertyChanged}"
                                      VerticalContentAlignment="Center" FontSize="11" Height="24" Padding="4,1"/>
                             <TextBlock Grid.Column="2" Text="kg" VerticalAlignment="Center" FontSize="11" Foreground="#6B7280"/>
                             <TextBlock Grid.Column="4" Text="体温:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
-                            <TextBox Grid.Column="5" Text="{Binding PatientTemperature, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
+                            <TextBox Grid.Column="5" Text="{Binding PatientTemperature, Converter={StaticResource DecimalInput}, UpdateSourceTrigger=PropertyChanged}"
                                      VerticalContentAlignment="Center" FontSize="11" Height="24" Padding="4,1"/>
                             <TextBlock Grid.Column="6" Text="°C" VerticalAlignment="Center" FontSize="11" Foreground="#6B7280"/>
                             <TextBlock Grid.Column="8" Text="血压:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
@@ -840,7 +842,11 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="药品名称" Binding="{Binding DrugName}" Width="*" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="规格" Binding="{Binding Spec}" Width="60" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="剂量" Binding="{Binding Dose, UpdateSourceTrigger=PropertyChanged}" Width="40"/>
+                                <DataGridTextColumn Header="剂量" Width="40">
+                                    <DataGridTextColumn.Binding>
+                                        <Binding Path="Dose" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource DecimalInput}"/>
+                                    </DataGridTextColumn.Binding>
+                                </DataGridTextColumn>
                                 <DataGridComboBoxColumn Header="单位" Width="40"
                                                          SelectedItemBinding="{Binding DoseUnit, UpdateSourceTrigger=PropertyChanged}"
                                                          ItemsSource="{StaticResource DoseUnits}"/>
@@ -851,7 +857,11 @@
                                                          SelectedItemBinding="{Binding Route, UpdateSourceTrigger=PropertyChanged}"
                                                          ItemsSource="{StaticResource Routes}"/>
                                 <DataGridTextColumn Header="天" Binding="{Binding DurationDays, UpdateSourceTrigger=PropertyChanged}" Width="35"/>
-                                <DataGridTextColumn Header="数量" Binding="{Binding Qty, UpdateSourceTrigger=PropertyChanged}" Width="40"/>
+                                <DataGridTextColumn Header="数量" Width="40">
+                                    <DataGridTextColumn.Binding>
+                                        <Binding Path="Qty" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource DecimalInput}"/>
+                                    </DataGridTextColumn.Binding>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="金额" Binding="{Binding Subtotal, StringFormat=F2}" Width="50" IsReadOnly="True"/>
                                 <DataGridTemplateColumn Header="" Width="40">
                                     <DataGridTemplateColumn.CellTemplate>

@@ -18,5 +18,9 @@ public interface IUserSession
     bool MustChangePassword { get; }
 
     void SetAuthenticated(long userId, string username, string displayName, UserRole role, bool mustChangePassword = false);
+
+    /// <summary>更新当前会话用户的显示名称（修改姓名后同步会话）</summary>
+    void UpdateDisplayName(string newDisplayName);
+
     void Clear();
 }

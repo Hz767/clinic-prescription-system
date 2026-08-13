@@ -119,6 +119,36 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
+    /// 更新当前登录用户的显示名称。同步更新数据库记录和会话状态。
+    /// </summary>
+    public async Task UpdateDisplayNameAsync(string newDisplayName, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(newDisplayName))
+            throw new ArgumentException("显示名称不能为空", nameof(newDisplayName));
+
+        if (newDisplayName.Trim().Length > 50)
+            throw new ArgumentException("显示名称不能超过50个字符", nameof(newDisplayName));
+
+        var userId = _session.UserId
+            ?? throw new InvalidOperationException("未登录，无法修改显示名称");
+
+        var users = await _userRepo.FindAsync(u => u.Id == userId, ct);
+        var user = users.FirstOrDefault()
+            ?? throw new InvalidOperationException("用户不存在");
+
+        var oldName = user.DisplayName;
+        user.DisplayName = newDisplayName.Trim();
+        _userRepo.Update(user);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        // 更新会话状态
+        _session.UpdateDisplayName(user.DisplayName);
+
+        await SafeAuditAsync("UPDATE_DISPLAY_NAME", $"User:{user.Username}",
+            $"姓名变更：{oldName} → {user.DisplayName}", ct);
+    }
+
+    /// <summary>
     /// 安全审计日志：审计失败不影响业务操作（best-effort）。
     /// 登录场景中用户会话尚未建立或已清除，审计日志可能无法获取 userId。
     /// </summary>

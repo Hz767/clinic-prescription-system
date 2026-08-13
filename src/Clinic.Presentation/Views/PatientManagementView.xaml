@@ -131,8 +131,8 @@
                                  Margin="0,0,0,8"/>
 
                         <TextBlock Style="{StaticResource TextLabel}" Text="性别" Margin="0,0,0,4"/>
-                        <ComboBox Text="{Binding NewGender}"
-                                  IsEditable="True" IsReadOnly="True"
+                        <ComboBox SelectedValue="{Binding NewGender}"
+                                  SelectedValuePath="Content"
                                   Margin="0,0,0,8">
                             <ComboBoxItem Content="男" IsSelected="True"/>
                             <ComboBoxItem Content="女"/>

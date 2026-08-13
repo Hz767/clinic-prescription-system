@@ -12,6 +12,14 @@ public interface IAuthService
     bool IsAuthenticated { get; }
     long? CurrentUserId { get; }
     string? CurrentUserName { get; }
+
+    /// <summary>
+    /// 更新当前登录用户的显示名称（用于处方签名）。
+    /// 同步更新数据库和会话状态。
+    /// </summary>
+    /// <param name="newDisplayName">新的显示名称</param>
+    /// <param name="ct">取消令牌</param>
+    Task UpdateDisplayNameAsync(string newDisplayName, CancellationToken ct = default);
 }
 
 /// <summary>

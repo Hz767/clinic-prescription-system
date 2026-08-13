@@ -51,7 +51,7 @@ public static class DbSeeder
             new SysUser
             {
                 Username = "admin",
-                DisplayName = "管理员",
+                DisplayName = "陈医生",
                 Role = UserRole.Doctor,
                 PasswordHash = defaultPassword,
                 IsActive = true,

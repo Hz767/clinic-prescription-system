@@ -4,6 +4,28 @@
 
 ---
 
+## [1.1.0] — 2026-08-13
+
+### 医生姓名编辑 + 输入控件全面修复
+
+#### 新增功能
+- **医生姓名编辑**：主窗口新增编辑按钮，支持修改医生显示姓名（用于处方签名），修改后即时更新数据库和当前会话
+- **EditNameDialog 对话框**：独立的姓名编辑窗口，含输入验证和错误提示
+- **DecimalInputConverter 转换器**：通用十进制输入转换器，支持临时无效输入状态（如单独的小数点），解决 decimal 类型绑定无法输入小数点的问题
+
+#### 修复
+- **输入框内容不可见**：修复 TextBox/PasswordBox 自定义模板中 ScrollViewer 布局导致输入内容不可见的问题（Padding 从 ScrollViewer 移至 Border，移除 ScrollViewer 的 VerticalAlignment）
+- **体温无法输入小数点**：就诊体征中的体重、体温字段添加 DecimalInputConverter，支持流畅的小数输入
+- **处方数量列无法输入小数**：处方明细 DataGrid 的「数量」列（Qty, decimal）添加 DecimalInputConverter
+- **患者管理性别选择异常**：性别 ComboBox 从 Text 绑定 + IsEditable 改为 SelectedValue + SelectedValuePath，与自定义模板兼容
+- **种子数据医生姓名**：默认管理员姓名从"管理员"改为"陈医生"，符合处方签名规范
+
+#### 优化
+- **输入控件视觉反馈**：所有 TextBox/PasswordBox/ComboBox/DatePicker 增强鼠标悬停和键盘聚焦状态（边框变色、边框加粗、背景色变化），提供清晰的选中反馈
+- **输入控件全面审查**：系统检查全部 6 个视图中的所有输入控件，确认无其他显示或输入问题
+
+---
+
 ## [1.0.0] — 2026-08-13
 
 ### 首次正式版本发布

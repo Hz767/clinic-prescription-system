@@ -1,8 +1,8 @@
 # 个体诊所处方系统 — 开发过程文档
 
 > 最后更新：2026-08-13
-> 当前版本：v1.0.0
-> 当前阶段：界面优化 + 字段完善 + Git 版本控制 + 开发文档完善
+> 当前版本：v1.1.0
+> 当前阶段：医生姓名编辑 + 输入控件全面修复 + v1.1.0 发布
 
 ---
 
@@ -1256,3 +1256,85 @@ Clinic.sln
 - **快速建档标签统一**：处方页面的"基础疾病"与患者管理页面的"慢病标签"统一为"基础疾病"，避免概念混淆
 - **DataGrid 过敏史列红色字体**：医生浏览患者列表时一眼识别过敏风险，悬浮显示完整内容避免截断
 - **Git 版本控制选在 v1.0.0**：14 个开发阶段全部完成，9 项集成测试全部通过，功能完备可正式使用
+
+---
+
+## 阶段十五：v1.1.0 — 医生姓名编辑 + 输入控件全面修复
+
+> 版本：v1.1.0 | 日期：2026-08-13
+
+### 背景
+
+v1.0.0 发布后，实际使用中发现两类问题：
+1. 处方单医生签名显示"管理员"而非实际医生姓名，且无法修改
+2. 多个输入框存在显示和输入问题：点击后看不到选中状态、体温无法输入小数点、键盘输入内容不可见
+
+### 完成内容
+
+#### 1. 医生姓名编辑功能
+- 新增 `IAuthService.UpdateDisplayNameAsync()` 接口方法和实现，支持更新用户显示姓名
+- 新增 `IUserSession.UpdateDisplayName()` 方法，修改后即时同步当前会话
+- `MainViewModel` 新增 `EditDoctorNameCommand`，弹出编辑对话框
+- 创建 `EditNameDialog.xaml` / `.xaml.cs` 独立对话框，含输入验证（非空、长度 2-20）和错误提示
+- `MainWindow.xaml` 在医生姓名旁添加编辑按钮（铅笔图标）
+- 修改 `DbSeeder.cs` 种子数据，默认管理员姓名从"管理员"改为"陈医生"
+- 更新已有数据库记录的 DisplayName 字段
+
+#### 2. DecimalInputConverter 十进制输入转换器
+- 创建 `Converters/DecimalInputConverter.cs`，实现 `IValueConverter`
+- `ConvertBack` 方法处理临时无效输入状态：空字符串返回 null，单独小数点/逗号/正负号返回 `Binding.DoNothing`（保持当前值不触发验证错误），结尾带小数点的部分输入也返回 `Binding.DoNothing`
+- 解决 WPF 中 decimal 类型绑定无法输入小数点的根本问题（WPF 在每次按键时尝试解析，"3." 解析失败会回退旧值）
+
+#### 3. 输入框内容不可见修复
+- **问题根因**：TextBox/PasswordBox 自定义 ControlTemplate 中 ScrollViewer 的布局设置不当
+- **修复方案**：将 `Padding` 从 ScrollViewer 移至外层 Border，移除 ScrollViewer 的 `VerticalAlignment` 和 `Margin`
+- 影响 `Inputs.xaml` 中的 TextBox 和 PasswordBox 模板
+
+#### 4. 输入控件视觉反馈增强
+- **TextBox**：鼠标悬停时边框变为 #9CA3AF；键盘聚焦时边框变为 BorderFocusBrush、边框加粗至 2px、背景变为 #F0FDFA
+- **PasswordBox**：同 TextBox 的悬停和聚焦效果
+- **ComboBox**：悬停和下拉打开时边框变化，下拉打开时背景变为 #F0FDFA
+- **DatePicker**：悬停和键盘聚焦时边框变化，聚焦时背景变为 #F0FDFA
+
+#### 5. 处方明细数量列小数输入修复
+- 处方 DataGrid 的「数量」列（Qty, decimal）原本缺少 DecimalInputConverter
+- 改为使用 `<Binding>` 元素语法添加 `Converter={StaticResource DecimalInput}`
+- 与「剂量」列（Dose）保持一致的处理方式
+
+#### 6. 患者管理性别 ComboBox 修复
+- 原先使用 `IsEditable="True"` + `Text` 绑定，与自定义 ComboBox 模板不兼容
+- 改为 `SelectedValue` + `SelectedValuePath="Content"` 绑定方式，非编辑模式下正常显示选中值
+
+#### 7. 全系统输入控件审查
+- 系统检查全部 6 个视图（PrescriptionView / PatientManagementView / BillingView / InventoryView / PrescriptionHistoryView / LoginWindow）和 EditNameDialog
+- 确认 BillingView 和 InventoryView 的数值输入框均为 string 类型 + ViewModel 内 TryParse，无小数输入问题
+- 确认体征中的血压、心率为 int? 类型，WPF 自动过滤非数字输入
+- 确认所有 ComboBox、DatePicker、PasswordBox 均无显示或输入问题
+
+### 变更文件清单
+
+| 文件 | 变更类型 | 说明 |
+|------|----------|------|
+| `Directory.Build.props` | 修改 | 版本号 1.0.0 → 1.1.0 |
+| `CHANGELOG.md` | 修改 | 新增 v1.1.0 变更记录 |
+| `docs/development-log.md` | 修改 | 新增阶段十五记录 |
+| `IServices.cs` | 修改 | 新增 UpdateDisplayNameAsync 接口 |
+| `AuthService.cs` | 修改 | 实现 UpdateDisplayNameAsync |
+| `IUserSession.cs` | 修改 | 新增 UpdateDisplayName 方法 |
+| `UserSession.cs` | 修改 | 实现 UpdateDisplayName |
+| `DbSeeder.cs` | 修改 | 种子数据"管理员"→"陈医生" |
+| `MainViewModel.cs` | 修改 | 新增 EditDoctorNameCommand |
+| `MainWindow.xaml` | 修改 | 添加医生姓名编辑按钮 |
+| `Inputs.xaml` | 修改 | 修复模板 + 增强视觉反馈 |
+| `PatientManagementView.xaml` | 修改 | 修复性别 ComboBox 绑定 |
+| `PrescriptionView.xaml` | 修改 | 添加 DecimalInputConverter + 修复 Qty 列 |
+| `DecimalInputConverter.cs` | 新增 | 十进制输入转换器 |
+| `EditNameDialog.xaml` | 新增 | 姓名编辑对话框 |
+| `EditNameDialog.xaml.cs` | 新增 | 对话框代码逻辑 |
+
+### 关键决策
+
+- **版本号 1.1.0 而非 1.0.1**：新增了医生姓名编辑功能和 DecimalInputConverter 转换器，属于功能新增（minor），不仅仅是 bug 修复（patch）
+- **DecimalInputConverter 返回 Binding.DoNothing 而非 DependencyProperty.UnsetValue**：DoNothing 明确表示"不做任何事"，不会触发验证错误；UnsetValue 可能被 WPF 解释为"值不可用"并触发回退
+- **EditNameDialog 使用 code-behind 而非 ViewModel**：对话框逻辑简单（输入验证 + 返回结果），无需创建独立 ViewModel，减少不必要的代码
+- **种子数据改名为"陈医生"而非"医生"**：处方签名需要具体姓名，"陈医生"与诊所名称"陈医生诊所"一致，更真实

@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using Clinic.Application.Interfaces;
 using Clinic.Presentation.Helpers;
+using Clinic.Presentation.Views;
 using Clinic.Shared.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -255,6 +256,42 @@ public partial class MainViewModel : ObservableObject
     {
         _session.Clear();
         LogoutRequested?.Invoke();
+    }
+
+    /// <summary>
+    /// 编辑当前登录用户的显示名称（用于处方签名）。
+    /// 弹出输入对话框，确认后更新数据库和会话。
+    /// </summary>
+    [RelayCommand]
+    private async Task EditDoctorNameAsync()
+    {
+        var currentName = _session.DisplayName ?? "";
+        var newName = EditNameDialog.Show(currentName);
+
+        if (string.IsNullOrWhiteSpace(newName) || newName == currentName)
+            return;
+
+        IsBusy = true;
+        ErrorMessage = null;
+
+        try
+        {
+            using var scope = _services.CreateScope();
+            var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+            await authService.UpdateDisplayNameAsync(newName);
+
+            // 刷新 UI 显示
+            OnPropertyChanged(nameof(CurrentUserDisplayName));
+            StatusMessage = $"医生姓名已更新为：{newName.Trim()}";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"修改失败：{ExceptionFormatter.GetMessage(ex)}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     /// <summary>

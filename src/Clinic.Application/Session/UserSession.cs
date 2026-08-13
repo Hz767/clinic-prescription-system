@@ -37,6 +37,11 @@ public sealed class UserSession : IUserSession
         _mustChangePassword = mustChangePassword;
     }
 
+    public void UpdateDisplayName(string newDisplayName)
+    {
+        _displayName = newDisplayName;
+    }
+
     public void Clear()
     {
         _userId = null;

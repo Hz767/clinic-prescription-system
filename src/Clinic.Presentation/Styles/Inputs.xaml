@@ -24,17 +24,21 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="6">
+                            CornerRadius="6"
+                            Padding="{TemplateBinding Padding}">
                         <ScrollViewer x:Name="PART_ContentHost"
-                                      Margin="{TemplateBinding Padding}"
-                                      VerticalAlignment="Center"
                                       Focusable="False"
                                       HorizontalScrollBarVisibility="Hidden"
                                       VerticalScrollBarVisibility="Hidden"/>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="InputBd" Property="BorderBrush" Value="#9CA3AF"/>
+                        </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="InputBd" Property="BorderBrush" Value="{StaticResource BorderFocusBrush}"/>
+                            <Setter TargetName="InputBd" Property="BorderThickness" Value="2"/>
+                            <Setter TargetName="InputBd" Property="Background" Value="#F0FDFA"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Background" Value="{StaticResource Gray100Brush}"/>
@@ -65,15 +69,21 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="6">
+                            CornerRadius="6"
+                            Padding="{TemplateBinding Padding}">
                         <ScrollViewer x:Name="PART_ContentHost"
-                                      Margin="{TemplateBinding Padding}"
-                                      VerticalAlignment="Center"
-                                      Focusable="False"/>
+                                      Focusable="False"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Hidden"/>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="PwdBd" Property="BorderBrush" Value="#9CA3AF"/>
+                        </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="PwdBd" Property="BorderBrush" Value="{StaticResource BorderFocusBrush}"/>
+                            <Setter TargetName="PwdBd" Property="BorderThickness" Value="2"/>
+                            <Setter TargetName="PwdBd" Property="Background" Value="#F0FDFA"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -92,6 +102,77 @@
         <Setter Property="Padding" Value="10,7"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Border x:Name="CbdBd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="28"/>
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter Grid.Column="0"
+                                              x:Name="ContentSite"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"
+                                              IsHitTestVisible="False"/>
+                            <Path Grid.Column="1"
+                                  Data="M 0 3 L 8 3 L 4 9 Z"
+                                  Fill="#6B7280"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Width="10" Height="6" Stretch="Fill"/>
+                            <Popup x:Name="Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Slide">
+                                <Border x:Name="PopupBd"
+                                        Background="White"
+                                        BorderBrush="{StaticResource BorderDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Margin="0,2,0,0"
+                                        Padding="0,4"
+                                        MinWidth="{TemplateBinding ActualWidth}"
+                                        MaxHeight="300">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="CbdBd" Property="BorderBrush" Value="#9CA3AF"/>
+                        </Trigger>
+                        <Trigger Property="IsDropDownOpen" Value="True">
+                            <Setter TargetName="CbdBd" Property="BorderBrush" Value="{StaticResource BorderFocusBrush}"/>
+                            <Setter TargetName="CbdBd" Property="BorderThickness" Value="2"/>
+                            <Setter TargetName="CbdBd" Property="Background" Value="#F0FDFA"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="CbdBd" Property="BorderBrush" Value="{StaticResource BorderFocusBrush}"/>
+                            <Setter TargetName="CbdBd" Property="BorderThickness" Value="2"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Background" Value="{StaticResource Gray100Brush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextDisabledBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ComboBoxItem Style -->
@@ -119,6 +200,74 @@
         <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DatePicker">
+                    <Border x:Name="DpBd"
+                            Background="White"
+                            BorderBrush="{StaticResource BorderDefaultBrush}"
+                            BorderThickness="1.5"
+                            CornerRadius="6">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="28"/>
+                            </Grid.ColumnDefinitions>
+                            <DatePickerTextBox Grid.Column="0"
+                                               x:Name="PART_TextBox"
+                                               VerticalAlignment="Center"
+                                               Padding="10,7"
+                                               BorderThickness="0"
+                                               Background="Transparent"
+                                               Focusable="True"/>
+                            <Button Grid.Column="1"
+                                    x:Name="PART_Button"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Cursor="Hand"
+                                    Focusable="False"
+                                    Padding="2">
+                                <Path Data="M2 4 L4 2 L6 4 M4 2 L4 8 M1 9 L7 9"
+                                      Width="12" Height="12" Stretch="Uniform"
+                                      Stroke="#6B7280" StrokeThickness="1.5"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+                            <Popup x:Name="PART_Popup"
+                                   Placement="Bottom"
+                                   StaysOpen="False"
+                                   AllowsTransparency="True"
+                                   PopupAnimation="Slide">
+                                <Border Background="White"
+                                        BorderBrush="{StaticResource BorderDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Margin="0,2,0,0"
+                                        Padding="4">
+                                    <Calendar x:Name="PART_Calendar"
+                                              BorderThickness="0"
+                                              Focusable="True"/>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="DpBd" Property="BorderBrush" Value="#9CA3AF"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="DpBd" Property="BorderBrush" Value="{StaticResource BorderFocusBrush}"/>
+                            <Setter TargetName="DpBd" Property="BorderThickness" Value="2"/>
+                            <Setter TargetName="DpBd" Property="Background" Value="#F0FDFA"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="DpBd" Property="Background" Value="{StaticResource Gray100Brush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- DatePickerTextBox Style -->
@@ -128,6 +277,24 @@
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="Padding" Value="8,6"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="CaretBrush" Value="{StaticResource PrimaryBrush}"/>
+        <Setter Property="SelectionBrush" Value="{StaticResource PrimaryLightBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DatePickerTextBox">
+                    <Border x:Name="DpTbBd"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            CornerRadius="0"
+                            Padding="{TemplateBinding Padding}">
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      Focusable="False"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Hidden"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
 </ResourceDictionary>

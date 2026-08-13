@@ -1,10 +1,10 @@
 <Project>
   <PropertyGroup>
     <!-- 版本号管理：主版本.次版本.修订号 -->
-    <VersionPrefix>1.0.0</VersionPrefix>
-    <FileVersion>1.0.0.0</FileVersion>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <InformationalVersion>1.0.0</InformationalVersion>
+    <VersionPrefix>1.1.0</VersionPrefix>
+    <FileVersion>1.1.0.0</FileVersion>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <InformationalVersion>1.1.0</InformationalVersion>
     <Authors>陈医生诊所</Authors>
     <Company>陈医生诊所</Company>
     <Product>陈医生诊所处方系统</Product>
