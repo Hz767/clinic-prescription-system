@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>llama.cpp 实战指南 — 本地部署大模型</title>
+<style>
+  :root {
+    --bg: #f8fafc; --card: #fff; --border: #e2e8f0;
+    --text: #1e293b; --text2: #64748b; --accent: #0d9488; --accent2: #0f766e;
+    --red: #dc2626; --amber: #d97706; --green: #059669; --blue: #2563eb;
+    --code-bg: #1e293b; --code-text: #e2e8f0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .container { max-width: 1000px; margin: 0 auto; padding: 32px 20px; }
+  h1 { font-size: 2rem; margin-bottom: 6px; color: #0f172a; }
+  .subtitle { color: var(--text2); font-size: 1rem; margin-bottom: 32px; }
+  h2 { font-size: 1.3rem; margin: 36px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); color: #0f172a; }
+  h3 { font-size: 1.05rem; margin: 24px 0 10px; color: #334155; }
+
+  pre { background: var(--code-bg); color: var(--code-text); padding: 16px 20px; border-radius: 8px; overflow-x: auto; font-size: 0.88rem; line-height: 1.6; margin: 12px 0; }
+  code { font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace; font-size: 0.9em; }
+  :not(pre) > code { background: #f1f5f9; color: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+
+  .note { background: #fef3c7; border-left: 4px solid var(--amber); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 0.92rem; }
+  .tip { background: #d1fae5; border-left: 4px solid var(--green); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 0.92rem; }
+  .warn { background: #fee2e2; border-left: 4px solid var(--red); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 0.92rem; }
+
+  .step { display: flex; gap: 16px; margin: 20px 0; }
+  .step-num { flex-shrink: 0; width: 36px; height: 36px; background: var(--accent); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; }
+  .step-body { flex: 1; }
+  .step-body h3 { margin: 0 0 6px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+  th { background: #f1f5f9; padding: 10px 14px; text-align: left; font-weight: 600; color: #475569; }
+  td { padding: 10px 14px; border-top: 1px solid var(--border); }
+  tr:hover td { background: #f8fafc; }
+
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+  .tag-green { background: #d1fae5; color: #065f46; }
+  .tag-blue { background: #dbeafe; color: #1e40af; }
+  .tag-amber { background: #fef3c7; color: #92400e; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .card h4 { margin: 0 0 8px; color: var(--accent); }
+
+  .api-table td:first-child { font-family: monospace; white-space: nowrap; color: var(--accent2); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>llama.cpp 实战指南</h1>
+<p class="subtitle">零门槛本地部署大模型 · 从安装到生产级 API 服务</p>
+
+<!-- 是什么 -->
+<h2>一、llama.cpp 是什么？</h2>
+<p>llama.cpp 是由 Georgi Gerganov 用纯 C/C++ 编写的 LLM 推理引擎，是 Ollama 的底层核心。它的核心贡献是 <strong>GGUF 量化格式</strong>——将 70B 模型压缩到 40GB 以内，让普通笔记本也能跑大模型。</p>
+
+<div class="cards">
+  <div class="card">
+    <h4>极低硬件门槛</h4>
+    <p>4-bit 量化后 Llama-3-8B 仅需 4.9GB 内存，纯 CPU 也能跑。树莓派、老旧笔记本均可运行。</p>
+  </div>
+  <div class="card">
+    <h4>CPU + GPU 混合推理</h4>
+    <p>模型太大放不进显存？llama.cpp 支持将部分层卸载到 CPU，其余保留在 GPU，灵活分配资源。</p>
+  </div>
+  <div class="card">
+    <h4>跨平台 + 零依赖</h4>
+    <p>Windows / macOS / Linux 原生运行，支持 CUDA、Metal、Vulkan、ROCm 多种后端。</p>
+  </div>
+  <div class="card">
+    <h4>OpenAI 兼容 API</h4>
+    <p>llama-server 提供 <code>/v1/chat/completions</code> 端点，可直接替换 OpenAI 客户端。</p>
+  </div>
+</div>
+
+<!-- 安装 -->
+<h2>二、安装（Windows）</h2>
+
+<div class="step">
+  <div class="step-num">1</div>
+  <div class="step-body">
+    <h3>下载预编译二进制（推荐，最快）</h3>
+    <p>前往 <a href="https://github.com/ggml-org/llama.cpp/releases" target="_blank">GitHub Releases</a>，下载 <code>llama-bxxxx-win-x64.zip</code>（带 CUDA 支持则选 <code>llama-bxxxx-win-x64-cuda.zip</code>）。</p>
+    <p>解压到 <code>D:\llama.cpp</code>，无需安装。</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">2</div>
+  <div class="step-body">
+    <h3>从源码编译（需要 CUDA 加速时推荐）</h3>
+    <p>需要安装：Visual Studio 2022（勾选"使用 C++ 的桌面开发"）+ CMake。</p>
+<pre># 克隆仓库
+git clone https://github.com/ggml-org/llama.cpp
+cd llama.cpp
+
+# CMake 配置（CUDA 加速）
+cmake -B build -DGGML_CUDA=ON
+cmake --build build --config Release -j
+
+# 编译产物在 build/bin/Release/ 目录</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">3</div>
+  <div class="step-body">
+    <h3>下载 GGUF 模型</h3>
+    <p>从 <a href="https://huggingface.co/models?library=gguf" target="_blank">Hugging Face GGUF</a> 搜索下载。推荐模型：</p>
+    <div class="table-wrap" style="overflow-x:auto;">
+    <table>
+      <tr><th>模型</th><th>量化</th><th>大小</th><th>说明</th></tr>
+      <tr><td>Qwen2.5-7B-Instruct</td><td>Q4_K_M</td><td>~4.7GB</td><td>中文能力强，推荐首选</td></tr>
+      <tr><td>Llama-3.1-8B-Instruct</td><td>Q4_K_M</td><td>~4.9GB</td><td>英文最佳，通用场景</td></tr>
+      <tr><td>DeepSeek-R1-Distill-Qwen-7B</td><td>Q4_K_M</td><td>~4.7GB</td><td>推理能力强，思维链</td></tr>
+      <tr><td>Qwen2.5-14B-Instruct</td><td>Q4_K_M</td><td>~8.7GB</td><td>16GB 内存即可运行</td></tr>
+    </table>
+    </div>
+    <div class="tip"><strong>量化级别说明：</strong>Q4_K_M 是性价比最高的选择——体积小、精度损失极低。Q8_0 精度最高但体积翻倍。Q2_K 最小但质量下降明显。</div>
+  </div>
+</div>
+
+<!-- 基本使用 -->
+<h2>三、命令行使用（llama-cli）</h2>
+
+<h3>3.1 最简启动</h3>
+<pre># 交互式聊天
+llama-cli -m models\qwen2.5-7b-instruct-q4_k_m.gguf -c 4096 --color -i</pre>
+
+<h3>3.2 单次推理</h3>
+<pre># 一次性问答
+llama-cli -m models\qwen2.5-7b-instruct-q4_k_m.gguf \
+  -p "用一句话解释什么是量子计算" \
+  -n 256 \
+  --temp 0.7</pre>
+
+<h3>3.3 核心参数速查</h3>
+<div class="table-wrap" style="overflow-x:auto;">
+<table>
+  <tr><th>参数</th><th>说明</th><th>示例</th></tr>
+  <tr><td><code>-m</code></td><td>模型文件路径</td><td><code>-m model.gguf</code></td></tr>
+  <tr><td><code>-c</code> / <code>--ctx-size</code></td><td>上下文窗口大小</td><td><code>-c 4096</code>（默认 4096）</td></tr>
+  <tr><td><code>-n</code> / <code>--n-predict</code></td><td>最大生成 token 数</td><td><code>-n 512</code></td></tr>
+  <tr><td><code>-i</code> / <code>--interactive</code></td><td>交互式对话模式</td><td><code>-i</code></td></tr>
+  <tr><td><code>--temp</code></td><td>温度（0-2），越高越随机</td><td><code>--temp 0.7</code></td></tr>
+  <tr><td><code>--top-p</code></td><td>核心采样，0.9 常用</td><td><code>--top-p 0.9</code></td></tr>
+  <tr><td><code>--color</code></td><td>彩色输出</td><td><code>--color</code></td></tr>
+  <tr><td><code>-ngl</code> / <code>--n-gpu-layers</code></td><td>卸载到 GPU 的层数</td><td><code>-ngl 35</code></td></tr>
+  <tr><td><code>-t</code> / <code>--threads</code></td><td>CPU 线程数</td><td><code>-t 8</code></td></tr>
+  <tr><td><code>--chat-template</code></td><td>聊天模板（如 chatml）</td><td><code>--chat-template chatml</code></td></tr>
+</table>
+</div>
+
+<!-- Server 模式 -->
+<h2>四、Server 模式 — OpenAI 兼容 API</h2>
+
+<p>这是 llama.cpp 最强大的功能，提供与 OpenAI <code>/v1/chat/completions</code> 完全兼容的 HTTP API。</p>
+
+<h3>4.1 启动服务</h3>
+<pre># 基础启动（CPU 推理）
+llama-server -m models\qwen2.5-7b-instruct-q4_k_m.gguf
+
+# 生产级启动（GPU 加速 + 大上下文）
+llama-server -m models\qwen2.5-7b-instruct-q4_k_m.gguf \
+  --host 0.0.0.0 \
+  --port 8080 \
+  --ctx-size 8192 \
+  --n-gpu-layers 35 \
+  --threads 8 \
+  --batch-size 512</pre>
+
+<div class="note"><strong>启动后访问：</strong>浏览器打开 <code>http://localhost:8080</code> 即可看到内置 Web 聊天界面。API 文档在 <code>http://localhost:8080/docs</code>。</div>
+
+<h3>4.2 API 调用</h3>
+<pre># Chat Completion（OpenAI 兼容）
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-3.5-turbo",
+    "messages": [
+      {"role": "user", "content": "你好，用中文介绍你自己"}
+    ],
+    "temperature": 0.7,
+    "max_tokens": 512
+  }'
+
+# Python 调用（直接使用 openai 库）
+from openai import OpenAI
+client = OpenAI(base_url="http://localhost:8080/v1", api_key="not-needed")
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[{"role": "user", "content": "用 Python 写一个快速排序"}]
+)
+print(response.choices[0].message.content)
+
+# C# 调用（你的诊所系统可以直接集成）
+using var http = new HttpClient { BaseAddress = new Uri("http://localhost:8080") };
+var json = JsonSerializer.Serialize(new {
+    model = "gpt-3.5-turbo",
+    messages = new[] { new { role = "user", content = "你好" } }
+});
+var response = await http.PostAsync("/v1/chat/completions",
+    new StringContent(json, Encoding.UTF8, "application/json"));</pre>
+
+<pre># Embedding（向量化）
+curl http://localhost:8080/v1/embeddings \
+  -H "Content-Type: application/json" \
+  -d '{"input": "Hello world", "model": "gpt-3.5-turbo"}'</pre>
+
+<h3>4.3 Server 完整参数</h3>
+<div class="table-wrap" style="overflow-x:auto;">
+<table class="api-table">
+  <tr><th>参数</th><th>默认值</th><th>说明</th></tr>
+  <tr><td><code>--host</code></td><td>127.0.0.1</td><td>监听地址，0.0.0.0 允许外部访问</td></tr>
+  <tr><td><code>--port</code></td><td>8080</td><td>监听端口</td></tr>
+  <tr><td><code>--ctx-size</code></td><td>4096</td><td>上下文窗口（越大越吃内存）</td></tr>
+  <tr><td><code>--n-gpu-layers</code></td><td>0</td><td>GPU 层数（99 = 全部）</td></tr>
+  <tr><td><code>--threads</code></td><td>CPU 核心数</td><td>CPU 推理线程数</td></tr>
+  <tr><td><code>--batch-size</code></td><td>2048</td><td>批处理大小</td></tr>
+  <tr><td><code>--parallel</code></td><td>1</td><td>并发请求数</td></tr>
+  <tr><td><code>--api-key</code></td><td>无</td><td>设置 API 密钥（Bearer token）</td></tr>
+  <tr><td><code>--slots</code></td><td>1</td><td>推理槽位（支持多客户端）</td></tr>
+  <tr><td><code>--embedding</code></td><td>false</td><td>启用 embedding 端点</td></tr>
+  <tr><td><code>--no-webui</code></td><td>false</td><td>禁用内置 Web 界面</td></tr>
+</table>
+</div>
+
+<!-- 性能调优 -->
+<h2>五、性能调优</h2>
+
+<h3>5.1 GPU 层数调优（最关键）</h3>
+<p><code>--n-gpu-layers</code> 控制多少层卸载到 GPU。这是影响推理速度的最重要参数。</p>
+<pre># 小模型（8B），8GB 显存：全部放 GPU
+llama-server -m model.gguf --n-gpu-layers 99
+
+# 大模型（70B），24GB 显存：部分放 GPU
+llama-server -m model.gguf --n-gpu-layers 35
+
+# 纯 CPU 推理（无 GPU）
+llama-server -m model.gguf --n-gpu-layers 0 --threads 16</pre>
+
+<div class="tip"><strong>找最优值：</strong>从 <code>--n-gpu-layers 99</code> 开始，如果显存不足（OOM），逐次减 10 层直到稳定运行。通常 8B 模型在 8GB 显存上可以全部放 GPU。</div>
+
+<h3>5.2 量化级别性能对比</h3>
+<div class="table-wrap" style="overflow-x:auto;">
+<table>
+  <tr><th>量化</th><th>8B 模型大小</th><th>质量损失</th><th>推理速度</th><th>推荐场景</th></tr>
+  <tr><td>Q8_0</td><td>~8.5GB</td><td><span class="tag tag-green">几乎无损</span></td><td>慢</td><td>精度敏感任务</td></tr>
+  <tr><td>Q4_K_M</td><td>~4.9GB</td><td><span class="tag tag-blue">极低</span></td><td>快</td><td>通用场景（推荐）</td></tr>
+  <tr><td>Q4_0</td><td>~4.6GB</td><td><span class="tag tag-amber">低</span></td><td>最快</td><td>低配机器</td></tr>
+  <tr><td>Q2_K</td><td>~3.2GB</td><td><span class="tag tag-amber">中等</span></td><td>极快</td><td>嵌入式/边缘设备</td></tr>
+</table>
+</div>
+
+<h3>5.3 上下文大小与内存关系</h3>
+<p>上下文 <code>--ctx-size</code> 越大，KV Cache 占用内存越多。粗略估算：</p>
+<pre># 8B 模型，Q4_K_M 量化
+--ctx-size 4096   →  KV Cache ≈ 0.5GB 额外内存
+--ctx-size 8192   →  KV Cache ≈ 1.0GB 额外内存
+--ctx-size 32768  →  KV Cache ≈ 4.0GB 额外内存</pre>
+<div class="warn"><strong>注意：</strong>不要盲目追求大上下文。8B 模型对超长文本的理解力有限，4K-8K 上下文通常足够。设置过大会导致 OOM 或推理显著变慢。</div>
+
+<!-- 对比 Ollama -->
+<h2>六、llama.cpp vs Ollama — 什么时候该用？</h2>
+<div class="table-wrap" style="overflow-x:auto;">
+<table>
+  <tr><th>场景</th><th>推荐</th><th>原因</th></tr>
+  <tr><td>快速上手、不想折腾</td><td><span class="tag tag-green">Ollama</span></td><td>一条命令安装，自动管理模型</td></tr>
+  <tr><td>追求极致性能</td><td><span class="tag tag-blue">llama.cpp</span></td><td>直接调优 GPU 层数、线程、批处理</td></tr>
+  <tr><td>CPU 推理 / 无 GPU</td><td><span class="tag tag-blue">llama.cpp</span></td><td>CPU 优化是 llama.cpp 的核心优势</td></tr>
+  <tr><td>生产环境 API 服务</td><td><span class="tag tag-blue">llama.cpp</span></td><td>llama-server 更轻量、更可控</td></tr>
+  <tr><td>多模型管理</td><td><span class="tag tag-green">Ollama</span></td><td>ollama pull/push 生态成熟</td></tr>
+  <tr><td>集成到 C/C++ 应用</td><td><span class="tag tag-blue">llama.cpp</span></td><td>原生 C API，零依赖</td></tr>
+</table>
+</div>
+
+<div class="tip" style="margin-top: 24px;">
+  <strong>实际建议：</strong>两者可以共存。Ollama 底层就是 llama.cpp，你用 <code>OLLAMA_NUM_PARALLEL</code>、<code>OLLAMA_CTX_SIZE</code> 等环境变量调优时，本质上就是在调 llama.cpp 的参数。如果觉得 Ollama 环境变量不够用，直接用 llama.cpp 的 <code>llama-server</code> 替代即可——API 完全兼容，代码不用改。
+</div>
+
+<!-- 常见问题 -->
+<h2>七、常见问题</h2>
+
+<h3>Q: 启动后报 "failed to load model"？</h3>
+<p>检查 <code>-m</code> 路径是否正确，确认文件是 GGUF 格式（不是 safetensors 或 pytorch）。</p>
+
+<h3>Q: 显存不足（CUDA OOM）？</h3>
+<p>减少 <code>--n-gpu-layers</code> 值，或降低 <code>--ctx-size</code>。用 <code>llama-perplexity</code> 工具测试内存占用。</p>
+
+<h3>Q: 输出乱码/重复？</h3>
+<p>调整 <code>--temp</code>（0.6-0.8）、<code>--top-p</code>（0.9）、<code>--repeat-penalty</code>（1.1）。</p>
+
+<h3>Q: 如何让 llama-server 开机自启？</h3>
+<pre># Windows 任务计划程序或 NSSM
+nssm install LlamaServer "D:\llama.cpp\llama-server.exe" "-m D:\models\qwen.gguf --host 0.0.0.0 --port 8080"
+nssm start LlamaServer</pre>
+
+<h3>Q: 和 Ollama 的 API 兼容吗？</h3>
+<p>完全兼容。llama-server 的 <code>/v1/chat/completions</code> 端点与 OpenAI API 格式一致，任何使用 OpenAI SDK 的代码都可以直接指向 llama-server。</p>
+
+</div>
+</body>
+</html>

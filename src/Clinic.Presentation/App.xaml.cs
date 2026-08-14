@@ -2,6 +2,8 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using Clinic.Application;
+using Clinic.Application.DTOs;
+using Clinic.Application.Interfaces;
 using Clinic.Domain.Interfaces;
 using Clinic.Infrastructure;
 using Clinic.Infrastructure.Backup;
@@ -47,8 +49,28 @@ public partial class App : System.Windows.Application
                 var llmEndpoint = context.Configuration["Llm:Endpoint"];
                 var llmModel = context.Configuration["Llm:Model"];
 
+                // 读取 llama.cpp 配置
+                var llamaCppSection = context.Configuration.GetSection("LlamaCpp");
+                var llamaCppEnabled = llamaCppSection.GetValue<bool>("Enabled");
+                var llamaCppSettings = llamaCppEnabled
+                    ? new LlamaCppSettings
+                    {
+                        Enabled = true,
+                        ExecutablePath = llamaCppSection["ExecutablePath"] ?? "",
+                        ModelPath = llamaCppSection["ModelPath"] ?? "",
+                        Host = llamaCppSection["Host"] ?? "127.0.0.1",
+                        Port = llamaCppSection.GetValue<int>("Port", 8080),
+                        CtxSize = llamaCppSection.GetValue<int>("CtxSize", 4096),
+                        NGpuLayers = llamaCppSection.GetValue<int>("NGpuLayers", 0),
+                        Threads = llamaCppSection.GetValue<int>("Threads", 4),
+                        AutoStart = llamaCppSection.GetValue<bool>("AutoStart"),
+                        StartupTimeoutSeconds = llamaCppSection.GetValue<int>("StartupTimeoutSeconds", 30),
+                        HealthCheckIntervalMs = llamaCppSection.GetValue<int>("HealthCheckIntervalMs", 500)
+                    }
+                    : null;
+
                 // 注册各层服务
-                services.AddInfrastructure(dbPath, encryptionKey, pepper, llmEnabled, llmEndpoint, llmModel);
+                services.AddInfrastructure(dbPath, encryptionKey, pepper, llmEnabled, llmEndpoint, llmModel, llamaCppSettings);
                 services.AddApplication();
 
                 // 注册 ViewModel 和 Window
@@ -92,6 +114,35 @@ public partial class App : System.Windows.Application
                 await db.Database.EnsureCreatedAsync();
                 await MigratePrescriptionVitalsAsync(db);
                 await DbSeeder.SeedAsync(db, passwordHasher, encryption);
+
+                // 启动 llama.cpp 本地推理服务（如果配置了 AutoStart）
+                var llamaCppCfg = config.GetSection("LlamaCpp");
+                var lcppEnabled = llamaCppCfg.GetValue<bool>("Enabled");
+                var lcppAutoStart = llamaCppCfg.GetValue<bool>("AutoStart");
+                if (lcppEnabled && lcppAutoStart)
+                {
+                    try
+                    {
+                        var llamaManager = sp.GetService<ILlamaServerManager>();
+                        if (llamaManager is not null)
+                        {
+                            var started = await llamaManager.StartAsync();
+                            if (started)
+                            {
+                                System.Diagnostics.Debug.WriteLine(
+                                    $"[llama.cpp] 已启动 llama-server ({llamaCppCfg["Host"]}:{llamaCppCfg["Port"]})");
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debug.WriteLine("[llama.cpp] llama-server 启动失败，LLM 功能将不可用");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[llama.cpp] 启动异常: {ex.Message}");
+                    }
+                }
             }
 
             ShowLoginWindow();
@@ -190,6 +241,20 @@ public partial class App : System.Windows.Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
+        // 停止 llama.cpp 推理服务（仅在启用时注册了 ILlamaServerManager）
+        try
+        {
+            var llamaManager = _host.Services.GetService<ILlamaServerManager>();
+            if (llamaManager is not null)
+            {
+                await llamaManager.StopAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[llama.cpp] 停止异常: {ex.Message}");
+        }
+
         await _host.StopAsync();
         _host.Dispose();
         base.OnExit(e);

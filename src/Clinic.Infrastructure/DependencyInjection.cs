@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Clinic.Application.DTOs;
 using Clinic.Application.Interfaces;
 using Clinic.Domain.Entities;
 using Clinic.Domain.Interfaces;
@@ -33,7 +34,8 @@ public static class DependencyInjection
         string? pepper,
         bool llmEnabled = false,
         string? llmEndpoint = null,
-        string? llmModel = null)
+        string? llmModel = null,
+        LlamaCppSettings? llamaCppSettings = null)
     {
         // ── 解析 AES-256 加密密钥 ──
         // 优先从配置读取 Base64 编码的 32 字节密钥；
@@ -93,8 +95,27 @@ public static class DependencyInjection
             sp.GetRequiredService<IClock>(),
             sp.GetRequiredService<IAuditService>()));
 
+        // ── llama.cpp 本地推理引擎管理 ──
+        // 注册 LlamaCppSettings 供 ILlamaServerManager 使用
+        if (llamaCppSettings is { Enabled: true })
+        {
+            services.AddSingleton(llamaCppSettings);
+            services.AddSingleton<ILlamaServerManager, LlamaServerProcessManager>();
+        }
+
         // ── LLM 服务（Singleton：无状态，HTTP 客户端可复用）──
-        if (llmEnabled && !string.IsNullOrWhiteSpace(llmEndpoint) && !string.IsNullOrWhiteSpace(llmModel))
+        // 优先级：llama.cpp > Ollama > NoOp
+        if (llamaCppSettings is { Enabled: true })
+        {
+            var endpoint = $"http://{llamaCppSettings.Host}:{llamaCppSettings.Port}";
+            var model = Path.GetFileNameWithoutExtension(llamaCppSettings.ModelPath);
+            services.AddSingleton<ILlmService>(sp =>
+            {
+                var logger = sp.GetService<ILogger<LlamaCppLlmService>>();
+                return new LlamaCppLlmService(endpoint, model, logger);
+            });
+        }
+        else if (llmEnabled && !string.IsNullOrWhiteSpace(llmEndpoint) && !string.IsNullOrWhiteSpace(llmModel))
         {
             services.AddSingleton<ILlmService>(sp =>
             {
