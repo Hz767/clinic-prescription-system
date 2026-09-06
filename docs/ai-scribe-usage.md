@@ -25,19 +25,22 @@ AI智能问诊功能通过语音拾音，自动记录医患对话，并使用AI�
 ### 1. 启动llama.cpp（必需，用于病历生成）
 
 ```bash
-D:\llama.cpp\b10375\llama-server.exe -m D:\llama.cpp\models\qwen2.5-7b-instruct-q4_k_m.gguf --port 8080
+D:\llama.cpp\b10375\llama-server.exe -m D:\llama.cpp\models\qwen2.5-7b-instruct-q4_k_m_merged.gguf --port 8080 -c 4096 -t 4
 ```
 
-### 2. 下载FunASR模型（必需，用于语音识别）
+> 注意：必须使用 `_merged.gguf` 版本，分片文件会导致加载失败。
 
-1. 访问 https://github.com/mightychaos/funasr-llama.cpp/releases
-2. 下载 `paraformer-zh.gguf`（中文语音识别模型，约200MB）
-3. 下载 `funasr-cli.exe`（Windows可执行文件）
-4. 放置到以下目录：
-   ```
-   src/Clinic.AiScribe/tools/funasr-llama.cpp/funasr-cli.exe
-   src/Clinic.AiScribe/models/paraformer-zh.gguf
-   ```
+### 2. FunASR模型（已预配置完成）
+
+FunASR-llama.cpp v1.4.14 Windows AVX2版本已下载配置完成：
+- 可执行文件：`src\Clinic.AiScribe\tools\funasr-llama.cpp\llama-funasr-paraformer.exe`（5MB）
+- ASR模型：`src\Clinic.AiScribe\models\paraformer-q8.gguf`（226MB）
+- VAD模型：`src\Clinic.AiScribe\models\fsmn-vad.gguf`（1.6MB）
+
+如需重新下载：
+- 二进制：https://github.com/modelscope/FunASR/releases/download/v1.4.14/funasr-llamacpp-windows-x64-avx2.zip
+- 模型：https://huggingface.co/FunAudioLLM/Paraformer-GGUF/resolve/main/paraformer-q8.gguf
+- VAD：https://huggingface.co/FunAudioLLM/fsmn-vad-GGUF/resolve/main/fsmn-vad.gguf
 
 ### 3. 启动AI问诊Agent服务
 
