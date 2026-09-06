@@ -11,6 +11,8 @@
     <FontFamily x:Key="MonoFontFamily">Cascadia Code, Consolas, Courier New, monospace</FontFamily>
 
     <!-- Font Sizes -->
+    <system:Double x:Key="FontSizeMicro" xmlns:system="clr-namespace:System;assembly=System.Runtime">10</system:Double>
+    <system:Double x:Key="FontSizeTiny" xmlns:system="clr-namespace:System;assembly=System.Runtime">11</system:Double>
     <system:Double x:Key="FontSizeCaption" xmlns:system="clr-namespace:System;assembly=System.Runtime">12</system:Double>
     <system:Double x:Key="FontSizeSmall" xmlns:system="clr-namespace:System;assembly=System.Runtime">13</system:Double>
     <system:Double x:Key="FontSizeBody" xmlns:system="clr-namespace:System;assembly=System.Runtime">14</system:Double>

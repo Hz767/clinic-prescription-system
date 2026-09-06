@@ -1,5 +1,9 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:conv="clr-namespace:Clinic.Presentation.Converters">
+
+    <!-- 导航高亮用的多值比较转换器（必须在本字典内声明，因为 MergedDictionary 无法引用 App.xaml 主资源） -->
+    <conv:EqualityMultiConverter x:Key="EqualityMultiConverter"/>
 
     <!-- ================================================================ -->
     <!-- Clinic Prescription System - Button Styles                        -->
@@ -236,10 +240,71 @@
                 <Setter Property="Background" Value="{StaticResource PrimaryBgBrush}"/>
                 <Setter Property="Foreground" Value="{StaticResource PrimaryDarkBrush}"/>
             </Trigger>
+            <!-- 当前页面高亮：Tag 与 MainViewModel.CurrentNavKey 匹配时 -->
+            <DataTrigger Value="True">
+                <DataTrigger.Binding>
+                    <MultiBinding Converter="{StaticResource EqualityMultiConverter}">
+                        <Binding Path="Tag" RelativeSource="{RelativeSource Self}"/>
+                        <Binding Path="DataContext.CurrentNavKey" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                    </MultiBinding>
+                </DataTrigger.Binding>
+                <Setter Property="Background" Value="{StaticResource PrimaryBgBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource PrimaryDarkBrush}"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+            </DataTrigger>
         </Style.Triggers>
     </Style>
 
+    <!-- Tag Button (悬浮辅助工具栏中的快捷标签) -->
+    <Style x:Key="BtnTag" TargetType="Button">
+        <Setter Property="Background" Value="#F0FDF4"/>
+        <Setter Property="Foreground" Value="#15803D"/>
+        <Setter Property="BorderBrush" Value="#BBF7D0"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Padding" Value="10,4"/>
+        <Setter Property="Margin" Value="0,0,6,6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="12"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#DCFCE7"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="#86EFAC"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#BBF7D0"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Default Button (applies to all unstyled buttons) -->
-    <Style TargetType="Button" BasedOn="{StaticResource BtnOutline}"/>
+    <Style TargetType="Button" BasedOn="{StaticResource BtnOutline}">
+        <Setter Property="FocusVisualStyle">
+            <Setter.Value>
+                <Style>
+                    <Setter Property="Control.Template">
+                        <Setter.Value>
+                            <ControlTemplate>
+                                <Border Margin="-2" BorderBrush="{StaticResource PrimaryBrush}" BorderThickness="2" CornerRadius="6" SnapsToDevicePixels="True"/>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
 </ResourceDictionary>

@@ -1,10 +1,11 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using Clinic.Application.DTOs;
 using Clinic.Application.Interfaces;
 using Clinic.Presentation.Helpers;
+using Clinic.Presentation.Services;
 using Clinic.Shared.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,9 +18,10 @@ namespace Clinic.Presentation.ViewModels;
 /// 处方历史查询 ViewModel。
 /// 功能：按关键词/日期查询处方历史 + 重新生成并打印处方 PDF + 作废处方。
 /// </summary>
-public partial class PrescriptionHistoryViewModel : ObservableObject
+public partial class PrescriptionHistoryViewModel : ViewModelBase
 {
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IDialogService _dialogService;
 
     /// <summary>导航到收费页面的事件（由 MainViewModel 订阅）</summary>
     public event Action<long>? NavigateToBillingRequested;
@@ -45,23 +47,17 @@ public partial class PrescriptionHistoryViewModel : ObservableObject
     /// <summary>作废原因输入</summary>
     [ObservableProperty]
     private string _voidReason = string.Empty;
-
-    [ObservableProperty]
-    private string? _statusMessage;
-
-    [ObservableProperty]
-    private string? _errorMessage;
-
-    /// <summary>是否正在执行异步操作（防重复提交）</summary>
+/// <summary>是否正在执行异步操作（防重复提交）</summary>
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SearchCommand))]
     [NotifyCanExecuteChangedFor(nameof(ReprintPdfCommand))]
     [NotifyCanExecuteChangedFor(nameof(VoidPrescriptionCommand))]
     private bool _isBusy;
 
-    public PrescriptionHistoryViewModel(IServiceScopeFactory scopeFactory)
+    public PrescriptionHistoryViewModel(IServiceScopeFactory scopeFactory, IDialogService dialogService)
     {
         _scopeFactory = scopeFactory;
+        _dialogService = dialogService;
     }
 
     /// <summary>当前选中的处方是否可作废（仅已收费状态可作废）</summary>
@@ -161,16 +157,14 @@ public partial class PrescriptionHistoryViewModel : ObservableObject
         if (SelectedPrescription is null) return;
 
         // 弹出确认对话框
-        var confirm = MessageBox.Show(
+        var confirm = _dialogService.ShowConfirm(
             $"确定要作废处方 {SelectedPrescription.NoYearSeq} 吗？\n" +
             $"患者：{SelectedPrescription.PatientName}\n" +
             $"金额：¥{SelectedPrescription.TotalAmount:F2}\n\n" +
             "作废后库存将回退，已收费将生成退款冲正记录，此操作不可撤销。",
-            "确认作废处方",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
+            "确认作废处方");
 
-        if (confirm != MessageBoxResult.Yes)
+        if (!confirm)
             return;
 
         IsBusy = true;

@@ -8,11 +8,14 @@ using Clinic.Domain.Interfaces;
 using Clinic.Infrastructure;
 using Clinic.Infrastructure.Backup;
 using Clinic.Infrastructure.Data;
+using Clinic.Infrastructure.Llm;
 using Microsoft.EntityFrameworkCore;
 using Clinic.Presentation.ViewModels;
+using Clinic.Presentation.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Clinic.Presentation;
 
@@ -23,6 +26,13 @@ namespace Clinic.Presentation;
 public partial class App : System.Windows.Application
 {
     private readonly IHost _host;
+    private static ILogger<App>? _logger;
+
+    /// <summary>懒加载的Logger（_host构建完成后可用）</summary>
+    private static ILogger<App> Logger => _logger ??= ((App)Current)._host.Services.GetRequiredService<ILogger<App>>();
+
+    /// <summary>全局服务提供者（供 View 层 code-behind 获取服务）</summary>
+    public static IServiceProvider Services => ((App)Current)._host.Services;
 
     public App()
     {
@@ -73,13 +83,24 @@ public partial class App : System.Windows.Application
                 services.AddInfrastructure(dbPath, encryptionKey, pepper, llmEnabled, llmEndpoint, llmModel, llamaCppSettings);
                 services.AddApplication();
 
+                // 注册 AI 辅助管理器（全局单例）
+                services.AddSingleton<IAiAssistantManager, AiAssistantManager>();
+
+                // 注册对话框服务
+                services.AddSingleton<IDialogService, DialogService>();
+
+                // 注册窗口服务
+                services.AddSingleton<IWindowService, WindowService>();
+
                 // 注册 ViewModel 和 Window
                 services.AddSingleton<MainViewModel>();
+                services.AddTransient<DashboardViewModel>();
                 services.AddTransient<PatientManagementViewModel>();
                 services.AddTransient<PrescriptionViewModel>();
                 services.AddTransient<BillingViewModel>();
                 services.AddTransient<InventoryViewModel>();
                 services.AddTransient<PrescriptionHistoryViewModel>();
+                services.AddTransient<MedicalRecordManagementViewModel>();
                 services.AddTransient<LoginViewModel>();
                 services.AddSingleton<MainWindow>();
                 services.AddTransient<LoginWindow>();
@@ -113,43 +134,19 @@ public partial class App : System.Windows.Application
 
                 await db.Database.EnsureCreatedAsync();
                 await MigratePrescriptionVitalsAsync(db);
+                await MigrateP0P1ColumnsAsync(db);
                 await DbSeeder.SeedAsync(db, passwordHasher, encryption);
 
-                // 启动 llama.cpp 本地推理服务（如果配置了 AutoStart）
-                var llamaCppCfg = config.GetSection("LlamaCpp");
-                var lcppEnabled = llamaCppCfg.GetValue<bool>("Enabled");
-                var lcppAutoStart = llamaCppCfg.GetValue<bool>("AutoStart");
-                if (lcppEnabled && lcppAutoStart)
-                {
-                    try
-                    {
-                        var llamaManager = sp.GetService<ILlamaServerManager>();
-                        if (llamaManager is not null)
-                        {
-                            var started = await llamaManager.StartAsync();
-                            if (started)
-                            {
-                                System.Diagnostics.Debug.WriteLine(
-                                    $"[llama.cpp] 已启动 llama-server ({llamaCppCfg["Host"]}:{llamaCppCfg["Port"]})");
-                            }
-                            else
-                            {
-                                System.Diagnostics.Debug.WriteLine("[llama.cpp] llama-server 启动失败，LLM 功能将不可用");
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[llama.cpp] 启动异常: {ex.Message}");
-                    }
-                }
+                // 注意：不再自动启动 llama.cpp，改为用户在登录时选择是否启用 AI 辅助
+                // （避免低配置电脑因强行加载大模型导致系统卡顿或进程中断）
+                // 如果需要恢复自动启动，可在登录后通过主界面"加载大模型"按钮手动加载
             }
 
             ShowLoginWindow();
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"应用启动失败: {ex}");
+            Logger.LogError(ex, "应用启动失败");
             MessageBox.Show($"应用启动失败：{ex.Message}", "错误",
                 MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
@@ -181,7 +178,40 @@ public partial class App : System.Windows.Application
             {
                 await db.Database.ExecuteSqlRawAsync(
                     $"ALTER TABLE Prescriptions ADD COLUMN {name} {type};");
-                System.Diagnostics.Debug.WriteLine($"[Migration] Added column Prescriptions.{name}");
+                Logger.LogInformation("[Migration] Added column Prescriptions.{name}", name);
+            }
+            catch
+            {
+                // 列已存在或表不存在，忽略错误
+            }
+        }
+    }
+
+    /// <summary>
+    /// 手动迁移：P0-P1 新增列。
+    /// - DrugMasters.ReorderLevel：补货阈值（低库存预警）
+    /// - Patients.Tags：自定义标签（列表筛选）
+    /// - Prescriptions.OverrideReason：临床覆盖理由（阻断项放行时记录）
+    /// - Prescriptions.DispensedAt / DispensedBy：发药时间与操作人
+    /// </summary>
+    private static async Task MigrateP0P1ColumnsAsync(ClinicDbContext db)
+    {
+        var migrations = new (string Table, string Column, string Type)[]
+        {
+            ("DrugMasters", "ReorderLevel", "REAL"),
+            ("Patients", "Tags", "TEXT"),
+            ("Prescriptions", "OverrideReason", "TEXT"),
+            ("Prescriptions", "DispensedAt", "TEXT"),
+            ("Prescriptions", "DispensedBy", "INTEGER")
+        };
+
+        foreach (var (table, column, type) in migrations)
+        {
+            try
+            {
+                await db.Database.ExecuteSqlRawAsync(
+                    $"ALTER TABLE {table} ADD COLUMN {column} {type};");
+                Logger.LogInformation("[Migration] Added column {table}.{column}", table, column);
             }
             catch
             {
@@ -206,27 +236,48 @@ public partial class App : System.Windows.Application
     /// <summary>显示主窗口，退出登录时返回登录窗口</summary>
     private void ShowMainWindow()
     {
-        var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-        var mainViewModel = (MainViewModel)mainWindow.DataContext;
-
-        // 先取消旧订阅再添加新订阅，防止事件累积（H-13）
-        // Lambda 无法取消订阅，改为命名方法
-        mainViewModel.LogoutRequested -= OnLogoutRequested;
-        mainViewModel.LogoutRequested += OnLogoutRequested;
-
-        // 先显示窗口，再刷新权限（确保即使 RefreshPermissions 抛异常窗口仍可见）
-        mainWindow.Show();
-        mainWindow.Activate();
-
+        var logPath = Path.Combine(AppContext.BaseDirectory, "startup_debug.log");
         try
         {
-            // 刷新权限相关 UI 状态（MainViewModel 为 Singleton，跨登录会话复用）
-            mainViewModel.RefreshPermissions();
+            File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] ShowMainWindow start\n");
+            var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+            File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] MainWindow created, IsLoaded={mainWindow.IsLoaded}\n");
+            var mainViewModel = (MainViewModel)mainWindow.DataContext;
+            File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] DataContext got\n");
+
+            // 先取消旧订阅再添加新订阅，防止事件累积（H-13）
+            mainViewModel.LogoutRequested -= OnLogoutRequested;
+            mainViewModel.LogoutRequested += OnLogoutRequested;
+
+            // 修复：Singleton 窗口可能被 Hide() 过，需强制重置可见性和大小
+            mainWindow.Visibility = Visibility.Visible;
+            mainWindow.WindowState = WindowState.Normal;
+            if (mainWindow.Width <= 0) mainWindow.Width = 1100;
+            if (mainWindow.Height <= 0) mainWindow.Height = 700;
+            File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] Before Show, Vis={mainWindow.Visibility}, W={mainWindow.Width}, H={mainWindow.Height}\n");
+            mainWindow.Show();
+            File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] After Show, IsLoaded={mainWindow.IsLoaded}\n");
+            mainWindow.Activate();
+            mainWindow.Focus();
+
+            try
+            {
+                // 刷新权限相关 UI 状态（MainViewModel 为 Singleton，跨登录会话复用）
+                _ = mainViewModel.RefreshPermissions();
+                File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] RefreshPermissions done\n");
+            }
+            catch (Exception ex)
+            {
+                File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] RefreshPermissions 异常: {ex}\n");
+                mainViewModel.ErrorMessage = $"初始化页面失败：{ex.Message}";
+            }
+            File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] ShowMainWindow done\n");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"RefreshPermissions 异常: {ex}");
-            mainViewModel.ErrorMessage = $"初始化页面失败：{ex.Message}";
+            File.AppendAllText(logPath, $"[{DateTime.Now:HH:mm:ss}] ShowMainWindow 异常: {ex}\n");
+            MessageBox.Show($"打开主窗口失败：{ex.Message}\n\n{ex.StackTrace}", "错误",
+                MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -252,7 +303,7 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[llama.cpp] 停止异常: {ex.Message}");
+            Logger.LogWarning(ex, "[llama.cpp] 停止异常");
         }
 
         await _host.StopAsync();

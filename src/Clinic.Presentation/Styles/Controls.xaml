@@ -23,6 +23,9 @@
         <Setter Property="AutoGenerateColumns" Value="False"/>
         <Setter Property="RowHeight" Value="36"/>
         <Setter Property="ColumnHeaderHeight" Value="38"/>
+        <Setter Property="RowBackground" Value="White"/>
+        <Setter Property="AlternationCount" Value="2"/>
+        <Setter Property="AlternatingRowBackground" Value="#F9FAFB"/>
     </Style>
 
     <!-- DataGridColumnHeader Style -->
@@ -44,14 +47,13 @@
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
         <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        <Setter Property="Background" Value="White"/>
         <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="{StaticResource PrimaryBgBrush}"/>
                 <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{StaticResource Gray50Brush}"/>
+                <Setter Property="Background" Value="{StaticResource Gray100Brush}"/>
             </Trigger>
         </Style.Triggers>
     </Style>

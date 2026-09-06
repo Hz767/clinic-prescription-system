@@ -1,7 +1,8 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using Clinic.Application.DTOs;
 using Clinic.Application.Interfaces;
 using Clinic.Presentation.Helpers;
+using Clinic.Presentation.Services;
 using Clinic.Shared.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -14,10 +15,32 @@ namespace Clinic.Presentation.ViewModels;
 /// 功能：记录收费（现金/POS）+ 日结报表查询。
 /// 权限：仅 Doctor 可收费（CanBill），所有角色可查看日报。
 /// </summary>
-public partial class BillingViewModel : ObservableObject
+public partial class BillingViewModel : ViewModelBase
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IUserSession _session;
+    private readonly IDialogService _dialogService;
+
+    // ── 待办工作台 ──
+
+    /// <summary>待审核处方列表（状态=已保存）</summary>
+    public ObservableCollection<PrescriptionHistoryDto> PendingReviewList { get; } = new();
+
+    /// <summary>待收费处方列表（状态=已审核）</summary>
+    public ObservableCollection<PrescriptionHistoryDto> PendingBillingList { get; } = new();
+
+    /// <summary>待发药处方列表（状态=已收费）</summary>
+    public ObservableCollection<PrescriptionHistoryDto> PendingDispenseList { get; } = new();
+
+    [ObservableProperty] private int _pendingReviewCount;
+    [ObservableProperty] private int _pendingBillingCount;
+    [ObservableProperty] private int _pendingDispenseCount;
+
+    /// <summary>当前选中的待办处方（用于跳转到对应处理区域）</summary>
+    [ObservableProperty] private PrescriptionHistoryDto? _selectedPendingPrescription;
+
+    /// <summary>当前激活的Tab索引（0=待办工作台, 1=业务办理, 2=日结报表, 3=收费流水）</summary>
+    [ObservableProperty] private int _activeTabIndex;
 
     // ── 收费表单 ──
 
@@ -59,14 +82,7 @@ public partial class BillingViewModel : ObservableObject
     private bool _hasReportData;
 
     // ── 状态 ──
-
-    [ObservableProperty]
-    private string? _statusMessage;
-
-    [ObservableProperty]
-    private string? _errorMessage;
-
-    /// <summary>是否正在执行异步操作（防重复提交）</summary>
+/// <summary>是否正在执行异步操作（防重复提交）</summary>
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RecordPaymentCommand))]
     [NotifyCanExecuteChangedFor(nameof(LoadDailyReportCommand))]
@@ -74,6 +90,8 @@ public partial class BillingViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(RefundCommand))]
     [NotifyCanExecuteChangedFor(nameof(AiPreReviewCommand))]
     [NotifyCanExecuteChangedFor(nameof(ReviewPrescriptionCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LoadDispensePrescriptionCommand))]
+    [NotifyCanExecuteChangedFor(nameof(DispenseCommand))]
     private bool _isBusy;
 
     // ── 收费流水查询 ──
@@ -111,6 +129,180 @@ public partial class BillingViewModel : ObservableObject
     [ObservableProperty]
     private bool _canReview; // Doctor或Nurse可审核
 
+    // ── 发药（药房配药发药，发药时扣减库存） ──
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(LoadDispensePrescriptionCommand))]
+    private string _dispensePrescriptionIdInput = string.Empty;
+
+    [ObservableProperty] private string? _dispensePrescriptionNo;
+    [ObservableProperty] private string? _dispensePatientName;
+    [ObservableProperty] private string? _dispenseAmount;
+    [ObservableProperty] private string? _dispenseStatusText;
+    [ObservableProperty] private bool _hasDispensePrescription;
+
+    /// <summary>当前用户是否有发药权限（Doctor / Nurse / Pharmacist）</summary>
+    public bool CanDispense =>
+        _session.Role is UserRole.Doctor or UserRole.Nurse or UserRole.Pharmacist;
+
+    // ── 处方搜索下拉（收费/审核/发药共用） ──
+
+    /// <summary>处方搜索结果列表</summary>
+    public ObservableCollection<PrescriptionHistoryDto> PrescriptionSearchResults { get; } = new();
+
+    /// <summary>搜索下拉是否打开</summary>
+    [ObservableProperty]
+    private bool _isPrescriptionSearchOpen;
+
+    /// <summary>当前激活的搜索字段：0=收费, 1=审核, 2=发药</summary>
+    [ObservableProperty]
+    private int _activePrescriptionSearchField;
+
+    /// <summary>加载待办工作台数据（待审核/待收费/待发药）</summary>
+    [RelayCommand]
+    private async Task LoadPendingWorkbenchAsync()
+    {
+        IsBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var rxSvc = scope.ServiceProvider.GetRequiredService<IPrescriptionService>();
+
+            // 取最近30天的处方，按状态分类
+            var all = (await rxSvc.GetPrescriptionHistoryAsync(
+                searchKeyword: null,
+                fromDate: DateTime.Today.AddDays(-30),
+                toDate: DateTime.Today.AddDays(1))).ToList();
+
+            PendingReviewList.Clear();
+            PendingBillingList.Clear();
+            PendingDispenseList.Clear();
+
+            foreach (var p in all)
+            {
+                switch (p.Status)
+                {
+                    case 1: PendingReviewList.Add(p); break;  // 已保存→待审核
+                    case 4: PendingBillingList.Add(p); break; // 已审核→待收费
+                    case 2: PendingDispenseList.Add(p); break; // 已收费→待发药
+                }
+            }
+
+            PendingReviewCount = PendingReviewList.Count;
+            PendingBillingCount = PendingBillingList.Count;
+            PendingDispenseCount = PendingDispenseList.Count;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"加载待办失败：{ExceptionFormatter.GetMessage(ex)}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>点击待办项：跳转到业务办理Tab并填充对应处方ID</summary>
+    [RelayCommand]
+    private void SelectPendingPrescription(PrescriptionHistoryDto? prescription)
+    {
+        if (prescription is null) return;
+        SelectedPendingPrescription = prescription;
+        ActiveTabIndex = 1; // 跳转到业务办理Tab
+        var idStr = prescription.Id.ToString();
+
+        // 根据状态跳转到对应处理区域
+        switch (prescription.Status)
+        {
+            case 1: // 待审核→审核区域
+                ReviewPrescriptionIdInput = idStr;
+                break;
+            case 4: // 待收费→收费区域
+                PrescriptionIdInput = idStr;
+                AmountInput = prescription.TotalAmount.ToString("F2");
+                break;
+            case 2: // 待发药→发药区域
+                DispensePrescriptionIdInput = idStr;
+                _ = LoadDispensePrescriptionAsync();
+                break;
+        }
+    }
+
+    /// <summary>搜索处方（按处方编号/患者姓名/诊断关键词）</summary>
+    [RelayCommand]
+    private async Task SearchPrescriptionsAsync()
+    {
+        ErrorMessage = null;
+        var keyword = ActivePrescriptionSearchField switch
+        {
+            0 => PrescriptionIdInput?.Trim(),
+            1 => ReviewPrescriptionIdInput?.Trim(),
+            2 => DispensePrescriptionIdInput?.Trim(),
+            _ => null
+        };
+
+        if (string.IsNullOrWhiteSpace(keyword))
+        {
+            IsPrescriptionSearchOpen = false;
+            return;
+        }
+
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var rxSvc = scope.ServiceProvider.GetRequiredService<IPrescriptionService>();
+            var results = await rxSvc.GetPrescriptionHistoryAsync(
+                searchKeyword: keyword,
+                fromDate: null,
+                toDate: null);
+
+            PrescriptionSearchResults.Clear();
+            foreach (var r in results.Take(10))
+                PrescriptionSearchResults.Add(r);
+
+            IsPrescriptionSearchOpen = PrescriptionSearchResults.Count > 0;
+            if (PrescriptionSearchResults.Count == 0)
+                StatusMessage = $"未找到匹配「{keyword}」的处方";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"搜索处方失败：{ExceptionFormatter.GetMessage(ex)}";
+        }
+    }
+
+    /// <summary>从搜索结果中选择处方，填入对应输入框</summary>
+    [RelayCommand]
+    private void SelectPrescriptionFromSearch(PrescriptionHistoryDto? prescription)
+    {
+        if (prescription is null) return;
+        var idStr = prescription.Id.ToString();
+
+        switch (ActivePrescriptionSearchField)
+        {
+            case 0:
+                PrescriptionIdInput = idStr;
+                AmountInput = prescription.TotalAmount.ToString("F2");
+                break;
+            case 1:
+                ReviewPrescriptionIdInput = idStr;
+                break;
+            case 2:
+                DispensePrescriptionIdInput = idStr;
+                break;
+        }
+
+        IsPrescriptionSearchOpen = false;
+        StatusMessage = $"已选择处方 {prescription.NoYearSeq}（{prescription.PatientName}）";
+    }
+
+    /// <summary>关闭搜索下拉</summary>
+    [RelayCommand]
+    private void ClosePrescriptionSearch()
+    {
+        IsPrescriptionSearchOpen = false;
+    }
+
     // ── 待收费处方信息（从处方页面跳转时自动加载） ──
 
     [ObservableProperty] private string? _pendingPrescriptionNo;
@@ -126,19 +318,21 @@ public partial class BillingViewModel : ObservableObject
     /// <summary>当前用户是否有收费权限</summary>
     public bool CanBill => _session.Role == UserRole.Doctor;
 
-    public BillingViewModel(IServiceScopeFactory scopeFactory, IUserSession session)
+    public BillingViewModel(IServiceScopeFactory scopeFactory, IUserSession session, IDialogService dialogService)
     {
         _scopeFactory = scopeFactory;
         _session = session;
+        _dialogService = dialogService;
         _canReview = _session.Role == UserRole.Doctor || _session.Role == UserRole.Nurse;
     }
 
-    /// <summary>从处方页面跳转过来时预填处方ID到审核区和收费区，并显示患者信息</summary>
+    /// <summary>从处方页面跳转过来时预填处方ID到审核区、收费区和发药区，并显示患者信息</summary>
     public async Task SetPendingPrescription(long prescriptionId)
     {
         var idStr = prescriptionId.ToString();
         ReviewPrescriptionIdInput = idStr;
         PrescriptionIdInput = idStr;
+        DispensePrescriptionIdInput = idStr;
 
         // 查询处方完整信息并填充
         try
@@ -163,7 +357,7 @@ public partial class BillingViewModel : ObservableObject
 
     private static string GetStatusText(int status) => status switch
     {
-        0 => "草稿", 1 => "已保存", 2 => "已收费", 3 => "已作废", 4 => "已审核", _ => "未知"
+        0 => "草稿", 1 => "已保存", 2 => "已收费", 3 => "已作废", 4 => "已审核", 5 => "已发药", _ => "未知"
     };
 
     /// <summary>支付方式变更时更新 IsPos 属性</summary>
@@ -212,7 +406,12 @@ public partial class BillingViewModel : ObservableObject
                 Note?.Trim());
 
             var methodText = PaymentMethod == 0 ? "现金" : "POS";
-            StatusMessage = $"收费成功：{methodText} ¥{amount:F2}（流水号 {paymentId}）";
+            StatusMessage = $"收费成功：{methodText} ¥{amount:F2}（流水号 {paymentId}）。已自动载入发药区，请完成配药发药";
+
+            // 收费成功后自动填充发药区（发药时扣减库存）
+            DispensePrescriptionIdInput = prescriptionId.ToString();
+            HasDispensePrescription = false;
+            await LoadDispensePrescriptionCoreAsync(prescriptionId);
 
             // 清空表单
             PrescriptionIdInput = string.Empty;
@@ -334,17 +533,15 @@ public partial class BillingViewModel : ObservableObject
         if (target is null) return;
 
         // 弹出确认对话框
-        var confirm = System.Windows.MessageBox.Show(
+        var confirm = _dialogService.ShowConfirm(
             $"确定要退费吗？\n" +
             $"处方编号：{target.PrescriptionNo}\n" +
             $"收费方式：{target.MethodText}\n" +
             $"金额：¥{target.Amount:F2}\n\n" +
             "退费后处方将作废，库存将回退，此操作不可撤销。",
-            "确认退费",
-            System.Windows.MessageBoxButton.YesNo,
-            System.Windows.MessageBoxImage.Warning);
+            "确认退费");
 
-        if (confirm != System.Windows.MessageBoxResult.Yes)
+        if (!confirm)
             return;
 
         IsBusy = true;
@@ -390,6 +587,115 @@ public partial class BillingViewModel : ObservableObject
     // ── 药师审核 ──
 
     /// <summary>智能预审处方（规则引擎检查药物交互/过敏/剂量等，辅助药师审核）</summary>
+    // ── 发药工作台：加载待发药处方信息 ──
+
+    /// <summary>加载发药处方信息（仅「已收费」状态可发药）</summary>
+    [RelayCommand(CanExecute = nameof(CanLoadDispensePrescription))]
+    private async Task LoadDispensePrescriptionAsync()
+    {
+        IsBusy = true;
+        ErrorMessage = null;
+        StatusMessage = null;
+
+        try
+        {
+            if (!long.TryParse(DispensePrescriptionIdInput.Trim(), out var prescriptionId) || prescriptionId <= 0)
+            {
+                ErrorMessage = "请输入有效的处方 ID";
+                return;
+            }
+
+            await LoadDispensePrescriptionCoreAsync(prescriptionId);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"加载发药信息失败：{ExceptionFormatter.GetMessage(ex)}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private bool CanLoadDispensePrescription()
+        => CanDispense && !IsBusy && !string.IsNullOrWhiteSpace(DispensePrescriptionIdInput);
+
+    /// <summary>核心：查询处方并填充发药区信息</summary>
+    private async Task LoadDispensePrescriptionCoreAsync(long prescriptionId)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var rxSvc = scope.ServiceProvider.GetRequiredService<IPrescriptionService>();
+        var rx = await rxSvc.GetPrescriptionByIdAsync(prescriptionId);
+
+        if (rx is null)
+        {
+            ErrorMessage = "处方不存在";
+            HasDispensePrescription = false;
+            return;
+        }
+
+        DispensePrescriptionNo = rx.NoYearSeq;
+        DispensePatientName = rx.PatientName;
+        DispenseAmount = $"¥{rx.TotalAmount:F2}";
+        DispenseStatusText = GetStatusText(rx.Status);
+        HasDispensePrescription = true;
+
+        if (rx.Status != 2)
+        {
+            ErrorMessage = $"处方状态为「{GetStatusText(rx.Status)}」，仅「已收费」状态的处方可发药";
+        }
+    }
+
+    // ── 发药工作台：确认发药（发药时按 FIFO 扣减库存） ──
+
+    /// <summary>确认发药：仅「已收费」处方可发药，发药后状态变为「已发药」并扣减库存</summary>
+    [RelayCommand(CanExecute = nameof(CanDispensePrescription))]
+    private async Task DispenseAsync()
+    {
+        IsBusy = true;
+        ErrorMessage = null;
+        StatusMessage = null;
+
+        try
+        {
+            if (!long.TryParse(DispensePrescriptionIdInput.Trim(), out var prescriptionId) || prescriptionId <= 0)
+            {
+                ErrorMessage = "请输入有效的处方 ID";
+                return;
+            }
+
+            using var scope = _scopeFactory.CreateScope();
+            var rxSvc = scope.ServiceProvider.GetRequiredService<IPrescriptionService>();
+
+            var success = await rxSvc.DispensePrescriptionAsync(prescriptionId);
+            if (success)
+            {
+                StatusMessage = $"发药成功：处方 {DispensePrescriptionNo ?? prescriptionId.ToString()} 已完成配药发药，库存已扣减";
+                DispensePrescriptionIdInput = string.Empty;
+                HasDispensePrescription = false;
+                DispensePrescriptionNo = null;
+                DispensePatientName = null;
+                DispenseAmount = null;
+                DispenseStatusText = null;
+            }
+            else
+            {
+                ErrorMessage = "发药失败，处方不存在";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"发药失败：{ExceptionFormatter.GetMessage(ex)}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private bool CanDispensePrescription()
+        => CanDispense && !IsBusy && !string.IsNullOrWhiteSpace(DispensePrescriptionIdInput);
+
     [RelayCommand(CanExecute = nameof(CanAiPreReview))]
     private async Task AiPreReviewAsync()
     {
@@ -438,15 +744,13 @@ public partial class BillingViewModel : ObservableObject
         }
 
         // 弹出确认对话框
-        var confirm = System.Windows.MessageBox.Show(
+        var confirm = _dialogService.ShowConfirm(
             $"确定要审核通过该处方吗？\n" +
             $"处方 ID：{prescriptionId}\n\n" +
             "审核通过后处方方可收费。",
-            "确认药师审核",
-            System.Windows.MessageBoxButton.YesNo,
-            System.Windows.MessageBoxImage.Question);
+            "确认药师审核");
 
-        if (confirm != System.Windows.MessageBoxResult.Yes)
+        if (!confirm)
             return;
 
         IsBusy = true;

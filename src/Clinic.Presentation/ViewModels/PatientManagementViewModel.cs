@@ -1,5 +1,7 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Text;
 using Clinic.Application.DTOs;
 using Clinic.Application.Interfaces;
 using Clinic.Presentation.Helpers;
@@ -13,7 +15,7 @@ namespace Clinic.Presentation.ViewModels;
 /// 患者管理 ViewModel。提供患者搜索、建档、列表展示功能。
 /// 搜索策略：输入纯数字按手机号查找，否则按姓名模糊搜索。
 /// </summary>
-public partial class PatientManagementViewModel : ObservableObject
+public partial class PatientManagementViewModel : ViewModelBase
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILlmService _llmService;
@@ -34,6 +36,49 @@ public partial class PatientManagementViewModel : ObservableObject
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(EditPatientCommand))]
     private PatientDto? _selectedPatient;
+
+    /// <summary>选中患者的就诊历史（处方记录）</summary>
+    public ObservableCollection<PrescriptionHistoryDto> PatientPrescriptionHistory { get; } = new();
+
+    /// <summary>选中患者的就诊次数</summary>
+    [ObservableProperty]
+    private int _selectedPatientVisitCount;
+
+    /// <summary>选中患者变化时加载就诊历史</summary>
+    partial void OnSelectedPatientChanged(PatientDto? value)
+    {
+        _ = LoadPatientHistoryAsync(value);
+    }
+
+    private async Task LoadPatientHistoryAsync(PatientDto? patient)
+    {
+        PatientPrescriptionHistory.Clear();
+        SelectedPatientVisitCount = 0;
+
+        if (patient is null) return;
+
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var rxSvc = scope.ServiceProvider.GetRequiredService<IPrescriptionService>();
+            var history = await rxSvc.GetPrescriptionHistoryAsync(
+                searchKeyword: patient.Name,
+                fromDate: null,
+                toDate: null);
+
+            // 只保留该患者的记录（按姓名匹配可能有同名，这里简单过滤）
+            foreach (var p in history.Where(p => p.PatientId == patient.Id)
+                         .OrderByDescending(p => p.CreatedAt))
+            {
+                PatientPrescriptionHistory.Add(p);
+            }
+            SelectedPatientVisitCount = PatientPrescriptionHistory.Count;
+        }
+        catch
+        {
+            // 就诊历史加载失败不影响主流程
+        }
+    }
 
     // ── 编辑模式 ──
 
@@ -80,6 +125,26 @@ public partial class PatientManagementViewModel : ObservableObject
     [ObservableProperty]
     private string _newChronicTags = string.Empty;
 
+    /// <summary>自定义标签（逗号分隔，如"孕妇、随访人群"）</summary>
+    [ObservableProperty]
+    private string _newTags = string.Empty;
+
+    // ── 列表筛选与导出 ──
+
+    /// <summary>标签/过敏史筛选关键词（本地过滤当前列表）</summary>
+    [ObservableProperty]
+    private string _tagFilter = string.Empty;
+
+    /// <summary>同名患者提示：新建档案时若存在同名患者，提示核对手机号避免重复建档</summary>
+    [ObservableProperty]
+    private string? _sameNameWarning;
+
+    /// <summary>同名检查防抖令牌</summary>
+    private CancellationTokenSource? _sameNameCts;
+
+    /// <summary>当前加载的全部患者（标签筛选的本地数据源）</summary>
+    private List<PatientDto> _allLoadedPatients = new();
+
     // ── LLM 辅助输入 ──
 
     /// <summary>LLM 服务是否可用</summary>
@@ -93,14 +158,7 @@ public partial class PatientManagementViewModel : ObservableObject
     private string _llmAllergyInput = string.Empty;
 
     // ── 状态消息 ──
-
-    [ObservableProperty]
-    private string? _statusMessage;
-
-    [ObservableProperty]
-    private string? _errorMessage;
-
-    public PatientManagementViewModel(IServiceScopeFactory scopeFactory, ILlmService llmService)
+public PatientManagementViewModel(IServiceScopeFactory scopeFactory, ILlmService llmService)
     {
         _scopeFactory = scopeFactory;
         _llmService = llmService;
@@ -132,10 +190,8 @@ public partial class PatientManagementViewModel : ObservableObject
             using var scope = _scopeFactory.CreateScope();
             var patientService = scope.ServiceProvider.GetRequiredService<IPatientService>();
 
-            Patients.Clear();
-            var results = await patientService.GetAllPatientsAsync();
-            foreach (var p in results)
-                Patients.Add(p);
+            _allLoadedPatients = (await patientService.GetAllPatientsAsync()).ToList();
+            ApplyTagFilter();
             StatusMessage = Patients.Count > 0
                 ? $"共 {Patients.Count} 位患者"
                 : "暂无患者档案，请在右侧表单中创建";
@@ -163,16 +219,14 @@ public partial class PatientManagementViewModel : ObservableObject
             using var scope = _scopeFactory.CreateScope();
             var patientService = scope.ServiceProvider.GetRequiredService<IPatientService>();
 
-            Patients.Clear();
-
             var keyword = SearchKeyword.Trim();
 
-            // 纯数字 → 手机号查找
+            // 纯数字 → 手机号查找；否则 → 姓名模糊搜索
             if (keyword.All(char.IsDigit) && keyword.Length >= 4)
             {
                 var patient = await patientService.FindByPhoneAsync(keyword);
-                if (patient is not null)
-                    Patients.Add(patient);
+                _allLoadedPatients = patient is not null ? [patient] : [];
+                ApplyTagFilter();
                 StatusMessage = Patients.Count > 0
                     ? $"找到 {Patients.Count} 条记录"
                     : "未找到匹配的患者";
@@ -180,8 +234,8 @@ public partial class PatientManagementViewModel : ObservableObject
             else
             {
                 var results = await patientService.SearchByNameAsync(keyword);
-                foreach (var p in results)
-                    Patients.Add(p);
+                _allLoadedPatients = results.ToList();
+                ApplyTagFilter();
                 StatusMessage = $"找到 {Patients.Count} 条记录";
             }
         }
@@ -193,6 +247,26 @@ public partial class PatientManagementViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>按标签/过敏史关键词本地过滤当前列表</summary>
+    private void ApplyTagFilter()
+    {
+        var filter = TagFilter.Trim();
+        Patients.Clear();
+
+        IEnumerable<PatientDto> source = _allLoadedPatients;
+        if (!string.IsNullOrWhiteSpace(filter))
+        {
+            source = source.Where(p =>
+                (p.Tags is not null && p.Tags.Contains(filter, StringComparison.OrdinalIgnoreCase)) ||
+                (p.ChronicTags is not null && p.ChronicTags.Contains(filter, StringComparison.OrdinalIgnoreCase)) ||
+                (p.Allergies is not null && p.Allergies.Contains(filter, StringComparison.OrdinalIgnoreCase)) ||
+                p.Name.Contains(filter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        foreach (var p in source)
+            Patients.Add(p);
     }
 
     private bool CanSearch() => !IsBusy && !string.IsNullOrWhiteSpace(SearchKeyword);
@@ -221,7 +295,8 @@ public partial class PatientManagementViewModel : ObservableObject
                 NewPhone.Trim(),
                 string.IsNullOrWhiteSpace(NewAllergies) ? null : NewAllergies.Trim(),
                 string.IsNullOrWhiteSpace(NewHistory) ? null : NewHistory.Trim(),
-                string.IsNullOrWhiteSpace(NewChronicTags) ? null : NewChronicTags.Trim());
+                string.IsNullOrWhiteSpace(NewChronicTags) ? null : NewChronicTags.Trim(),
+                tags: string.IsNullOrWhiteSpace(NewTags) ? null : NewTags.Trim());
 
             StatusMessage = $"患者档案已创建（ID: {patientId}）";
 
@@ -235,6 +310,8 @@ public partial class PatientManagementViewModel : ObservableObject
             NewAllergies = string.Empty;
             NewHistory = string.Empty;
             NewChronicTags = string.Empty;
+            NewTags = string.Empty;
+            SameNameWarning = null;
 
             // 自动搜索新创建的患者并在列表中显示
             SearchKeyword = createdPhone;
@@ -251,9 +328,55 @@ public partial class PatientManagementViewModel : ObservableObject
     }
 
     /// <summary>手机号实时验证（中国手机号：11位，1开头，第二位3-9）</summary>
-    partial void OnNewPhoneChanged(string value)
+    partial void OnNewNameChanged(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        // 同名检查（P1-3 重复建档拦截）：输入姓名时防抖查询同名患者，提示核对手机号
+        _sameNameCts?.Cancel();
+
+        if (IsEditMode || string.IsNullOrWhiteSpace(value))
+        {
+            SameNameWarning = null;
+            return;
+        }
+
+        var cts = new CancellationTokenSource();
+        _sameNameCts = cts;
+        _ = CheckSameNameAsync(value.Trim(), cts.Token);
+    }
+
+    private async Task CheckSameNameAsync(string name, CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(400, ct);
+
+            using var scope = _scopeFactory.CreateScope();
+            var patientService = scope.ServiceProvider.GetRequiredService<IPatientService>();
+            var matches = await patientService.SearchByNameAsync(name, ct);
+
+            if (ct.IsCancellationRequested)
+                return;
+
+            SameNameWarning = matches.Count > 0
+                ? $"存在 {matches.Count} 位同名患者（{string.Join("、", matches.Take(3).Select(m => m.Phone))}），请核对手机号避免重复建档"
+                : null;
+        }
+        catch (OperationCanceledException)
+        {
+            // 用户继续输入，取消旧查询
+        }
+        catch
+        {
+            // 同名查询失败不影响建档
+        }
+    }
+
+    /// <summary>标签/过敏史筛选：本地过滤当前列表（不重新查库）</summary>
+    partial void OnTagFilterChanged(string value) => ApplyTagFilter();
+
+    /// <summary>手机号实时验证（中国手机号：11位，1开头，第二位3-9）</summary>
+    partial void OnNewPhoneChanged(string value)
+    {        if (string.IsNullOrWhiteSpace(value))
         {
             NewPhoneError = null;
             return;
@@ -360,6 +483,8 @@ public partial class PatientManagementViewModel : ObservableObject
         NewAllergies = SelectedPatient.Allergies ?? string.Empty;
         NewHistory = SelectedPatient.History ?? string.Empty;
         NewChronicTags = SelectedPatient.ChronicTags ?? string.Empty;
+        NewTags = SelectedPatient.Tags ?? string.Empty;
+        SameNameWarning = null;
 
         StatusMessage = $"正在编辑患者：{SelectedPatient.Name}";
         ErrorMessage = null;
@@ -395,7 +520,8 @@ public partial class PatientManagementViewModel : ObservableObject
                 NewPhone.Trim(),
                 string.IsNullOrWhiteSpace(NewAllergies) ? null : NewAllergies.Trim(),
                 string.IsNullOrWhiteSpace(NewHistory) ? null : NewHistory.Trim(),
-                string.IsNullOrWhiteSpace(NewChronicTags) ? null : NewChronicTags.Trim());
+                string.IsNullOrWhiteSpace(NewChronicTags) ? null : NewChronicTags.Trim(),
+                tags: string.IsNullOrWhiteSpace(NewTags) ? null : NewTags.Trim());
 
             if (success)
             {
@@ -445,8 +571,64 @@ public partial class PatientManagementViewModel : ObservableObject
         NewAllergies = string.Empty;
         NewHistory = string.Empty;
         NewChronicTags = string.Empty;
+        NewTags = string.Empty;
+        SameNameWarning = null;
 
         StatusMessage = null;
         ErrorMessage = null;
     }
+
+    /// <summary>导出当前列表为 CSV（Excel 可直接打开，UTF-8 BOM）</summary>
+    [RelayCommand]
+    private void ExportCsv()
+    {
+        if (Patients.Count == 0)
+        {
+            StatusMessage = "当前列表为空，无可导出数据";
+            return;
+        }
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "CSV 文件 (*.csv)|*.csv",
+            FileName = $"患者列表_{DateTime.Now:yyyyMMdd_HHmmss}.csv",
+            Title = "导出患者列表"
+        };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        try
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("ID,姓名,性别,出生日期,联系电话,过敏史,病史,基础疾病,标签");
+
+            foreach (var p in Patients)
+            {
+                sb.AppendLine(string.Join(",",
+                    p.Id.ToString(),
+                    CsvEscape(p.Name),
+                    CsvEscape(p.Gender),
+                    p.Dob?.ToString("yyyy-MM-dd") ?? string.Empty,
+                    CsvEscape(p.Phone),
+                    CsvEscape(p.Allergies ?? string.Empty),
+                    CsvEscape(p.History ?? string.Empty),
+                    CsvEscape(p.ChronicTags ?? string.Empty),
+                    CsvEscape(p.Tags ?? string.Empty)));
+            }
+
+            File.WriteAllText(dialog.FileName, sb.ToString(), new UTF8Encoding(true));
+            StatusMessage = $"已导出 {Patients.Count} 条记录：{dialog.FileName}";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"导出失败：{ExceptionFormatter.GetMessage(ex)}";
+        }
+    }
+
+    /// <summary>CSV 字段转义：含逗号/引号/换行时加引号包裹</summary>
+    private static string CsvEscape(string value) =>
+        value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r')
+            ? "\"" + value.Replace("\"", "\"\"") + "\""
+            : value;
 }
