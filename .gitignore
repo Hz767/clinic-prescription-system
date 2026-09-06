@@ -32,6 +32,8 @@ clinic.db
 # ── 备份文件 ──
 Backups/
 *.zip
+*.bak
+clinic.db.bak-*
 
 # ── 日志文件 ──
 *.log
