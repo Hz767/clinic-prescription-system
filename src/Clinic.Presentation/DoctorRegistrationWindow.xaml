@@ -1,0 +1,367 @@
+﻿<Window x:Class="Clinic.Presentation.DoctorRegistrationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Clinic.Presentation.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:DoctorRegistrationViewModel}"
+        Title="医生注册 — 陈医生诊所处方管理系统"
+        Height="720" Width="780"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanMinimize">
+    <Window.Resources>
+        <conv:NullToCollapsedConverter x:Key="NullToCollapsedConverter"
+                                        xmlns:conv="clr-namespace:Clinic.Presentation.Converters"/>
+    </Window.Resources>
+
+    <Grid Background="{StaticResource SurfaceDarkBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题栏 -->
+        <Border Grid.Row="0" Background="#0F766E" Padding="20,12">
+            <DockPanel>
+                <TextBlock Text="医生注册" FontSize="18" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                <TextBlock DockPanel.Dock="Right" Text="只需填写账号信息即可注册，资格证明可后期补充" FontSize="{StaticResource FontSizeTiny}" Foreground="#A7F3D0" VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
+
+        <!-- 内容区（可滚动） -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16">
+            <StackPanel>
+
+                <!-- ── 账号信息 ── -->
+                <Border Background="White" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="账号信息" FontSize="{StaticResource FontSizeSmall}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="用户名 *" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="姓名 *" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                            </StackPanel>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="密码 * (至少6位)" Style="{StaticResource TextLabel}"/>
+                                <PasswordBox x:Name="PwdBox" PasswordChanged="PwdBox_PasswordChanged" Margin="0,2,0,8"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="确认密码 *" Style="{StaticResource TextLabel}"/>
+                                <PasswordBox x:Name="ConfirmPwdBox" PasswordChanged="ConfirmPwdBox_PasswordChanged" Margin="0,2,0,8"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── 基本信息 ── -->
+                <Border Background="White" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="基本信息" FontSize="{StaticResource FontSizeSmall}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="性别" Style="{StaticResource TextLabel}"/>
+                                <ComboBox SelectedValue="{Binding Gender, Mode=TwoWay}"
+                                          SelectedValuePath="Content"
+                                          Margin="0,2,0,8">
+                                    <ComboBoxItem Content="男"/>
+                                    <ComboBoxItem Content="女"/>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="出生日期" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding BirthDate, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" ToolTip="格式：YYYY-MM-DD"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="身份证号" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding IdCard, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                            </StackPanel>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="联系电话" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="电子邮箱" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                            </StackPanel>
+                        </Grid>
+                        <StackPanel>
+                            <TextBlock Text="联系地址" Style="{StaticResource TextLabel}"/>
+                            <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── 可选信息（可折叠） ── -->
+                <Border Background="White" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="0" Margin="0,0,0,12">
+                    <ToggleButton IsChecked="{Binding ShowOptionalSections, Mode=TwoWay}"
+                                  Background="Transparent" BorderThickness="0" Padding="16,12"
+                                  HorizontalContentAlignment="Stretch" Cursor="Hand">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" FontSize="{StaticResource FontSizeBody}" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="▼ 展开"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ShowOptionalSections}" Value="True">
+                                                <Setter Property="Text" Value="▲ 收起"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <StackPanel>
+                                <TextBlock Text="行医资格证明与照片上传（可选）" FontSize="{StaticResource FontSizeSmall}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="注册后可在个人中心补充完善，不影响账号注册" FontSize="{StaticResource FontSizeMicro}" Foreground="{StaticResource TextMutedBrush}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </ToggleButton>
+                </Border>
+
+                <!-- ── 行医资格证明 ── -->
+                <Border Background="White" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12"
+                        Visibility="{Binding ShowOptionalSections, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel>
+                        <TextBlock Text="行医资格证明" FontSize="{StaticResource FontSizeSmall}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="医师资格证号" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding MedicalLicenseNo, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="执业医师证号" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding PracticeLicenseNo, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                            </StackPanel>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="资格证发证日期" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding MedicalLicenseIssueDate, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" ToolTip="YYYY-MM-DD"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="资格证有效期至" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding MedicalLicenseExpiryDate, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" ToolTip="YYYY-MM-DD"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="专业" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding Specialty, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                            </StackPanel>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="执业证发证日期" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding PracticeLicenseIssueDate, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" ToolTip="YYYY-MM-DD"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="执业证有效期至" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding PracticeLicenseExpiryDate, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" ToolTip="YYYY-MM-DD"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="职称" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                            </StackPanel>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="科室" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding Department, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="执业机构" Style="{StaticResource TextLabel}"/>
+                                <TextBox Text="{Binding Hospital, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── 照片上传 ── -->
+                <Border Background="White" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12"
+                        Visibility="{Binding ShowOptionalSections, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel>
+                        <TextBlock Text="照片上传" FontSize="{StaticResource FontSizeSmall}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- 人像照片 -->
+                            <Border Grid.Column="0" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="10">
+                                <StackPanel>
+                                    <TextBlock Text="人像照片" FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold" Foreground="{StaticResource Gray700Brush}" Margin="0,0,0,6"/>
+                                    <Border Height="100" Background="{StaticResource Gray50Brush}" CornerRadius="4" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1">
+                                        <Grid>
+                                            <Image Source="{Binding AvatarPath}" Stretch="Uniform" Visibility="{Binding AvatarPath, Converter={StaticResource NullToCollapsedConverter}}"/>
+                                            <TextBlock Text="点击上传" FontSize="{StaticResource FontSizeMicro}" Foreground="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Visibility="{Binding AvatarPath, Converter={StaticResource NullToCollapsedConverter}}"/>
+                                        </Grid>
+                                    </Border>
+                                    <Button Content="上传人像照片" Style="{StaticResource BtnOutlineSm}"
+                                            Command="{Binding UploadPhotoCommand}" CommandParameter="avatar"
+                                            Margin="0,6,0,0" FontSize="{StaticResource FontSizeMicro}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 身份证正面 -->
+                            <Border Grid.Column="2" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="10">
+                                <StackPanel>
+                                    <TextBlock Text="身份证正面" FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold" Foreground="{StaticResource Gray700Brush}" Margin="0,0,0,6"/>
+                                    <Border Height="100" Background="{StaticResource Gray50Brush}" CornerRadius="4" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1">
+                                        <Grid>
+                                            <Image Source="{Binding IdCardFrontPath}" Stretch="Uniform" Visibility="{Binding IdCardFrontPath, Converter={StaticResource NullToCollapsedConverter}}"/>
+                                            <TextBlock Text="点击上传" FontSize="{StaticResource FontSizeMicro}" Foreground="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Visibility="{Binding IdCardFrontPath, Converter={StaticResource NullToCollapsedConverter}}"/>
+                                        </Grid>
+                                    </Border>
+                                    <Button Content="上传身份证正面" Style="{StaticResource BtnOutlineSm}"
+                                            Command="{Binding UploadPhotoCommand}" CommandParameter="idcard_front"
+                                            Margin="0,6,0,0" FontSize="{StaticResource FontSizeMicro}"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Grid Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- 身份证背面 -->
+                            <Border Grid.Column="0" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="10">
+                                <StackPanel>
+                                    <TextBlock Text="身份证背面" FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold" Foreground="{StaticResource Gray700Brush}" Margin="0,0,0,6"/>
+                                    <Border Height="100" Background="{StaticResource Gray50Brush}" CornerRadius="4" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1">
+                                        <Grid>
+                                            <Image Source="{Binding IdCardBackPath}" Stretch="Uniform" Visibility="{Binding IdCardBackPath, Converter={StaticResource NullToCollapsedConverter}}"/>
+                                            <TextBlock Text="点击上传" FontSize="{StaticResource FontSizeMicro}" Foreground="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Visibility="{Binding IdCardBackPath, Converter={StaticResource NullToCollapsedConverter}}"/>
+                                        </Grid>
+                                    </Border>
+                                    <Button Content="上传身份证背面" Style="{StaticResource BtnOutlineSm}"
+                                            Command="{Binding UploadPhotoCommand}" CommandParameter="idcard_back"
+                                            Margin="0,6,0,0" FontSize="{StaticResource FontSizeMicro}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 医师资格证 -->
+                            <Border Grid.Column="2" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="10">
+                                <StackPanel>
+                                    <TextBlock Text="医师资格证" FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold" Foreground="{StaticResource Gray700Brush}" Margin="0,0,0,6"/>
+                                    <Border Height="100" Background="{StaticResource Gray50Brush}" CornerRadius="4" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1">
+                                        <Grid>
+                                            <Image Source="{Binding MedicalLicensePhotoPath}" Stretch="Uniform" Visibility="{Binding MedicalLicensePhotoPath, Converter={StaticResource NullToCollapsedConverter}}"/>
+                                            <TextBlock Text="点击上传" FontSize="{StaticResource FontSizeMicro}" Foreground="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Visibility="{Binding MedicalLicensePhotoPath, Converter={StaticResource NullToCollapsedConverter}}"/>
+                                        </Grid>
+                                    </Border>
+                                    <Button Content="上传资格证照片" Style="{StaticResource BtnOutlineSm}"
+                                            Command="{Binding UploadPhotoCommand}" CommandParameter="medical_license"
+                                            Margin="0,6,0,0" FontSize="{StaticResource FontSizeMicro}"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- 执业证 -->
+                        <Border BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,8,0,0">
+                            <StackPanel>
+                                <TextBlock Text="执业医师证" FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold" Foreground="{StaticResource Gray700Brush}" Margin="0,0,0,6"/>
+                                <Border Height="100" Background="{StaticResource Gray50Brush}" CornerRadius="4" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1">
+                                    <Grid>
+                                        <Image Source="{Binding PracticeLicensePhotoPath}" Stretch="Uniform" Visibility="{Binding PracticeLicensePhotoPath, Converter={StaticResource NullToCollapsedConverter}}"/>
+                                        <TextBlock Text="点击上传" FontSize="{StaticResource FontSizeMicro}" Foreground="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Visibility="{Binding PracticeLicensePhotoPath, Converter={StaticResource NullToCollapsedConverter}}"/>
+                                    </Grid>
+                                </Border>
+                                <Button Content="上传执业证照片" Style="{StaticResource BtnOutlineSm}"
+                                        Command="{Binding UploadPhotoCommand}" CommandParameter="practice_license"
+                                        Margin="0,6,0,0" FontSize="{StaticResource FontSizeMicro}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- 错误/成功提示 -->
+                <Border Background="{StaticResource ErrorBgBrush}" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="6" Padding="12,8"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsedConverter}}" Margin="0,0,0,8">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="#991B1B" FontSize="{StaticResource FontSizeCaption}" TextWrapping="Wrap"/>
+                </Border>
+                <Border Background="{StaticResource SuccessBgBrush}" BorderBrush="#6EE7B7" BorderThickness="1" CornerRadius="6" Padding="12,8"
+                        Visibility="{Binding SuccessMessage, Converter={StaticResource NullToCollapsedConverter}}" Margin="0,0,0,8">
+                    <TextBlock Text="{Binding SuccessMessage}" Foreground="#065F46" FontSize="{StaticResource FontSizeCaption}" TextWrapping="Wrap"/>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 底部按钮 -->
+        <Border Grid.Row="2" Background="White" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1,0,0,0" Padding="16,12">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="取消" Style="{StaticResource BtnOutline}"
+                        Command="{Binding CloseWindowCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                        Margin="8,0,0,0" Width="100"/>
+                <Button DockPanel.Dock="Right" Content="提交注册" Style="{StaticResource BtnPrimary}"
+                        Command="{Binding RegisterCommand}" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}"
+                        Width="120"/>
+                <TextBlock VerticalAlignment="Center" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}">
+                    <Run Text="* 为必填项（用户名、密码、姓名），行医资格证明和照片可后期补充"/>
+                </TextBlock>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

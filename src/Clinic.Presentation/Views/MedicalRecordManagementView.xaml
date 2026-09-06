@@ -1,0 +1,96 @@
+﻿<UserControl x:Class="Clinic.Presentation.Views.MedicalRecordManagementView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Clinic.Presentation.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:MedicalRecordManagementViewModel}">
+    <UserControl.Resources>
+        <conv:NullToCollapsedConverter x:Key="NullToCollapsedConverter"
+                                        xmlns:conv="clr-namespace:Clinic.Presentation.Converters"/>
+    </UserControl.Resources>
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="8"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题栏 -->
+        <DockPanel Grid.Row="0">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                <Button Content="刷新"
+                        Style="{StaticResource BtnOutlineSm}"
+                        Command="{Binding RefreshCommand}"
+                        Padding="12,4" Margin="8,0,0,0"/>
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="病历管理" FontSize="18" FontWeight="Bold"
+                           Foreground="{StaticResource Gray800Brush}"/>
+                <TextBlock Text="浏览和检索所有患者的就诊病历记录"
+                           FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource Gray500Brush}" Margin="0,2,0,0"/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- 搜索栏 -->
+        <Border Grid.Row="2" Background="White" CornerRadius="8"
+                BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1"
+                Padding="12,10">
+            <DockPanel>
+                <TextBlock Text="共 {Binding TotalCount} 条记录，筛选后 {Binding FilteredCount} 条"
+                           FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource Gray500Brush}"
+                           VerticalAlignment="Center" DockPanel.Dock="Right"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="搜索：" FontSize="{StaticResource FontSizeCaption}" VerticalAlignment="Center"
+                               Foreground="{StaticResource Gray600Brush}"/>
+                    <TextBox Width="280"
+                             Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="支持患者姓名、诊断、处方编号、医生搜索"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- 病历列表 -->
+        <Border Grid.Row="4" Background="White" CornerRadius="8"
+                BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1">
+            <DataGrid EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" x:Name="RecordDataGrid"
+                      ItemsSource="{Binding FilteredRecords}"
+                      SelectedItem="{Binding SelectedRecord}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      IsReadOnly="True"
+                      SelectionMode="Single"
+                      GridLinesVisibility="Horizontal"
+                      HeadersVisibility="Column"
+                      RowHeight="36"
+                      MouseDoubleClick="RecordDataGrid_MouseDoubleClick"
+                      AlternatingRowBackground="{StaticResource Gray50Brush}"
+                      RowBackground="White">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="病历编号" Binding="{Binding Id}" Width="80"/>
+                    <DataGridTextColumn Header="患者姓名" Binding="{Binding PatientName}" Width="100"/>
+                    <DataGridTextColumn Header="性别" Binding="{Binding PatientGender}" Width="60"/>
+                    <DataGridTextColumn Header="就诊日期" Binding="{Binding VisitAt, StringFormat=yyyy-MM-dd HH:mm}" Width="140"/>
+                    <DataGridTextColumn Header="主诉" Binding="{Binding ChiefComplaint}" Width="*"/>
+                    <DataGridTextColumn Header="诊断" Binding="{Binding Diagnosis}" Width="180"/>
+                    <DataGridTextColumn Header="医生" Binding="{Binding DoctorName}" Width="80"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- 状态消息 -->
+        <StackPanel Grid.Row="5" Margin="0,8,0,0">
+            <TextBlock Text="{Binding StatusMessage}" FontSize="{StaticResource FontSizeTiny}"
+                       Foreground="{StaticResource SuccessBrush}"
+                       Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsedConverter}}"/>
+            <TextBlock Text="{Binding ErrorMessage}" FontSize="{StaticResource FontSizeTiny}"
+                       Foreground="{StaticResource ErrorBrush}"
+                       Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsedConverter}}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
