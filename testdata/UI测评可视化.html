@@ -1,0 +1,135 @@
+<html style="margin:0;padding:0;">
+<div style="background-color:transparent;box-sizing:border-box;font-family:'PingFang SC','Microsoft YaHei',sans-serif;color:#1A1B1C;padding:8px;">
+  <div style="border-radius:14px;border:1px solid #E4E3DD;background:#FFFFFF;padding:16px;box-sizing:border-box;">
+    <div style="font-size:16px;font-weight:600;margin-bottom:2px;">UI 交互界面测评 · 问题分布与优化路线</div>
+    <div style="font-size:12px;color:#6B7280;margin-bottom:14px;">共发现 42 项问题（P0 四项 / P1 十三项 / P2 二十五项）· 2026-09-05</div>
+
+    <!-- 总体评分 -->
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">总体评分（5 维度）</div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:8px;"><div style="width:72px;font-size:12px;color:#6B7280;flex:0 0 auto;">视觉设计</div><div style="flex:1;height:10px;background:#F4F3EE;border-radius:5px;overflow:hidden;"><div style="width:80%;height:100%;background:#0D9488;"></div></div><div style="width:36px;font-size:11px;color:#6B7280;text-align:right;">★★★★☆</div></div>
+      <div style="display:flex;align-items:center;gap:8px;"><div style="width:72px;font-size:12px;color:#6B7280;flex:0 0 auto;">交互效率</div><div style="flex:1;height:10px;background:#F4F3EE;border-radius:5px;overflow:hidden;"><div style="width:60%;height:100%;background:#0D9488;"></div></div><div style="width:36px;font-size:11px;color:#6B7280;text-align:right;">★★★☆☆</div></div>
+      <div style="display:flex;align-items:center;gap:8px;"><div style="width:72px;font-size:12px;color:#6B7280;flex:0 0 auto;">信息架构</div><div style="flex:1;height:10px;background:#F4F3EE;border-radius:5px;overflow:hidden;"><div style="width:60%;height:100%;background:#0D9488;"></div></div><div style="width:36px;font-size:11px;color:#6B7280;text-align:right;">★★★☆☆</div></div>
+      <div style="display:flex;align-items:center;gap:8px;"><div style="width:72px;font-size:12px;color:#6B7280;flex:0 0 auto;">反馈容错</div><div style="flex:1;height:10px;background:#F4F3EE;border-radius:5px;overflow:hidden;"><div style="width:60%;height:100%;background:#0D9488;"></div></div><div style="width:36px;font-size:11px;color:#6B7280;text-align:right;">★★★☆☆</div></div>
+      <div style="display:flex;align-items:center;gap:8px;"><div style="width:72px;font-size:12px;color:#6B7280;flex:0 0 auto;">可访问性</div><div style="flex:1;height:10px;background:#F4F3EE;border-radius:5px;overflow:hidden;"><div style="width:40%;height:100%;background:#0D9488;"></div></div><div style="width:36px;font-size:11px;color:#6B7280;text-align:right;">★★☆☆☆</div></div>
+    </div>
+
+    <!-- 问题分布堆叠柱状图 -->
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">各模块问题数量（按优先级堆叠）</div>
+    <div style="display:flex;align-items:flex-end;gap:10px;height:180px;padding:0 4px;margin-bottom:6px;">
+      <!-- 框架 5=0+2+3 -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+        <div style="width:100%;max-width:48px;display:flex;flex-direction:column;justify-content:flex-end;">
+          <div style="height:60px;background:#3B82F6;border-radius:4px 4px 0 0;" title="P2: 3"></div>
+          <div style="height:40px;background:#F59E0B;" title="P1: 2"></div>
+        </div>
+        <div style="font-size:11px;color:#6B7280;margin-top:4px;">框架</div>
+      </div>
+      <!-- 登录 3=0+0+3 -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+        <div style="width:100%;max-width:48px;display:flex;flex-direction:column;justify-content:flex-end;">
+          <div style="height:60px;background:#3B82F6;border-radius:4px 4px 0 0;" title="P2: 3"></div>
+        </div>
+        <div style="font-size:11px;color:#6B7280;margin-top:4px;">登录</div>
+      </div>
+      <!-- 处方 7=1+2+4 -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+        <div style="width:100%;max-width:48px;display:flex;flex-direction:column;justify-content:flex-end;">
+          <div style="height:80px;background:#3B82F6;" title="P2: 4"></div>
+          <div style="height:40px;background:#F59E0B;" title="P1: 2"></div>
+          <div style="height:20px;background:#DC2626;border-radius:4px 4px 0 0;" title="P0: 1"></div>
+        </div>
+        <div style="font-size:11px;color:#6B7280;margin-top:4px;">处方</div>
+      </div>
+      <!-- 患者 5=0+2+3 -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+        <div style="width:100%;max-width:48px;display:flex;flex-direction:column;justify-content:flex-end;">
+          <div style="height:60px;background:#3B82F6;" title="P2: 3"></div>
+          <div style="height:40px;background:#F59E0B;border-radius:4px 4px 0 0;" title="P1: 2"></div>
+        </div>
+        <div style="font-size:11px;color:#6B7280;margin-top:4px;">患者</div>
+      </div>
+      <!-- 库存 6=1+2+3 -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+        <div style="width:100%;max-width:48px;display:flex;flex-direction:column;justify-content:flex-end;">
+          <div style="height:60px;background:#3B82F6;" title="P2: 3"></div>
+          <div style="height:40px;background:#F59E0B;" title="P1: 2"></div>
+          <div style="height:20px;background:#DC2626;border-radius:4px 4px 0 0;" title="P0: 1"></div>
+        </div>
+        <div style="font-size:11px;color:#6B7280;margin-top:4px;">库存</div>
+      </div>
+      <!-- 收费 6=2+1+3 -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+        <div style="width:100%;max-width:48px;display:flex;flex-direction:column;justify-content:flex-end;">
+          <div style="height:60px;background:#3B82F6;" title="P2: 3"></div>
+          <div style="height:20px;background:#F59E0B;" title="P1: 1"></div>
+          <div style="height:40px;background:#DC2626;border-radius:4px 4px 0 0;" title="P0: 2"></div>
+        </div>
+        <div style="font-size:11px;color:#6B7280;margin-top:4px;">收费</div>
+      </div>
+      <!-- 查询 4=0+1+3 -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+        <div style="width:100%;max-width:48px;display:flex;flex-direction:column;justify-content:flex-end;">
+          <div style="height:60px;background:#3B82F6;" title="P2: 3"></div>
+          <div style="height:20px;background:#F59E0B;border-radius:4px 4px 0 0;" title="P1: 1"></div>
+        </div>
+        <div style="font-size:11px;color:#6B7280;margin-top:4px;">查询</div>
+      </div>
+      <!-- 通用 6=0+3+3 -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+        <div style="width:100%;max-width:48px;display:flex;flex-direction:column;justify-content:flex-end;">
+          <div style="height:60px;background:#3B82F6;" title="P2: 3"></div>
+          <div style="height:60px;background:#F59E0B;border-radius:4px 4px 0 0;" title="P1: 3"></div>
+        </div>
+        <div style="font-size:11px;color:#6B7280;margin-top:4px;">通用</div>
+      </div>
+    </div>
+    <!-- 图例 -->
+    <div style="display:flex;gap:14px;justify-content:center;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:4px;"><div style="width:12px;height:12px;background:#DC2626;border-radius:2px;"></div><span style="font-size:11px;color:#6B7280;">P0 上线前必修 (4)</span></div>
+      <div style="display:flex;align-items:center;gap:4px;"><div style="width:12px;height:12px;background:#F59E0B;border-radius:2px;"></div><span style="font-size:11px;color:#6B7280;">P1 近期优化 (13)</span></div>
+      <div style="display:flex;align-items:center;gap:4px;"><div style="width:12px;height:12px;background:#3B82F6;border-radius:2px;"></div><span style="font-size:11px;color:#6B7280;">P2 中长期 (25)</span></div>
+    </div>
+
+    <!-- 优化路线图 -->
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">优化路线图（三阶段）</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <!-- 阶段1 -->
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="flex:0 0 auto;width:64px;padding:6px 0;border-radius:8px;background:rgba(220,38,38,0.12);text-align:center;">
+          <div style="font-size:10px;color:#DC2626;font-weight:600;">第一阶段</div>
+          <div style="font-size:10px;color:#6B7280;">1-2 天</div>
+        </div>
+        <div style="flex:1;padding:8px 10px;border-radius:8px;background:#F9FAFB;border:1px solid #E5E7EB;">
+          <div style="font-size:12px;font-weight:600;color:#1A1B1C;margin-bottom:3px;">P0 核心效率问题</div>
+          <div style="font-size:11px;color:#4B5563;line-height:1.5;">① 处方药品分类筛选 ② 库存概览搜索+筛选 ③ 收费页重构为 Tab（待办工作台/报表/流水）④ 处方 ID 改模糊搜索下拉</div>
+        </div>
+      </div>
+      <!-- 阶段2 -->
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="flex:0 0 auto;width:64px;padding:6px 0;border-radius:8px;background:rgba(245,158,11,0.14);text-align:center;">
+          <div style="font-size:10px;color:#B45309;font-weight:600;">第二阶段</div>
+          <div style="font-size:10px;color:#6B7280;">3-5 天</div>
+        </div>
+        <div style="flex:1;padding:8px 10px;border-radius:8px;background:#F9FAFB;border:1px solid #E5E7EB;">
+          <div style="font-size:12px;font-weight:600;color:#1A1B1C;margin-bottom:3px;">P1 体验提升（13 项）</div>
+          <div style="font-size:11px;color:#4B5563;line-height:1.5;">导航高亮 + 全局 Toast；药品库存/价格列 + 保存后直接打印；患者实时搜索+虚拟化；入库搜索下拉+导入进度；审核→收费→发药串联；处方详情预览；统一 DataGrid/输入框/对话框样式</div>
+        </div>
+      </div>
+      <!-- 阶段3 -->
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="flex:0 0 auto;width:64px;padding:6px 0;border-radius:8px;background:rgba(59,130,246,0.12);text-align:center;">
+          <div style="font-size:10px;color:#2563EB;font-weight:600;">第三阶段</div>
+          <div style="font-size:10px;color:#6B7280;">1 周+</div>
+        </div>
+        <div style="flex:1;padding:8px 10px;border-radius:8px;background:#F9FAFB;border:1px solid #E5E7EB;">
+          <div style="font-size:12px;font-weight:600;color:#1A1B1C;margin-bottom:3px;">P2 完善（25 项）</div>
+          <div style="font-size:11px;color:#4B5563;line-height:1.5;">暗色主题切换；键盘快捷键体系；危险操作二次确认；报表图表化；IconButton 控件封装；扫码枪支持；患者合并；POS 序列号记忆</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;color:#9CA3AF;margin-top:14px;border-top:1px solid #E4E3DD;padding-top:8px;">数据来源：UI 测评报告（testdata/UI交互界面测评与优化建议.md）；参考 GitHub keraunos-ab/clinic-software、DeelleDev/E-Clinic、Marothi-Mohale/clinic-admin</div>
+  </div>
+</div>
+</html>

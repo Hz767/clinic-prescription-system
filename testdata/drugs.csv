@@ -1,0 +1,270 @@
+﻿generic_name_cn,generic_name_en,spec,unit,default_usage,is_antibiotic,antibiotic_level,is_toxic_drug,contraindication_tags,cost_price_ref,retail_price_ref,reorder_level,drug_class,otc_type
+阿莫西林胶囊,Amoxicillin Capsules,0.25g×24粒,盒,口服 0.5g tid,1,NonRestricted,0,青霉素类,7.75,12.50,20,抗感染-青霉素类,Rx
+阿莫西林克拉维酸钾片,Amoxicillin/Clavulanate Tablets,0.457g×12片,盒,口服 0.457g bid,1,NonRestricted,0,青霉素类,11.16,18.00,15,抗感染-青霉素类,Rx
+氨苄西林胶囊,Ampicillin Capsules,0.25g×24粒,盒,口服 0.5g qid,1,NonRestricted,0,青霉素类,6.08,9.80,,抗感染-青霉素类,Rx
+头孢氨苄胶囊,Cefalexin Capsules,0.25g×24粒,盒,口服 0.5g qid,1,NonRestricted,0,头孢类,5.27,8.50,20,抗感染-头孢类,Rx
+头孢拉定胶囊,Cefradine Capsules,0.25g×24粒,盒,口服 0.5g qid,1,NonRestricted,0,头孢类,5.58,9.00,,抗感染-头孢类,Rx
+头孢克洛胶囊,Cefaclor Capsules,0.25g×12粒,盒,口服 0.25g tid,1,Restricted,0,头孢类,15.50,25.00,12,抗感染-头孢类,Rx
+头孢呋辛酯片,Cefuroxime Axetil Tablets,0.25g×12片,盒,口服 0.25g bid,1,Restricted,0,头孢类,17.36,28.00,,抗感染-头孢类,Rx
+头孢克肟分散片,Cefixime Dispersible Tablets,0.1g×12片,盒,口服 0.1g bid,1,Restricted,0,头孢类,13.64,22.00,,抗感染-头孢类,Rx
+阿奇霉素分散片,Azithromycin Dispersible Tablets,0.25g×6片,盒,口服 0.5g qd,1,NonRestricted,0,,9.30,15.00,15,抗感染-大环内酯类,Rx
+克拉霉素片,Clarithromycin Tablets,0.25g×12片,盒,口服 0.25g bid,1,NonRestricted,0,,9.92,16.00,,抗感染-大环内酯类,Rx
+罗红霉素胶囊,Roxithromycin Capsules,0.15g×12粒,盒,口服 0.15g bid,1,NonRestricted,0,,8.06,13.00,,抗感染-大环内酯类,Rx
+左氧氟沙星片,Levofloxacin Tablets,0.5g×7片,盒,口服 0.5g qd,1,Restricted,0,喹诺酮类,10.23,16.50,15,抗感染-喹诺酮类,Rx
+盐酸环丙沙星片,Ciprofloxacin Tablets,0.25g×12片,盒,口服 0.5g bid,1,Restricted,0,喹诺酮类,6.20,10.00,,抗感染-喹诺酮类,Rx
+诺氟沙星胶囊,Norfloxacin Capsules,0.1g×24粒,盒,口服 0.4g bid,1,Restricted,0,喹诺酮类,4.03,6.50,,抗感染-喹诺酮类,Rx
+庆大霉素片,Gentamicin Tablets,40mg×100片,瓶,口服 80mg tid,1,NonRestricted,0,氨基糖苷类,3.10,5.00,,抗感染-氨基糖苷类,Rx
+甲硝唑片,Metronidazole Tablets,0.2g×100片,瓶,口服 0.4g tid,0,None,0,,2.79,4.50,10,抗感染-硝基咪唑类,Rx
+奥硝唑分散片,Ornidazole Dispersible Tablets,0.25g×12片,盒,口服 0.5g bid,0,None,0,,8.68,14.00,,抗感染-硝基咪唑类,Rx
+复方磺胺甲噁唑片,Compound Sulfamethoxazole Tablets,0.48g×12片,盒,口服 1片 bid,1,NonRestricted,0,磺胺类,4.34,7.00,,抗感染-磺胺类,Rx
+盐酸小檗碱片,Berberine Hydrochloride Tablets,0.1g×100片,瓶,口服 0.3g tid,0,None,0,,4.96,8.00,,抗感染-其他,OTC甲
+阿昔洛韦片,Aciclovir Tablets,0.2g×24片,盒,口服 0.4g tid,0,None,0,,5.58,9.00,,抗感染-抗病毒,Rx
+利巴韦林颗粒,Ribavirin Granules,50mg×18袋,盒,口服 0.15g tid,0,None,0,,7.44,12.00,,抗感染-抗病毒,Rx
+磷酸奥司他韦胶囊,Oseltamivir Phosphate Capsules,75mg×10粒,盒,口服 75mg bid,0,None,0,,27.90,45.00,10,抗感染-抗病毒,Rx
+伊曲康唑胶囊,Itraconazole Capsules,0.1g×14粒,盒,口服 0.2g qd,0,None,0,,21.70,35.00,,抗感染-抗真菌,Rx
+氟康唑胶囊,Fluconazole Capsules,0.15g×6粒,盒,口服 0.15g qd,0,None,0,,11.16,18.00,,抗感染-抗真菌,Rx
+制霉菌素片,Nystatin Tablets,50万U×100片,瓶,口服 50万U tid,0,None,0,,12.40,20.00,,抗感染-抗真菌,Rx
+布洛芬缓释胶囊,Ibuprofen Sustained-release Capsules,0.3g×20粒,盒,口服 0.3g bid,0,None,0,NSAIDs,9.30,15.00,25,解热镇痛,OTC乙
+布洛芬片,Ibuprofen Tablets,0.2g×100片,瓶,口服 0.2g tid,0,None,0,NSAIDs,4.96,8.00,30,解热镇痛,OTC甲
+布洛芬混悬液,Ibuprofen Suspension,100ml:2g,瓶,口服 5ml qid,0,None,0,NSAIDs,7.44,12.00,,解热镇痛-儿科,OTC甲
+对乙酰氨基酚片,Paracetamol Tablets,0.5g×20片,盒,口服 0.5g tid,0,None,0,,3.10,5.00,30,解热镇痛,OTC甲
+对乙酰氨基酚缓释片,Paracetamol Sustained-release Tablets,0.65g×12片,盒,口服 0.65g bid,0,None,0,,5.58,9.00,,解热镇痛,OTC甲
+双氯芬酸钠缓释片,Diclofenac Sodium SR Tablets,75mg×10片,盒,口服 75mg qd,0,None,0,NSAIDs,6.82,11.00,,解热镇痛,Rx
+塞来昔布胶囊,Celecoxib Capsules,0.2g×6粒,盒,口服 0.2g qd,0,None,0,NSAIDs,13.64,22.00,,解热镇痛-COX2,Rx
+洛索洛芬钠片,Loxoprofen Sodium Tablets,60mg×24片,盒,口服 60mg tid,0,None,0,NSAIDs,8.68,14.00,,解热镇痛,Rx
+吲哚美辛肠溶片,Indometacin Enteric-coated Tablets,25mg×100片,瓶,口服 25mg bid,0,None,0,NSAIDs,4.34,7.00,,解热镇痛,Rx
+氨基比林咖啡因片,Amidopyrine and Caffeine Tablets,20片,盒,口服 1片 tid,0,None,0,,2.17,3.50,,解热镇痛-复方,OTC甲
+复方对乙酰氨基酚片(Ⅱ),Compound Paracetamol Tablets(Ⅱ),10片,盒,口服 1片 tid,0,None,0,,3.72,6.00,,解热镇痛-复方,OTC甲
+美洛昔康片,Meloxicam Tablets,7.5mg×10片,盒,口服 7.5mg qd,0,None,0,NSAIDs,8.06,13.00,,解热镇痛,Rx
+尼美舒利颗粒,Nimesulide Granules,0.1g×10袋,盒,口服 0.1g bid,0,None,0,NSAIDs,9.92,16.00,,解热镇痛,Rx
+去痛片,Compound Aminopyrine Phenacetin Tablets,100片,瓶,口服 1片 tid,0,None,0,,4.03,6.50,,解热镇痛-复方,OTC甲
+秋水仙碱片,Colchicine Tablets,0.5mg×20片,盒,口服 0.5mg bid,0,None,0,,6.20,10.00,,解热镇痛-痛风,Rx
+氨溴索口服溶液,Ambroxol Oral Solution,100ml:0.6g,瓶,口服 10ml tid,0,None,0,,5.58,9.00,,呼吸-祛痰,OTC甲
+盐酸氨溴索片,Ambroxol Hydrochloride Tablets,30mg×20片,盒,口服 30mg tid,0,None,0,,4.96,8.00,,呼吸-祛痰,OTC甲
+乙酰半胱氨酸颗粒,Acetylcysteine Granules,0.2g×12袋,盒,口服 0.2g tid,0,None,0,,9.30,15.00,,呼吸-祛痰,OTC甲
+复方甘草片,Compound Liquorice Tablets,100片,瓶,含服 3片 tid,0,None,0,,3.41,5.50,20,呼吸-镇咳,OTC甲
+右美沙芬愈创甘油醚糖浆,Dextromethorphan and Guaifenesin Syrup,100ml,瓶,口服 10ml tid,0,None,0,,8.06,13.00,,呼吸-镇咳,OTC甲
+氢溴酸右美沙芬片,Dextromethorphan Hydrobromide Tablets,15mg×24片,盒,口服 15mg tid,0,None,0,,4.96,8.00,,呼吸-镇咳,OTC甲
+喷托维林片,Pentoxyverine Tablets,25mg×100片,瓶,口服 25mg tid,0,None,0,,3.72,6.00,,呼吸-镇咳,OTC甲
+氨茶碱片,Aminophylline Tablets,0.1g×100片,瓶,口服 0.1g tid,0,None,0,,3.72,6.00,,呼吸-平喘,Rx
+沙丁胺醇吸入气雾剂,Salbutamol Aerosol,100μg×200揿,支,吸入 1-2揿 prn,0,None,0,,11.16,18.00,,呼吸-平喘,Rx
+茶碱缓释片,Theophylline SR Tablets,0.1g×24片,盒,口服 0.2g bid,0,None,0,,6.20,10.00,,呼吸-平喘,Rx
+孟鲁司特钠咀嚼片,Montelukast Sodium Chewable Tablets,5mg×5片,盒,口服 5mg qn,0,None,0,,15.50,25.00,,呼吸-抗过敏,Rx
+氯雷他定片,Loratadine Tablets,10mg×6片,盒,口服 10mg qd,0,None,0,,7.44,12.00,20,抗过敏-抗组胺,OTC甲
+氯雷他定糖浆,Loratadine Syrup,60ml:60mg,瓶,口服 5ml qd,0,None,0,,9.30,15.00,,抗过敏-抗组胺,OTC甲
+西替利嗪片,Cetirizine Tablets,10mg×12片,盒,口服 10mg qd,0,None,0,,6.20,10.00,,抗过敏-抗组胺,OTC甲
+马来酸氯苯那敏片,Chlorphenamine Maleate Tablets,4mg×100片,瓶,口服 4mg tid,0,None,0,,1.86,3.00,,抗过敏-抗组胺,OTC甲
+盐酸非索非那定片,Fexofenadine Hydrochloride Tablets,60mg×12片,盒,口服 60mg bid,0,None,0,,11.16,18.00,,抗过敏-抗组胺,Rx
+复方甲氧那明胶囊,Compound Methoxyphenamine Capsules,60粒,瓶,口服 2粒 tid,0,None,0,,13.64,22.00,,呼吸-平喘复方,Rx
+孟鲁司特钠片,Montelukast Sodium Tablets,10mg×5片,盒,口服 10mg qn,0,None,0,,17.36,28.00,,呼吸-抗过敏,Rx
+丙卡特罗片,Procaterol Tablets,25μg×20片,盒,口服 25μg bid,0,None,0,,9.92,16.00,,呼吸-平喘,Rx
+百咳静糖浆,Baikejing Syrup,100ml,瓶,口服 10ml tid,0,None,0,,7.44,12.00,,中成药-呼吸,OTC甲
+奥美拉唑肠溶胶囊,Omeprazole Enteric-coated Capsules,20mg×14粒,盒,口服 20mg qd,0,None,0,,11.16,18.00,15,消化-抑酸,Rx
+兰索拉唑肠溶片,Lansoprazole Enteric-coated Tablets,30mg×14片,盒,口服 30mg qd,0,None,0,,12.40,20.00,,消化-抑酸,Rx
+雷贝拉唑钠肠溶片,Rabeprazole Sodium Enteric-coated Tablets,10mg×14片,盒,口服 10mg qd,0,None,0,,14.88,24.00,,消化-抑酸,Rx
+埃索美拉唑镁肠溶片,Esomeprazole Magnesium Enteric-coated Tablets,20mg×7片,盒,口服 20mg qd,0,None,0,,16.12,26.00,,消化-抑酸,Rx
+法莫替丁片,Famotidine Tablets,20mg×24片,盒,口服 20mg bid,0,None,0,,4.96,8.00,,消化-抑酸,OTC甲
+西咪替丁片,Cimetidine Tablets,0.2g×100片,瓶,口服 0.2g tid,0,None,0,,4.34,7.00,,消化-抑酸,OTC甲
+铝碳酸镁咀嚼片,Hydrotalcite Chewable Tablets,0.5g×20片,盒,嚼服 1g tid,0,None,0,,6.20,10.00,,消化-抗酸,OTC甲
+硫糖铝咀嚼片,Sucralfate Chewable Tablets,0.25g×100片,瓶,嚼服 1g tid,0,None,0,,5.58,9.00,,消化-胃黏膜保护,OTC甲
+枸橼酸铋钾颗粒,Bismuth Potassium Citrate Granules,0.11g×28袋,盒,口服 1袋 qid,0,None,0,,8.68,14.00,,消化-胃黏膜保护,Rx
+复方氢氧化铝片,Compound Aluminium Hydroxide Tablets,100片,瓶,嚼服 2片 tid,0,None,0,,3.72,6.00,,消化-抗酸,OTC甲
+多潘立酮片,Domperidone Tablets,10mg×30片,盒,口服 10mg tid,0,None,0,,7.44,12.00,,消化-促动力,Rx
+枸橼酸莫沙必利片,Mosapride Citrate Tablets,5mg×24片,盒,口服 5mg tid,0,None,0,,9.30,15.00,,消化-促动力,Rx
+盐酸伊托必利片,Itopride Hydrochloride Tablets,50mg×20片,盒,口服 50mg tid,0,None,0,,8.06,13.00,,消化-促动力,Rx
+蒙脱石散,Montmorillonite Powder,3g×10袋,盒,口服 3g tid,0,None,0,,7.44,12.00,20,消化-止泻,OTC甲
+盐酸洛哌丁胺胶囊,Loperamide Hydrochloride Capsules,2mg×6粒,盒,口服 2mg qd,0,None,0,,4.96,8.00,,消化-止泻,OTC甲
+双歧杆菌三联活菌胶囊,Bifid Triple Viable Capsules,0.21g×24粒,盒,口服 0.63g tid,0,None,0,,12.40,20.00,,消化-微生态,OTC甲
+枯草杆菌二联活菌颗粒,Combined Bacillus Subtilis Granules,1g×10袋,盒,口服 1g bid,0,None,0,,11.16,18.00,,消化-微生态,OTC甲
+乳果糖口服溶液,Lactulose Oral Solution,100ml:66.7g,瓶,口服 15ml qd,0,None,0,,9.92,16.00,,消化-通便,OTC乙
+聚乙二醇4000散,Macrogol 4000 Powder,10g×10袋,盒,口服 10g qd,0,None,0,,9.30,15.00,,消化-通便,OTC乙
+开塞露,Glycerol Enema,20ml×20支,盒,纳肛 20ml prn,0,None,0,,5.58,9.00,,消化-通便,OTC乙
+复方消化酶胶囊,Compound Digestive Enzyme Capsules,20粒,盒,口服 1粒 tid,0,None,0,,11.16,18.00,,消化-助消化,OTC甲
+多酶片,Multienzyme Tablets,100片,瓶,口服 2片 tid,0,None,0,,3.10,5.00,,消化-助消化,OTC乙
+熊去氧胆酸胶囊,Ursodeoxycholic Acid Capsules,0.25g×24粒,盒,口服 0.25g tid,0,None,0,,18.60,30.00,,消化-肝胆,Rx
+水飞蓟宾胶囊,Silibinin Capsules,35mg×30粒,盒,口服 70mg tid,0,None,0,,13.64,22.00,,消化-肝胆,Rx
+复方谷氨酰胺肠溶胶囊,Compound Glutamine Enteric Capsules,0.25g×24粒,盒,口服 0.5g tid,0,None,0,,12.40,20.00,,消化-肠道修复,Rx
+藿香正气口服液,Huoxiangzhengqi Oral Liquid,10ml×10支,盒,口服 10ml bid,0,None,0,,8.68,14.00,,中成药-消化,OTC甲
+健胃消食片,Jianwei Xiaoshi Tablets,0.8g×32片,盒,口服 3片 tid,0,None,0,,4.96,8.00,,中成药-消化,OTC甲
+香砂养胃丸,Xiangsha Yangwei Pills,9g×10袋,盒,口服 9g bid,0,None,0,,7.44,12.00,,中成药-消化,OTC甲
+三九胃泰颗粒,Sanjiu Weitai Granules,20g×10袋,盒,口服 20g bid,0,None,0,,9.30,15.00,,中成药-消化,OTC甲
+硝苯地平缓释片(Ⅰ),Nifedipine SR Tablets(Ⅰ),10mg×30片,盒,口服 10mg bid,0,None,0,,5.58,9.00,,心血管-降压CCB,Rx
+硝苯地平控释片,Nifedipine Controlled-release Tablets,30mg×14片,盒,口服 30mg qd,0,None,0,,12.40,20.00,15,心血管-降压CCB,Rx
+氨氯地平片,Amlodipine Tablets,5mg×14片,盒,口服 5mg qd,0,None,0,,9.30,15.00,15,心血管-降压CCB,Rx
+苯磺酸左氨氯地平片,Levamlodipine Besylate Tablets,2.5mg×14片,盒,口服 2.5mg qd,0,None,0,,11.16,18.00,,心血管-降压CCB,Rx
+非洛地平缓释片,Felodipine SR Tablets,5mg×10片,盒,口服 5mg qd,0,None,0,,10.54,17.00,,心血管-降压CCB,Rx
+厄贝沙坦片,Irbesartan Tablets,0.15g×14片,盒,口服 0.15g qd,0,None,0,,9.92,16.00,15,心血管-降压ARB,Rx
+缬沙坦胶囊,Valsartan Capsules,80mg×14粒,盒,口服 80mg qd,0,None,0,,11.78,19.00,,心血管-降压ARB,Rx
+氯沙坦钾片,Losartan Potassium Tablets,50mg×14片,盒,口服 50mg qd,0,None,0,,11.16,18.00,,心血管-降压ARB,Rx
+替米沙坦片,Telmisartan Tablets,40mg×14片,盒,口服 40mg qd,0,None,0,,13.02,21.00,,心血管-降压ARB,Rx
+培哚普利叔丁胺片,Perindopril tert-Butylamine Tablets,4mg×14片,盒,口服 4mg qd,0,None,0,,14.88,24.00,,心血管-降压ACEI,Rx
+贝那普利片,Benazepril Tablets,10mg×14片,盒,口服 10mg qd,0,None,0,,10.54,17.00,,心血管-降压ACEI,Rx
+氢氯噻嗪片,Hydrochlorothiazide Tablets,25mg×100片,瓶,口服 25mg qd,0,None,0,,2.17,3.50,,心血管-利尿剂,Rx
+呋塞米片,Furosemide Tablets,20mg×100片,瓶,口服 20mg qd,0,None,0,,3.10,5.00,,心血管-利尿剂,Rx
+酒石酸美托洛尔片,Metoprolol Tartrate Tablets,25mg×20片,盒,口服 25mg bid,0,None,0,,4.03,6.50,15,心血管-β受体阻滞剂,Rx
+琥珀酸美托洛尔缓释片,Metoprolol Succinate SR Tablets,47.5mg×7片,盒,口服 47.5mg qd,0,None,0,,8.68,14.00,,心血管-β受体阻滞剂,Rx
+比索洛尔片,Bisoprolol Tablets,5mg×10片,盒,口服 5mg qd,0,None,0,,8.06,13.00,,心血管-β受体阻滞剂,Rx
+阿托伐他汀钙片,Atorvastatin Calcium Tablets,20mg×14片,盒,口服 20mg qn,0,None,0,,13.64,22.00,15,心血管-他汀,Rx
+瑞舒伐他汀钙片,Rosuvastatin Calcium Tablets,10mg×14片,盒,口服 10mg qn,0,None,0,,16.12,26.00,,心血管-他汀,Rx
+辛伐他汀片,Simvastatin Tablets,20mg×14片,盒,口服 20mg qn,0,None,0,,7.44,12.00,,心血管-他汀,Rx
+匹伐他汀钙片,Pitavastatin Calcium Tablets,2mg×14片,盒,口服 2mg qn,0,None,0,,17.36,28.00,,心血管-他汀,Rx
+非诺贝特胶囊,Fenofibrate Capsules,0.2g×10粒,盒,口服 0.2g qd,0,None,0,,11.16,18.00,,心血管-降脂贝特,Rx
+阿司匹林肠溶片,Aspirin Enteric-coated Tablets,100mg×30片,盒,口服 100mg qd,0,None,0,NSAIDs,4.96,8.00,20,心血管-抗血小板,Rx
+硫酸氢氯吡格雷片,Clopidogrel Bisulfate Tablets,75mg×14片,盒,口服 75mg qd,0,None,0,,18.60,30.00,,心血管-抗血小板,Rx
+华法林钠片,Warfarin Sodium Tablets,2.5mg×60片,瓶,口服 2.5mg qd,0,None,0,,7.44,12.00,,心血管-抗凝,Rx
+利伐沙班片,Rivaroxaban Tablets,10mg×14片,盒,口服 10mg qd,0,None,0,,34.10,55.00,,心血管-抗凝,Rx
+单硝酸异山梨酯缓释片,Isosorbide Mononitrate SR Tablets,40mg×14片,盒,口服 40mg qd,0,None,0,,12.40,20.00,,心血管-抗心绞痛,Rx
+硝酸甘油片,Nitroglycerin Tablets,0.5mg×24片,盒,舌下含服 0.5mg prn,0,None,0,,3.10,5.00,,心血管-抗心绞痛,Rx
+复方丹参滴丸,Compound Danshen Dripping Pills,27mg×180丸,盒,口服 10丸 tid,0,None,0,,13.64,22.00,,中成药-心血管,OTC甲
+速效救心丸,Suxiao Jiuxin Pills,40mg×60丸×2瓶,盒,含服 4-6丸 prn,0,None,0,,18.60,30.00,,中成药-心血管,OTC甲
+稳心颗粒,Wenxin Granules,9g×9袋,盒,口服 9g tid,0,None,0,,15.50,25.00,,中成药-心血管,Rx
+地奥心血康胶囊,Diao Xinxuekang Capsules,0.1g×30粒,盒,口服 0.2g tid,0,None,0,,11.16,18.00,,中成药-心血管,Rx
+通心络胶囊,Tongxinluo Capsules,0.26g×30粒,盒,口服 2粒 tid,0,None,0,,17.36,28.00,,中成药-心血管,Rx
+倍他司汀片,Betahistine Tablets,6mg×30片,盒,口服 6mg tid,0,None,0,,6.20,10.00,,心血管-其他,Rx
+曲克芦丁片,Troxerutin Tablets,60mg×100片,瓶,口服 120mg tid,0,None,0,,4.96,8.00,,心血管-其他,Rx
+盐酸二甲双胍片,Metformin Hydrochloride Tablets,0.5g×20片,盒,口服 0.5g bid,0,None,0,,4.96,8.00,15,内分泌-降糖,Rx
+盐酸二甲双胍缓释片,Metformin Hydrochloride SR Tablets,0.5g×30片,盒,口服 0.5g qd,0,None,0,,7.44,12.00,,内分泌-降糖,Rx
+格列美脲片,Glimepiride Tablets,2mg×12片,盒,口服 2mg qd,0,None,0,,9.30,15.00,,内分泌-降糖,Rx
+格列齐特缓释片,Gliclazide SR Tablets,30mg×20片,盒,口服 30mg qd,0,None,0,,11.16,18.00,,内分泌-降糖,Rx
+阿卡波糖片,Acarbose Tablets,50mg×30片,盒,口服 50mg tid,0,None,0,,12.40,20.00,,内分泌-降糖,Rx
+达格列净片,Dapagliflozin Tablets,10mg×14片,盒,口服 10mg qd,0,None,0,,27.90,45.00,,内分泌-降糖SGLT2,Rx
+西格列汀片,Sitagliptin Tablets,100mg×14片,盒,口服 100mg qd,0,None,0,,29.76,48.00,,内分泌-降糖DPP4,Rx
+左甲状腺素钠片,Levothyroxine Sodium Tablets,50μg×100片,瓶,口服 50μg qd,0,None,0,,9.30,15.00,,内分泌-甲状腺,Rx
+甲巯咪唑片,Thiamazole Tablets,5mg×100片,瓶,口服 5mg tid,0,None,0,,5.58,9.00,,内分泌-甲状腺,Rx
+碳酸钙D3片,Calcium Carbonate and Vitamin D3 Tablets,600mg×30片,盒,口服 1片 qd,0,None,0,,11.16,18.00,,内分泌-钙剂,OTC甲
+阿仑膦酸钠片,Alendronate Sodium Tablets,70mg×4片,盒,口服 70mg qw,0,None,0,,15.50,25.00,,内分泌-抗骨质疏松,Rx
+维生素D滴剂,Vitamin D Drops,400IU×30粒,盒,口服 1粒 qd,0,None,0,,13.64,22.00,,内分泌-维生素D,OTC甲
+骨化三醇胶丸,Calcitriol Soft Capsules,0.25μg×20粒,盒,口服 0.25μg qd,0,None,0,,21.70,35.00,,内分泌-维生素D,Rx
+非布司他片,Febuxostat Tablets,40mg×16片,盒,口服 40mg qd,0,None,0,,18.60,30.00,,内分泌-痛风,Rx
+别嘌醇片,Allopurinol Tablets,0.1g×100片,瓶,口服 0.1g bid,0,None,0,,4.96,8.00,,内分泌-痛风,Rx
+碳酸氢钠片,Sodium Bicarbonate Tablets,0.5g×100片,瓶,口服 1g tid,0,None,0,,2.48,4.00,,内分泌-痛风碱化,OTC甲
+谷维素片,Oryzanol Tablets,10mg×100片,瓶,口服 10mg tid,0,None,0,,3.10,5.00,,神经-植物神经,OTC乙
+甲钴胺片,Mecobalamin Tablets,0.5mg×24片,盒,口服 0.5mg tid,0,None,0,,7.44,12.00,,神经-营养神经,Rx
+维生素B1片,Vitamin B1 Tablets,10mg×100片,瓶,口服 10mg tid,0,None,0,,1.86,3.00,,神经-维生素B族,OTC乙
+维生素B12片,Vitamin B12 Tablets,25μg×100片,瓶,口服 25μg tid,0,None,0,,2.48,4.00,,神经-维生素B族,OTC乙
+艾司唑仑片,Estazolam Tablets,1mg×20片,盒,口服 1mg qn,0,None,0,,3.72,6.00,,神经-镇静催眠,Rx
+佐匹克隆片,Zopiclone Tablets,7.5mg×7片,盒,口服 7.5mg qn,0,None,0,,11.16,18.00,,神经-镇静催眠,Rx
+氟桂利嗪胶囊,Flunarizine Capsules,5mg×20粒,盒,口服 5mg qn,0,None,0,,6.20,10.00,,神经-偏头痛,Rx
+尼莫地平片,Nimodipine Tablets,20mg×50片,盒,口服 40mg tid,0,None,0,,9.30,15.00,,神经-脑血管,Rx
+吡拉西坦片,Piracetam Tablets,0.4g×100片,瓶,口服 0.8g tid,0,None,0,,6.20,10.00,,神经-脑代谢,Rx
+银杏叶片,Ginkgo Leaf Tablets,19.2mg×24片,盒,口服 1片 tid,0,None,0,,9.92,16.00,,中成药-神经,OTC甲
+养血清脑颗粒,Yangxue Qingnao Granules,4g×15袋,盒,口服 4g tid,0,None,0,,12.40,20.00,,中成药-神经,Rx
+天麻素胶囊,Gastrodin Capsules,50mg×24粒,盒,口服 100mg tid,0,None,0,,8.68,14.00,,中成药-神经,Rx
+甲磺酸倍他司汀片,Betahistine Mesylate Tablets,6mg×30片,盒,口服 6mg tid,0,None,0,,6.82,11.00,,神经-前庭,Rx
+莫匹罗星软膏,Mupirocin Ointment,10g:0.2g,支,外用 bid,0,None,0,,7.44,12.00,,皮肤-外用抗菌,OTC甲
+红霉素软膏,Erythromycin Ointment,10g:0.1g,支,外用 bid,0,None,0,,2.48,4.00,,皮肤-外用抗菌,OTC甲
+夫西地酸乳膏,Fusidic Acid Cream,10g:0.2g,支,外用 bid,0,None,0,,11.16,18.00,,皮肤-外用抗菌,Rx
+盐酸特比萘芬乳膏,Terbinafine Hydrochloride Cream,10g:0.1g,支,外用 qd,0,None,0,,6.20,10.00,,皮肤-抗真菌,OTC甲
+酮康唑乳膏,Ketoconazole Cream,10g:0.2g,支,外用 bid,0,None,0,,4.96,8.00,,皮肤-抗真菌,OTC甲
+硝酸咪康唑乳膏,Miconazole Nitrate Cream,20g:0.4g,支,外用 bid,0,None,0,,5.58,9.00,,皮肤-抗真菌,OTC甲
+曲安奈德益康唑乳膏,Triamcinolone Acetonide and Econazole Cream,15g,支,外用 bid,0,None,0,,6.82,11.00,,皮肤-复方抗真菌,OTC甲
+糠酸莫米松乳膏,Mometasone Furoate Cream,10g:5mg,支,外用 qd,0,None,0,,9.92,16.00,,皮肤-糖皮质激素,OTC甲
+丁酸氢化可的松乳膏,Hydrocortisone Butyrate Cream,10g:10mg,支,外用 bid,0,None,0,,8.06,13.00,,皮肤-糖皮质激素,OTC甲
+卤米松乳膏,Halometasone Cream,10g:5mg,支,外用 bid,0,None,0,,11.16,18.00,,皮肤-糖皮质激素,Rx
+阿昔洛韦乳膏,Aciclovir Cream,10g:0.3g,支,外用 qid,0,None,0,,3.72,6.00,,皮肤-抗病毒,OTC甲
+炉甘石洗剂,Calamine Lotion,100ml,瓶,外用 bid,0,None,0,,4.34,7.00,,皮肤-止痒收敛,OTC甲
+氯雷他定凝胶,Loratadine Gel,20g,支,外用 qd,0,None,0,,8.68,14.00,,皮肤-抗过敏,OTC甲
+维A酸乳膏,Tretinoin Cream,15g:15mg,支,外用 qn,0,None,0,,6.20,10.00,,皮肤-角质调节,Rx
+阿达帕林凝胶,Adapalene Gel,30g:0.03g,支,外用 qn,0,None,0,,13.64,22.00,,皮肤-痤疮,Rx
+夫西地酸乳膏,Fusidic Acid Cream,15g,支,外用 bid,0,None,0,,12.40,20.00,,皮肤-痤疮,Rx
+尿素维E乳膏,Urea and Vitamin E Cream,20g,支,外用 bid,0,None,0,,4.96,8.00,,皮肤-保湿,OTC乙
+马应龙麝香痔疮膏,Mayinglong Musk Hemorrhoids Ointment,10g,支,外用 bid,0,None,0,,11.16,18.00,,中成药-皮肤,OTC甲
+湿润烧伤膏,Moist Exposed Burn Ointment,40g,支,外用 qd,0,None,0,,15.50,25.00,,中成药-皮肤,OTC甲
+云南白药气雾剂,Yunnan Baiyao Aerosol,85g,瓶,外用 bid,0,None,0,,17.36,28.00,,中成药-皮肤,OTC甲
+氧氟沙星滴眼液,Ofloxacin Eye Drops,5ml:15mg,支,滴眼 qid,0,None,0,,5.58,9.00,,五官-抗菌眼,Rx
+左氧氟沙星滴眼液,Levofloxacin Eye Drops,5ml:24.4mg,支,滴眼 qid,0,None,0,,7.44,12.00,,五官-抗菌眼,Rx
+妥布霉素滴眼液,Tobramycin Eye Drops,5ml:15mg,支,滴眼 qid,0,None,0,,6.82,11.00,,五官-抗菌眼,Rx
+玻璃酸钠滴眼液,Sodium Hyaluronate Eye Drops,10ml:10mg,支,滴眼 tid,0,None,0,,15.50,25.00,,五官-人工泪液,OTC甲
+聚乙烯醇滴眼液,Polyvinyl Alcohol Eye Drops,0.8ml×20支,盒,滴眼 prn,0,None,0,,11.16,18.00,,五官-人工泪液,OTC甲
+盐酸羟甲唑啉滴鼻液,Oxymetazoline Hydrochloride Nasal Drops,10ml:5mg,支,滴鼻 bid,0,None,0,,4.96,8.00,,五官-鼻减充血,OTC甲
+丙酸氟替卡松鼻喷雾剂,Fluticasone Propionate Nasal Spray,120喷,支,喷鼻 qd,0,None,0,,27.90,45.00,,五官-鼻激素,Rx
+糠酸莫米松鼻喷雾剂,Mometasone Furoate Nasal Spray,60揿,支,喷鼻 qd,0,None,0,,29.76,48.00,,五官-鼻激素,Rx
+氧氟沙星滴耳液,Ofloxacin Ear Drops,5ml:15mg,支,滴耳 bid,0,None,0,,4.96,8.00,,五官-抗菌耳,Rx
+碳酸氢钠滴耳液,Sodium Bicarbonate Ear Drops,8ml,支,滴耳 tid,0,None,0,,2.48,4.00,,五官-耵聍软化,OTC甲
+复方薄荷脑滴鼻液,Compound Menthol Nasal Drops,10ml,支,滴鼻 tid,0,None,0,,3.10,5.00,,五官-鼻腔润滑,OTC甲
+西地碘含片,Cydiodine Buccal Tablets,1.5mg×24片,盒,含服 1片 tid,0,None,0,,7.44,12.00,,五官-口腔抗菌,OTC甲
+西瓜霜润喉片,Xiguashuang Throat Tablets,0.6g×48片,盒,含服 2片 tid,0,None,0,,6.20,10.00,,中成药-五官,OTC甲
+金嗓子喉片,Jinsangzi Throat Tablets,2g×20片,盒,含服 1片 tid,0,None,0,,5.58,9.00,,中成药-五官,OTC甲
+氯霉素滴眼液,Chloramphenicol Eye Drops,8ml:20mg,支,滴眼 qid,0,None,0,,3.72,6.00,,五官-抗菌眼,Rx
+甲硝唑阴道泡腾片,Metronidazole Vaginal Effervescent Tablets,0.2g×14片,盒,阴道给药 qn,0,None,0,,7.44,12.00,,妇科-阴道炎,Rx
+克霉唑阴道片,Clotrimazole Vaginal Tablets,0.5g×1片,盒,阴道给药 qn,0,None,0,,9.30,15.00,,妇科-阴道炎,OTC甲
+硝呋太尔制霉素阴道软胶囊,Nifuratel and Nystatin Vaginal Soft Capsules,6粒,盒,阴道给药 qn,0,None,0,,15.50,25.00,,妇科-阴道炎,Rx
+红核妇洁洗液,Honghe Fujie Lotion,150ml,瓶,外用冲洗 qd,0,None,0,,13.64,22.00,,中成药-妇科,OTC甲
+洁尔阴洗液,Jieeryin Lotion,350ml,瓶,外用冲洗 qd,0,None,0,,12.40,20.00,,中成药-妇科,OTC甲
+乌鸡白凤丸,Wuji Baifeng Pills,9g×10丸,盒,口服 1丸 bid,0,None,0,,15.50,25.00,,中成药-妇科,OTC甲
+益母草颗粒,Yimucao Granules,15g×10袋,盒,口服 15g bid,0,None,0,,7.44,12.00,,中成药-妇科,OTC甲
+妇科千金片,Fuke Qianjin Tablets,0.32g×144片,盒,口服 6片 tid,0,None,0,,17.36,28.00,,中成药-妇科,OTC甲
+逍遥丸,Xiaoyao Pills,6g×10袋,盒,口服 6g bid,0,None,0,,8.68,14.00,,中成药-妇科,OTC甲
+小儿氨酚黄那敏颗粒,Pediatric Paracetamol and Artificial Cow-bezoar Granules,6g×10袋,盒,口服 1袋 tid,0,None,0,,4.96,8.00,,儿科-感冒,OTC甲
+小儿豉翘清热颗粒,Xiaoer Chiqiao Qingre Granules,2g×9袋,盒,口服 1袋 tid,0,None,0,,13.64,22.00,,中成药-儿科,OTC甲
+小儿肺热咳喘口服液,Xiaoer Feire Kechuan Oral Liquid,10ml×10支,盒,口服 10ml tid,0,None,0,,15.50,25.00,,中成药-儿科,OTC甲
+小儿化痰止咳颗粒,Xiaoer Huatan Zhike Granules,5g×10袋,盒,口服 5g tid,0,None,0,,6.20,10.00,,中成药-儿科,OTC甲
+小儿健脾散,Xiaoer Jianpi Powder,1.5g×10袋,盒,口服 1.5g bid,0,None,0,,7.44,12.00,,中成药-儿科,OTC甲
+妈咪爱散,Medilac-Vita Powder,1g×15袋,盒,口服 1g bid,0,None,0,,11.16,18.00,,儿科-微生态,OTC甲
+蒙脱石散(儿童),Montmorillonite Powder (Pediatric),3g×10袋,盒,口服 1袋 tid,0,None,0,,7.44,12.00,,儿科-止泻,OTC甲
+小儿退热贴,Pediatric Cooling Patch,4贴,盒,外用 qd,0,None,0,,6.20,10.00,,儿科-物理降温,OTC乙
+连花清瘟胶囊,Lianhua Qingwen Capsules,0.35g×24粒,盒,口服 4粒 tid,0,None,0,,8.68,14.00,20,中成药-感冒,OTC甲
+板蓝根颗粒,Banlangen Granules,10g×20袋,盒,口服 10g tid,0,None,0,,7.44,12.00,,中成药-感冒,OTC甲
+感冒灵颗粒,Ganmaoling Granules,10g×9袋,盒,口服 10g tid,0,None,0,,6.82,11.00,,中成药-感冒,OTC甲
+维C银翘片,Vitamin C Yinqiao Tablets,24片,盒,口服 2片 tid,0,None,0,,3.72,6.00,,中成药-感冒,OTC甲
+双黄连口服液,Shuanghuanglian Oral Liquid,10ml×10支,盒,口服 20ml tid,0,None,0,,9.30,15.00,,中成药-感冒,OTC甲
+蒲地蓝消炎口服液,Pudilan Xiaoyan Oral Liquid,10ml×12支,盒,口服 10ml tid,0,None,0,,15.50,25.00,,中成药-消炎,Rx
+蓝芩口服液,Lanqin Oral Liquid,10ml×12支,盒,口服 10ml tid,0,None,0,,13.64,22.00,,中成药-咽炎,OTC甲
+金莲花颗粒,Jinlianhua Granules,8g×9袋,盒,口服 8g tid,0,None,0,,9.92,16.00,,中成药-咽炎,OTC甲
+肺力咳合剂,Feilike Mixture,150ml,瓶,口服 20ml tid,0,None,0,,12.40,20.00,,中成药-咳嗽,OTC甲
+急支糖浆,Jizhi Syrup,200ml,瓶,口服 20ml tid,0,None,0,,9.30,15.00,,中成药-咳嗽,OTC甲
+川贝枇杷膏,Chuanbei Pipa Gao,345g,瓶,口服 15ml tid,0,None,0,,15.50,25.00,,中成药-咳嗽,OTC甲
+京都念慈菴蜜炼川贝枇杷膏,Nin Jiom Pei Pa Koa,150ml,瓶,口服 15ml tid,0,None,0,,17.36,28.00,,中成药-咳嗽,OTC甲
+牛黄解毒片,Niuhuang Jiedu Tablets,0.25g×60片,瓶,口服 3片 tid,0,None,0,,4.96,8.00,,中成药-清热解毒,OTC甲
+黄连上清片,Huanglian Shangqing Tablets,0.3g×48片,盒,口服 4片 tid,0,None,0,,5.58,9.00,,中成药-清热解毒,OTC甲
+三黄片,Sanhuang Tablets,0.25g×100片,瓶,口服 4片 tid,0,None,0,,4.34,7.00,,中成药-清热解毒,OTC甲
+六味地黄丸,Liuwei Dihuang Pills,9g×10丸,盒,口服 1丸 bid,0,None,0,,8.68,14.00,,中成药-滋阴,OTC甲
+知柏地黄丸,Zhibai Dihuang Pills,9g×10丸,盒,口服 1丸 bid,0,None,0,,9.30,15.00,,中成药-滋阴,OTC甲
+杞菊地黄丸,Qiju Dihuang Pills,9g×10丸,盒,口服 1丸 bid,0,None,0,,8.68,14.00,,中成药-滋阴,OTC甲
+归脾丸,Guipi Pills,9g×10丸,盒,口服 1丸 tid,0,None,0,,8.06,13.00,,中成药-补益,OTC甲
+补中益气丸,Buzhong Yiqi Pills,6g×10袋,盒,口服 6g bid,0,None,0,,9.30,15.00,,中成药-补益,OTC甲
+金匮肾气丸,Jinkui Shenqi Pills,6g×10袋,盒,口服 6g bid,0,None,0,,9.92,16.00,,中成药-温阳,OTC甲
+血府逐瘀胶囊,Xuefu Zhuyu Capsules,0.4g×36粒,盒,口服 6粒 bid,0,None,0,,13.64,22.00,,中成药-活血,OTC甲
+舒筋活血片,Shujin Huoxue Tablets,0.3g×100片,瓶,口服 5片 tid,0,None,0,,6.20,10.00,,中成药-骨伤,OTC甲
+云南白药胶囊,Yunnan Baiyao Capsules,0.25g×16粒,盒,口服 2粒 tid,0,None,0,,11.16,18.00,,中成药-骨伤,OTC甲
+正骨水,Zhenggushui,45ml,瓶,外用 qid,0,None,0,,9.30,15.00,,中成药-骨伤,OTC甲
+伤湿止痛膏,Shangshi Zhitong Plaster,8贴,盒,外用 qd,0,None,0,,6.20,10.00,,中成药-骨伤,OTC甲
+安神补脑液,Anshen Bunao Liquid,10ml×10支,盒,口服 10ml bid,0,None,0,,12.40,20.00,,中成药-安神,OTC甲
+枣仁安神胶囊,Zaoren Anshen Capsules,0.45g×25粒,盒,口服 5粒 qn,0,None,0,,14.88,24.00,,中成药-安神,OTC甲
+保和丸,Baohe Pills,6g×10袋,盒,口服 6g bid,0,None,0,,7.44,12.00,,中成药-消食,OTC甲
+牛黄上清丸,Niuhuang Shangqing Pills,6g×10丸,盒,口服 1丸 bid,0,None,0,,6.82,11.00,,中成药-清热,OTC甲
+清开灵颗粒,Qingkailing Granules,3g×12袋,盒,口服 3g tid,0,None,0,,9.30,15.00,,中成药-清热,OTC甲
+康复新液,Kangfuxin Liquid,100ml,瓶,口服 10ml tid,0,None,0,,17.36,28.00,,中成药-黏膜修复,OTC甲
+六神丸,Liushen Pills,3.125g×10支,盒,含服 10粒 tid,0,None,0,,11.16,18.00,,中成药-咽喉,OTC甲
+藿香正气水,Huoxiangzhengqi Tincture,10ml×10支,盒,口服 10ml bid,0,None,0,,6.20,10.00,,中成药-暑湿,OTC甲
+正柴胡饮颗粒,Zhengchaihuyin Granules,10g×10袋,盒,口服 10g tid,0,None,0,,8.68,14.00,,中成药-感冒,OTC甲
+维生素C片,Vitamin C Tablets,0.1g×100片,瓶,口服 0.1g tid,0,None,0,,1.86,3.00,15,维生素,OTC乙
+维生素B2片,Vitamin B2 Tablets,5mg×100片,瓶,口服 5mg tid,0,None,0,,2.17,3.50,,维生素,OTC乙
+维生素B6片,Vitamin B6 Tablets,10mg×100片,瓶,口服 10mg tid,0,None,0,,1.86,3.00,,维生素,OTC乙
+维生素E软胶囊,Vitamin E Soft Capsules,0.1g×60粒,瓶,口服 0.1g bid,0,None,0,,7.44,12.00,,维生素,OTC乙
+复合维生素B片,Compound Vitamin B Tablets,100片,瓶,口服 2片 tid,0,None,0,,3.10,5.00,,维生素,OTC乙
+21金维他,21 Super-Vita,60片,瓶,口服 1片 qd,0,None,0,,17.36,28.00,,维生素-多维,OTC甲
+葡萄糖酸锌口服液,Zinc Gluconate Oral Solution,10ml×20支,盒,口服 10ml bid,0,None,0,,11.16,18.00,,矿物质,OTC甲
+葡萄糖酸钙口服液,Calcium Gluconate Oral Solution,10ml×20支,盒,口服 10ml bid,0,None,0,,12.40,20.00,,矿物质,OTC甲
+琥珀酸亚铁片,Ferrous Succinate Tablets,0.1g×24片,盒,口服 1片 tid,0,None,0,,9.30,15.00,,矿物质-补铁,Rx
+叶酸片,Folic Acid Tablets,5mg×100片,瓶,口服 5mg tid,0,None,0,,3.72,6.00,,维生素,OTC甲
+多维元素片(21),Multivitamin Tablets(21),60片,瓶,口服 1片 qd,0,None,0,,15.50,25.00,,维生素-多维,OTC甲
+口服补液盐Ⅲ,Oral Rehydration Salts Ⅲ,5.125g×6袋,盒,冲服 250ml prn,0,None,0,,6.20,10.00,,电解质,OTC甲
+碘伏消毒液,Povidone Iodine Solution,100ml:0.5g,瓶,外用 prn,0,None,0,,3.10,5.00,,消毒防腐,OTC乙
+75%乙醇消毒液,75% Alcohol Disinfectant,500ml,瓶,外用 prn,0,None,0,,4.96,8.00,,消毒防腐,OTC乙
+过氧化氢溶液,Hydrogen Peroxide Solution,100ml:3g,瓶,外用 prn,0,None,0,,1.86,3.00,,消毒防腐,OTC甲
+医用纱布块,Medical Gauze,8cm×10cm×5片,包,外用 prn,0,None,0,,1.86,3.00,,医用耗材,其他
+医用胶带,Medical Tape,1.25cm×9.1m,卷,外用 prn,0,None,0,,2.48,4.00,,医用耗材,其他
+一次性使用无菌注射器,Disposable Sterile Syringe,5ml×10支,包,肌注 prn,0,None,0,,3.72,6.00,,医用耗材,其他
+人血白蛋白,Human Albumin,10g:50ml,瓶,静滴 prn,0,None,0,,260.40,420.00,,血液制品,Rx
+破伤风抗毒素,Tetanus Antitoxin,1500IU:1ml,支,肌注 1500IU,0,None,0,,15.50,25.00,,生物制品,Rx
+狂犬病疫苗,Rabies Vaccine,0.5ml×4支,盒,肌注 0.5ml d0/3/7/14,0,None,0,,217.00,350.00,,生物制品,Rx
+注射用青霉素钠,Penicillin G Sodium for Injection,80万U,支,肌注 80万U bid,1,NonRestricted,0,青霉素类,1.55,2.50,,抗感染-注射,Rx
+硫酸庆大霉素注射液,Gentamicin Sulfate Injection,8万U:2ml,支,肌注 8万U bid,1,NonRestricted,0,氨基糖苷类,1.12,1.80,,抗感染-注射,Rx
+地塞米松磷酸钠注射液,Dexamethasone Sodium Phosphate Injection,5mg:1ml,支,肌注 5mg qd,0,None,0,,0.93,1.50,,激素-注射,Rx
+维生素B12注射液,Vitamin B12 Injection,0.5mg:1ml,支,肌注 0.5mg qd,0,None,0,,0.74,1.20,,维生素-注射,Rx
+盐酸肾上腺素注射液,Epinephrine Hydrochloride Injection,1mg:1ml,支,皮下/肌注 0.5mg prn,0,None,0,,3.10,5.00,,急救药品,Rx
+硝酸甘油注射液,Nitroglycerin Injection,5mg:1ml,支,静滴 prn,0,None,0,,4.96,8.00,,急救药品,Rx
+阿托品注射液,Atropine Injection,0.5mg:1ml,支,肌注 0.5mg prn,0,None,0,,1.24,2.00,,急救药品,Rx
+氯解磷定注射液,Pralidoxime Chloride Injection,0.5g:2ml,支,静注 prn,0,None,0,,6.20,10.00,,急救药品-解毒,Rx
+纳洛酮注射液,Naloxone Injection,0.4mg:1ml,支,静注 0.4mg prn,0,None,0,,9.30,15.00,,急救药品-解毒,Rx
