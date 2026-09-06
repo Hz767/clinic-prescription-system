@@ -1,6 +1,10 @@
 using System.Windows.Controls;
 using System.Windows.Input;
+using Clinic.Infrastructure.Data;
+using Clinic.Presentation.Services;
 using Clinic.Presentation.ViewModels;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Clinic.Presentation.Views;
 
@@ -12,15 +16,15 @@ public partial class PrescriptionHistoryView : UserControl
     }
 
     /// <summary>
-    /// 双击处方行跳转到收费页面（仅对已保存/已审核处方生效）。
-    /// 复用 ViewModel 的 GoToBillingCommand 进行权限和状态检查。
+    /// 双击处方行打开处方详情窗口，查看原始处方内容。
     /// </summary>
     private void PrescriptionDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (DataContext is PrescriptionHistoryViewModel vm
-            && vm.GoToBillingCommand.CanExecute(null))
+            && vm.SelectedPrescription is not null)
         {
-            vm.GoToBillingCommand.Execute(null);
+            var windowService = App.Services.GetRequiredService<IWindowService>();
+            windowService.ShowPrescriptionDetailWindow(vm.SelectedPrescription.Id);
         }
     }
 }

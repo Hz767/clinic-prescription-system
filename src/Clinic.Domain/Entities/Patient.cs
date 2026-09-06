@@ -11,6 +11,9 @@ public class Patient : Common.Entity
     public string? History { get; set; }
     public string? ChronicTags { get; set; }
 
+    /// <summary>自定义标签（逗号分隔，如"孕妇"、"随访人群"、"高血压随访"），用于列表筛选</summary>
+    public string? Tags { get; set; }
+
     // ── 体征信息 ──
     public decimal? Weight { get; set; }      // 体重 kg
     public decimal? Temperature { get; set; }  // 体温 °C

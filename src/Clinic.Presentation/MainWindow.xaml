@@ -1,4 +1,4 @@
-<Window x:Class="Clinic.Presentation.MainWindow"
+﻿<Window x:Class="Clinic.Presentation.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -15,6 +15,9 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <conv:NullToCollapsedConverter x:Key="NullToCollapsed"
                                         xmlns:conv="clr-namespace:Clinic.Presentation.Converters"/>
+        <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+            <views:DashboardView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:PatientManagementViewModel}">
             <views:PatientManagementView/>
         </DataTemplate>
@@ -29,6 +32,9 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:PrescriptionHistoryViewModel}">
             <views:PrescriptionHistoryView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:MedicalRecordManagementViewModel}">
+            <views:MedicalRecordManagementView/>
         </DataTemplate>
     </Window.Resources>
 
@@ -56,7 +62,7 @@
                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="陈医生诊所处方管理系统" FontSize="12" FontWeight="Bold"
+                            <TextBlock Text="陈医生诊所处方管理系统" FontSize="{StaticResource FontSizeCaption}" FontWeight="Bold"
                                        Foreground="{StaticResource Gray800Brush}"/>
                             <TextBlock Text="Dr. Chen's Clinic" FontSize="9"
                                        Foreground="{StaticResource Gray400Brush}"/>
@@ -93,10 +99,10 @@
                         </Button>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="{Binding CurrentUserDisplayName}"
-                                       FontSize="13" FontWeight="SemiBold"
+                                       FontSize="{StaticResource FontSizeSmall}" FontWeight="SemiBold"
                                        Foreground="{StaticResource Gray800Brush}"/>
                             <TextBlock Text="{Binding CurrentUserRoleText}"
-                                       FontSize="11" Foreground="{StaticResource Gray500Brush}"/>
+                                       FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource Gray500Brush}"/>
                         </StackPanel>
                     </DockPanel>
                 </Border>
@@ -112,7 +118,7 @@
                               Stroke="{StaticResource Gray600Brush}" StrokeThickness="2"
                               StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
                               VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBlock Text="退出登录" FontSize="13" VerticalAlignment="Center"/>
+                        <TextBlock Text="退出登录" FontSize="{StaticResource FontSizeSmall}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
 
@@ -120,9 +126,25 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="8,4,8,0">
                     <StackPanel>
 
+                        <!-- 工作台 Dashboard（首页） -->
+                        <Button Style="{StaticResource BtnNav}"
+                                Command="{Binding NavigateToDashboardCommand}"
+                                Tag="Dashboard"
+                                Margin="0,0,0,4">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource IconHome}"
+                                      Width="18" Height="18" Stretch="Uniform"
+                                      Stroke="{StaticResource Gray600Brush}" StrokeThickness="2"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="工作台" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
                         <!-- 处方开具（核心业务，首选入口） -->
                         <Button Style="{StaticResource BtnNav}"
                                 Command="{Binding NavigateToPrescriptionCommand}"
+                                Tag="Prescription"
                                 Visibility="{Binding CanPrescribe, Converter={StaticResource BoolToVis}}"
                                 Margin="0,0,0,4">
                             <StackPanel Orientation="Horizontal">
@@ -138,6 +160,7 @@
                         <!-- 收费管理 -->
                         <Button Style="{StaticResource BtnNav}"
                                 Command="{Binding NavigateToBillingCommand}"
+                                Tag="Billing"
                                 Margin="0,0,0,4">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconReceipt}"
@@ -152,6 +175,7 @@
                         <!-- 库存管理 -->
                         <Button Style="{StaticResource BtnNav}"
                                 Command="{Binding NavigateToInventoryCommand}"
+                                Tag="Inventory"
                                 Margin="0,0,0,4">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconPackage}"
@@ -166,6 +190,7 @@
                         <!-- 处方查询 -->
                         <Button Style="{StaticResource BtnNav}"
                                 Command="{Binding NavigateToPrescriptionHistoryCommand}"
+                                Tag="PrescriptionHistory"
                                 Margin="0,0,0,4">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconHistory}"
@@ -181,9 +206,25 @@
                         <Border Height="1" Background="{StaticResource BorderLightBrush}"
                                 Margin="4,8,4,8"/>
 
+                        <!-- 病历管理 -->
+                        <Button Style="{StaticResource BtnNav}"
+                                Command="{Binding NavigateToMedicalRecordCommand}"
+                                Tag="MedicalRecord"
+                                Margin="0,0,0,4">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource IconClipboardList}"
+                                      Width="18" Height="18" Stretch="Uniform"
+                                      Stroke="{StaticResource Gray600Brush}" StrokeThickness="2"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="病历管理" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
                         <!-- 患者管理（低频功能，移至分隔线下方） -->
                         <Button Style="{StaticResource BtnNav}"
                                 Command="{Binding NavigateToPatientCommand}"
+                                Tag="Patient"
                                 Margin="0,0,0,4">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconUsers}"
@@ -196,7 +237,7 @@
                         </Button>
 
                         <!-- 系统工具标题 -->
-                        <TextBlock Text="系统工具" FontSize="10" FontWeight="SemiBold"
+                        <TextBlock Text="系统工具" FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold"
                                    Foreground="{StaticResource Gray400Brush}"
                                    Margin="12,0,0,4"/>
 
@@ -210,7 +251,7 @@
                                       Stroke="{StaticResource Gray600Brush}" StrokeThickness="2"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBlock Text="数据备份" VerticalAlignment="Center" FontSize="13"/>
+                                <TextBlock Text="数据备份" VerticalAlignment="Center" FontSize="{StaticResource FontSizeSmall}"/>
                             </StackPanel>
                         </Button>
 
@@ -224,7 +265,7 @@
                                       Stroke="{StaticResource Gray600Brush}" StrokeThickness="2"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBlock Text="数据恢复" VerticalAlignment="Center" FontSize="13"/>
+                                <TextBlock Text="数据恢复" VerticalAlignment="Center" FontSize="{StaticResource FontSizeSmall}"/>
                             </StackPanel>
                         </Button>
 
@@ -238,45 +279,90 @@
                                       Stroke="{StaticResource Gray600Brush}" StrokeThickness="2"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBlock Text="审计验证" VerticalAlignment="Center" FontSize="13"/>
+                                <TextBlock Text="审计验证" VerticalAlignment="Center" FontSize="{StaticResource FontSizeSmall}"/>
                             </StackPanel>
                         </Button>
 
-                        <!-- 状态消息 -->
-                        <Border Background="{StaticResource SuccessBgBrush}"
-                                CornerRadius="6" Padding="10,8" Margin="4,12,4,0"
-                                Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource IconCircleCheck}"
-                                      Width="14" Height="14" Stretch="Uniform"
-                                      Stroke="{StaticResource SuccessBrush}" StrokeThickness="2"
-                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                      VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock Text="{Binding StatusMessage}"
-                                           Style="{StaticResource TextSuccess}" FontSize="11"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Background="{StaticResource ErrorBgBrush}"
-                                CornerRadius="6" Padding="10,8" Margin="4,4,4,0"
-                                Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsed}}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource IconAlertTriangle}"
-                                      Width="14" Height="14" Stretch="Uniform"
-                                      Stroke="{StaticResource ErrorBrush}" StrokeThickness="2"
-                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                      VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock Text="{Binding ErrorMessage}"
-                                           Style="{StaticResource TextError}" FontSize="11"/>
-                            </StackPanel>
-                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>
         </Border>
 
         <!-- ======== 内容区域 ======== -->
-        <ContentControl Grid.Column="1"
-                        Content="{Binding CurrentViewModel}"/>
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- 顶部状态消息 + AI 状态栏（操作反馈，紧邻内容区） -->
+            <StackPanel Grid.Row="0" Margin="12,8,12,0">
+                <!-- AI 状态栏 -->
+                <Border Background="#F0FDF4"
+                        CornerRadius="6" Padding="10,6"
+                        BorderBrush="#BBF7D0" BorderThickness="1"
+                        Visibility="{Binding AiStatusVisible, Converter={StaticResource BoolToVis}}">
+                    <DockPanel>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Ellipse Width="8" Height="8"
+                                     Fill="{Binding AiStatusColor}"
+                                     VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding AiStatusText}"
+                                       FontSize="{StaticResource FontSizeTiny}" Foreground="#166534"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                            <Button Content="加载大模型"
+                                    Style="{StaticResource BtnOutlineSm}"
+                                    Padding="8,2" Margin="4,0"
+                                    Command="{Binding LoadAiModelCommand}"
+                                    Visibility="{Binding AiLoadButtonVisible, Converter={StaticResource BoolToVis}}"/>
+                            <Button Content="卸载大模型"
+                                    Style="{StaticResource BtnOutlineSm}"
+                                    Padding="8,2" Margin="4,0"
+                                    Command="{Binding UnloadAiModelCommand}"
+                                    Visibility="{Binding AiUnloadButtonVisible, Converter={StaticResource BoolToVis}}"/>
+                            <Button Content="{Binding AiHealthCheckButtonText}"
+                                    Style="{StaticResource BtnOutlineSm}"
+                                    Padding="8,2" Margin="4,0"
+                                    Command="{Binding RunAiHealthCheckCommand}"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <!-- 成功消息 -->
+                <Border Background="{StaticResource SuccessBgBrush}"
+                        CornerRadius="6" Padding="10,8" Margin="0,4,0,0"
+                        Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource IconCircleCheck}"
+                              Width="14" Height="14" Stretch="Uniform"
+                              Stroke="{StaticResource SuccessBrush}" StrokeThickness="2"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                              VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   Style="{StaticResource TextSuccess}" FontSize="{StaticResource FontSizeTiny}"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="{StaticResource ErrorBgBrush}"
+                        CornerRadius="6" Padding="10,8" Margin="0,4,0,0"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsed}}">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource IconAlertTriangle}"
+                              Width="14" Height="14" Stretch="Uniform"
+                              Stroke="{StaticResource ErrorBrush}" StrokeThickness="2"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                              VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   Style="{StaticResource TextError}" FontSize="{StaticResource FontSizeTiny}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- 页面内容 -->
+            <ContentControl Grid.Row="1"
+                            Content="{Binding CurrentViewModel}"
+                            Margin="0,4,0,0"/>
+        </Grid>
     </Grid>
 </Window>

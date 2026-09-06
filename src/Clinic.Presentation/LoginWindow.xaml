@@ -1,4 +1,4 @@
-<Window x:Class="Clinic.Presentation.LoginWindow"
+﻿<Window x:Class="Clinic.Presentation.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,9 +7,10 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:LoginViewModel}"
         Title="登录 — 陈医生诊所处方管理系统"
-        Height="500" Width="400"
+        Width="420" MinHeight="500"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize">
+        ResizeMode="CanMinimize"
+        SizeToContent="Height">
     <Window.Resources>
         <conv:NullToCollapsedConverter x:Key="NullToCollapsedConverter"
                                         xmlns:conv="clr-namespace:Clinic.Presentation.Converters"/>
@@ -55,7 +56,7 @@
                            FontSize="18" FontWeight="SemiBold"
                            Foreground="White" HorizontalAlignment="Center"/>
                 <TextBlock Text="Dr. Chen's Clinic"
-                           FontSize="11" Foreground="#A7F3D0"
+                           FontSize="{StaticResource FontSizeTiny}" Foreground="#A7F3D0"
                            HorizontalAlignment="Center" Margin="0,2,0,0"/>
             </StackPanel>
 
@@ -75,7 +76,14 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="12"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="16"/>
+                        <RowDefinition Height="1"/>
+                        <RowDefinition Height="16"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
@@ -83,17 +91,36 @@
                     <TextBlock Grid.Row="0" Text="用户名"
                                Style="{StaticResource TextLabel}"/>
                     <TextBox Grid.Row="2"
-                             Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"/>
+                             Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                             AutomationProperties.Name="用户名"/>
 
                     <!-- Password -->
                     <TextBlock Grid.Row="4" Text="密码"
                                Style="{StaticResource TextLabel}"/>
                     <PasswordBox Grid.Row="6"
                                  x:Name="PasswordBox"
+                                 AutomationProperties.Name="密码"
                                  PasswordChanged="PasswordBox_PasswordChanged"/>
 
+                    <!-- AI 辅助选项 -->
+                    <CheckBox Grid.Row="8"
+                              Content="启用 AI 辅助（加载本地大模型，需 ≥6GB 内存）"
+                              IsChecked="{Binding EnableAiAssistant}"
+                              FontSize="{StaticResource FontSizeTiny}"
+                              Foreground="{StaticResource TextSecondaryBrush}"
+                              Margin="0,4,0,0"/>
+
+                    <!-- 系统自检状态 -->
+                    <TextBlock Grid.Row="9"
+                               Text="{Binding HealthCheckMessage}"
+                               FontSize="{StaticResource FontSizeMicro}"
+                               Foreground="{Binding HealthCheckColor}"
+                               TextWrapping="Wrap"
+                               Margin="0,2,0,0"
+                               Visibility="{Binding HealthCheckMessage, Converter={StaticResource NullToCollapsedConverter}}"/>
+
                     <!-- Error Message -->
-                    <Border Grid.Row="8"
+                    <Border Grid.Row="11"
                             Background="{StaticResource ErrorBgBrush}"
                             CornerRadius="6" Padding="12,8"
                             Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsedConverter}}">
@@ -109,11 +136,22 @@
                     </Border>
 
                     <!-- Login Button -->
-                    <Button Grid.Row="10"
+                    <Button Grid.Row="13"
                             Content="登 录"
                             Style="{StaticResource BtnPrimaryLg}"
                             Command="{Binding LoginCommand}"
                             IsDefault="True"/>
+
+                    <!-- 分隔线 -->
+                    <Border Grid.Row="15" Height="1" Background="{StaticResource Gray200Brush}"/>
+
+                    <!-- 注册链接 -->
+                    <TextBlock Grid.Row="17" HorizontalAlignment="Center">
+                        <Hyperlink Click="RegisterLink_Click" Foreground="{StaticResource PrimaryDarkBrush}" FontSize="{StaticResource FontSizeTiny}"
+                                   TextDecorations="None">
+                            <Run Text="没有账号？点击注册医生"/>
+                        </Hyperlink>
+                    </TextBlock>
                 </Grid>
             </Border>
         </Grid>

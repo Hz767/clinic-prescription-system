@@ -46,6 +46,12 @@ public sealed class NoOpLlmService : ILlmService
             RawOutput: string.Empty));
     }
 
+    public Task<IReadOnlyList<PrescriptionSuggestion>> ParsePrescriptionListAsync(
+        string freeText, CancellationToken ct = default)
+    {
+        return Task.FromResult<IReadOnlyList<PrescriptionSuggestion>>(Array.Empty<PrescriptionSuggestion>());
+    }
+
     public Task<LlmStatus> GetStatusAsync(CancellationToken ct = default)
     {
         return Task.FromResult(new LlmStatus(
@@ -53,5 +59,19 @@ public sealed class NoOpLlmService : ILlmService
             ModelName: null,
             Endpoint: null,
             Message: "LLM 功能未启用。如需使用，请安装 Ollama 并在 appsettings.json 中配置。"));
+    }
+
+    public Task<EvidenceBasedAdvice> GenerateEvidenceBasedAdviceAsync(
+        string patientInfo, string chiefComplaint, string diagnosis, string vitalSigns,
+        CancellationToken ct = default)
+    {
+        return Task.FromResult(new EvidenceBasedAdvice(
+            DifferentialDiagnoses: string.Empty,
+            SuggestedExams: string.Empty,
+            TreatmentOptions: string.Empty,
+            MedicationReference: string.Empty,
+            RiskWarnings: string.Empty,
+            EvidenceLevel: string.Empty,
+            RawOutput: null));
     }
 }

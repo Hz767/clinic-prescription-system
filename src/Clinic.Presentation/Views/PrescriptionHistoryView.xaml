@@ -1,4 +1,4 @@
-<UserControl x:Class="Clinic.Presentation.Views.PrescriptionHistoryView"
+﻿<UserControl x:Class="Clinic.Presentation.Views.PrescriptionHistoryView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -32,7 +32,7 @@
                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <ProgressBar IsIndeterminate="True" Width="120" Height="4"
                          HorizontalAlignment="Left"/>
-            <TextBlock Text="处理中..." FontSize="12"
+            <TextBlock Text="处理中..." FontSize="{StaticResource FontSizeCaption}"
                        Foreground="{StaticResource PrimaryBrush}"
                        VerticalAlignment="Center" Margin="8,0,0,0"/>
         </StackPanel>
@@ -43,9 +43,9 @@
             <TextBox Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}"
                      Width="200" Margin="0,0,12,0"/>
             <TextBlock Text="从" VerticalAlignment="Center" Margin="0,0,4,0"/>
-            <DatePicker SelectedDate="{Binding FromDate}" Width="140" Margin="0,0,8,0"/>
+            <DatePicker SelectedDate="{Binding FromDate, Mode=TwoWay}" Width="140" Margin="0,0,8,0"/>
             <TextBlock Text="到" VerticalAlignment="Center" Margin="0,0,4,0"/>
-            <DatePicker SelectedDate="{Binding ToDate}" Width="140" Margin="0,0,12,0"/>
+            <DatePicker SelectedDate="{Binding ToDate, Mode=TwoWay}" Width="140" Margin="0,0,12,0"/>
             <Button Content="搜索"
                     Command="{Binding SearchCommand}"
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
@@ -54,14 +54,14 @@
 
         <!-- 消息区 -->
         <TextBlock Grid.Row="3" Text="{Binding StatusMessage}"
-                   Foreground="#059669" FontSize="12" Margin="0,0,0,8"
+                   Foreground="{StaticResource SuccessBrush}" FontSize="{StaticResource FontSizeCaption}" Margin="0,0,0,8"
                    Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}"/>
         <TextBlock Grid.Row="3" Text="{Binding ErrorMessage}"
-                   Foreground="#DC2626" FontSize="12" Margin="0,0,0,8"
+                   Foreground="{StaticResource ErrorBrush}" FontSize="{StaticResource FontSizeCaption}" Margin="0,0,0,8"
                    Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsed}}"/>
 
         <!-- 处方列表 -->
-        <DataGrid Grid.Row="4"
+        <DataGrid EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" Grid.Row="4"
                   ItemsSource="{Binding Prescriptions}"
                   SelectedItem="{Binding SelectedPrescription}"
                   AutoGenerateColumns="False"

@@ -1,13 +1,14 @@
-<UserControl x:Class="Clinic.Presentation.Views.PrescriptionView"
+﻿<UserControl x:Class="Clinic.Presentation.Views.PrescriptionView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Clinic.Presentation.ViewModels"
+             xmlns:controls="clr-namespace:Clinic.Presentation.Controls"
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:PrescriptionViewModel}"
-             Background="#F3F4F6"
+             Background="{StaticResource SurfaceDarkBrush}"
              Loaded="PrescriptionView_Loaded">
     <UserControl.Resources>
         <conv:NullToCollapsedConverter x:Key="NullToCollapsed"
@@ -46,6 +47,68 @@
     </UserControl.Resources>
 
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ════════════════ 顶部：当前患者信息条（横跨，已选患者时显示） ════════════════ -->
+        <Border Grid.Row="0"
+                Visibility="{Binding SelectedPatient, Converter={StaticResource NullToCollapsed}}"
+                Background="White" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="0,0,0,1"
+                Padding="16,10">
+            <DockPanel>
+                <!-- 右侧操作 -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource BtnOutlineSm}"
+                            Content="清除患者"
+                            Command="{Binding SelectPatientCommand}"
+                            CommandParameter="{x:Null}"/>
+                </StackPanel>
+                <!-- 患者信息 -->
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding SelectedPatient.Name, Mode=OneWay}"
+                                   FontSize="{StaticResource FontSizeSubtitle}" FontWeight="Bold" Foreground="{StaticResource Gray900Brush}"
+                                   VerticalAlignment="Center"/>
+                        <Border Background="{StaticResource PrimaryBgBrush}" CornerRadius="4" Padding="6,2" Margin="8,0,0,0"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{Binding SelectedPatientAgeText, Mode=OneWay}"
+                                       FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource PrimaryDarkBrush}"/>
+                        </Border>
+                        <TextBlock Text="{Binding SelectedPatient.Gender, Mode=OneWay}"
+                                   FontSize="{StaticResource FontSizeCaption}" Foreground="{StaticResource TextMutedBrush}" Margin="8,0,0,0"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding SelectedPatient.Phone, Mode=OneWay}"
+                                   FontSize="{StaticResource FontSizeCaption}" Foreground="{StaticResource TextMutedBrush}" Margin="12,0,0,0"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <!-- 过敏史 -->
+                        <StackPanel Orientation="Horizontal" Visibility="{Binding HasAllergy, Converter={StaticResource BoolToVisibility}}">
+                            <Border Background="#FEF2F2" CornerRadius="4" Padding="6,2">
+                                <TextBlock FontSize="{StaticResource FontSizeTiny}">
+                                    <Run Text="过敏：" Foreground="#991B1B"/>
+                                    <Run Text="{Binding SelectedPatientAllergyText, Mode=OneWay}" Foreground="{StaticResource ErrorBrush}" FontWeight="SemiBold"/>
+                                </TextBlock>
+                            </Border>
+                        </StackPanel>
+                        <!-- 基础疾病 -->
+                        <StackPanel Orientation="Horizontal" Visibility="{Binding HasChronic, Converter={StaticResource BoolToVisibility}}" Margin="8,0,0,0">
+                            <Border Background="#FFFBEB" CornerRadius="4" Padding="6,2">
+                                <TextBlock FontSize="{StaticResource FontSizeTiny}">
+                                    <Run Text="慢病：" Foreground="#92400E"/>
+                                    <Run Text="{Binding SelectedPatientChronicText, Mode=OneWay}" Foreground="#B45309"/>
+                                </TextBlock>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ════════════════ 中间内容区（左右两栏） ════════════════ -->
+        <Grid Grid.Row="1">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="6"/>
@@ -56,83 +119,61 @@
         <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Background="White">
             <StackPanel Margin="12">
 
-                <!-- ── 患者信息 + 体征 ── -->
+                <!-- ── 患者搜索（AutoCompleteTextBox 带防抖） ── -->
                 <Border Style="{StaticResource CardBorder}">
                     <StackPanel>
-                        <TextBlock Text="患者信息" Style="{StaticResource TextSectionHeader}" Margin="0,0,0,8"/>
+                        <TextBlock Text="患者搜索" Style="{StaticResource TextSectionHeader}" Margin="0,0,0,8"/>
                         <TextBlock Text="输入姓名或手机号，自动联想匹配" Style="{StaticResource TextCaption}" Margin="0,0,0,6"/>
 
-                        <TextBox x:Name="PatientSearchBox"
-                                 Text="{Binding PatientSearchKeyword, UpdateSourceTrigger=PropertyChanged}"
-                                 VerticalContentAlignment="Center"
-                                 GotFocus="PatientSearchBox_GotFocus"
-                                 LostFocus="PatientSearchBox_LostFocus"/>
-
-                        <Border Visibility="{Binding ShowPatientDropdown, Converter={StaticResource BoolToVisibility}}"
-                                Background="White" BorderBrush="#D1D5DB" BorderThickness="1"
-                                CornerRadius="4" MaxHeight="240" Margin="0,2,0,0">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="*"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
-                                <!-- 搜索结果列表（有匹配时显示） -->
-                                <ListBox Grid.Row="0" x:Name="PatientListBox"
-                                         ItemsSource="{Binding FilteredPatients}"
-                                         BorderThickness="0"
-                                         PreviewMouseLeftButtonUp="PatientListBox_PreviewMouseLeftButtonUp"
-                                         Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}">
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Margin="4,3">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel Grid.Column="0">
-                                                    <TextBlock FontWeight="SemiBold">
-                                                        <Run Text="{Binding Name, Mode=OneWay}"/>
-                                                        <Run Text="  " FontSize="10"/>
-                                                        <Run Text="{Binding Gender, Mode=OneWay}" FontSize="11" Foreground="#6B7280"/>
-                                                    </TextBlock>
-                                                    <TextBlock Text="{Binding Phone}" FontSize="11" Foreground="#6B7280"/>
-                                                </StackPanel>
-                                                <TextBlock Grid.Column="1" VerticalAlignment="Center"
-                                                           FontSize="9" Foreground="#6B7280"
-                                                           Text="{Binding ChronicTags}"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
-
-                                <!-- 无匹配时提示 -->
-                                <TextBlock Grid.Row="0" Text="未找到匹配患者" Foreground="#6B7280" FontSize="12"
-                                           Margin="12,10" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                           Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisibility}}"/>
-
-                                <!-- 新建患者档案按钮（始终显示在下拉底部） -->
-                                <Border Grid.Row="1" BorderBrush="#E5E7EB" BorderThickness="0,1,0,0" Padding="8,6">
-                                    <Button Style="{StaticResource BtnOutlineSm}"
-                                            Command="{Binding ToggleQuickRegistrationCommand}"
-                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Path Data="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
-                                                  Width="12" Height="12" Stretch="Uniform" Margin="0,0,4,0"
-                                                  VerticalAlignment="Center"
-                                                  Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
-                                            <TextBlock Text="新建患者档案" VerticalAlignment="Center" FontSize="11"/>
+                        <controls:AutoCompleteTextBox
+                            x:Name="PatientSearchBox"
+                            Text="{Binding PatientSearchKeyword, UpdateSourceTrigger=PropertyChanged}"
+                            ItemsSource="{Binding FilteredPatients}"
+                            SelectedItem="{Binding SelectedPatient, Mode=TwoWay}"
+                            IsDropDownOpen="{Binding ShowPatientDropdown, Mode=TwoWay}"
+                            MinSearchLength="1">
+                            <controls:AutoCompleteTextBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock FontWeight="SemiBold">
+                                                <Run Text="{Binding Name, Mode=OneWay}"/>
+                                                <Run Text="  " FontSize="{StaticResource FontSizeMicro}"/>
+                                                <Run Text="{Binding Gender, Mode=OneWay}" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"/>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding Phone}" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"/>
                                         </StackPanel>
-                                    </Button>
-                                </Border>
-                            </Grid>
-                        </Border>
+                                        <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                                                   FontSize="9" Foreground="{StaticResource TextMutedBrush}"
+                                                   Text="{Binding ChronicTags}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </controls:AutoCompleteTextBox.ItemTemplate>
+                        </controls:AutoCompleteTextBox>
+
+                        <!-- 新建患者档案按钮（始终可见） -->
+                        <Button Style="{StaticResource BtnOutlineSm}"
+                                Command="{Binding ToggleQuickRegistrationCommand}"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                Margin="0,6,0,0" Padding="8,4">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
+                                      Width="12" Height="12" Stretch="Uniform" Margin="0,0,4,0"
+                                      VerticalAlignment="Center"
+                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                                <TextBlock Text="新建患者档案" VerticalAlignment="Center" FontSize="{StaticResource FontSizeTiny}"/>
+                            </StackPanel>
+                        </Button>
 
                         <Border Visibility="{Binding IsQuickRegistration, Converter={StaticResource BoolToVisibility}}"
-                                Background="#F9FAFB" CornerRadius="6" Padding="12,10" Margin="0,6,0,0"
-                                BorderBrush="#D1D5DB" BorderThickness="1">
+                                Background="{StaticResource Gray50Brush}" CornerRadius="6" Padding="12,10" Margin="0,6,0,0"
+                                BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="快速建档" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
+                                <TextBlock Text="快速建档" FontWeight="SemiBold" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,8"/>
 
                                 <!-- 姓名 + 性别 -->
                                 <Grid>
@@ -143,15 +184,15 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="80"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="姓名" FontSize="11" Foreground="#6B7280"
+                                    <TextBlock Grid.Column="0" Text="姓名" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
                                                VerticalAlignment="Center" Margin="0,0,6,0"/>
                                     <TextBox Grid.Column="1"
                                              Text="{Binding NewPatientName, UpdateSourceTrigger=PropertyChanged}"
                                              VerticalContentAlignment="Center"/>
-                                    <TextBlock Grid.Column="3" Text="性别" FontSize="11" Foreground="#6B7280"
+                                    <TextBlock Grid.Column="3" Text="性别" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
                                                VerticalAlignment="Center" Margin="0,0,6,0"/>
                                     <ComboBox Grid.Column="4"
-                                              SelectedValue="{Binding NewPatientGender}"
+                                              SelectedValue="{Binding NewPatientGender, Mode=TwoWay}"
                                               SelectedValuePath="Content"
                                               VerticalContentAlignment="Center">
                                         <ComboBoxItem Content="男"/>
@@ -165,7 +206,7 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="手机号" FontSize="11" Foreground="#6B7280"
+                                    <TextBlock Grid.Column="0" Text="手机号" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
                                                VerticalAlignment="Center" Margin="0,0,6,0"/>
                                     <TextBox Grid.Column="1"
                                              Text="{Binding NewPatientPhone, UpdateSourceTrigger=PropertyChanged}"
@@ -173,7 +214,7 @@
                                 </Grid>
                                 <!-- 手机号验证错误提示 -->
                                 <TextBlock Text="{Binding NewPatientPhoneError}"
-                                           FontSize="10" Foreground="#DC2626" Margin="44,2,0,0"
+                                           FontSize="{StaticResource FontSizeMicro}" Foreground="{StaticResource ErrorBrush}" Margin="44,2,0,0"
                                            TextWrapping="Wrap"
                                            Visibility="{Binding NewPatientPhoneError, Converter={StaticResource NullToCollapsed}}"/>
 
@@ -183,12 +224,13 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="出生日期" FontSize="11" Foreground="#6B7280"
+                                    <TextBlock Grid.Column="0" Text="出生日期" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
                                                VerticalAlignment="Center" Margin="0,0,6,0"/>
                                     <DatePicker Grid.Column="1"
-                                                SelectedDate="{Binding NewPatientDob}"
+                                                SelectedDate="{Binding NewPatientDob, Mode=TwoWay}"
                                                 VerticalContentAlignment="Center"
-                                                Height="28"/>
+                                                Height="28"
+                                                Language="zh-CN"/>
                                 </Grid>
 
                                 <!-- 过敏史 -->
@@ -197,10 +239,10 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="过敏史" FontSize="11" Foreground="#6B7280"
+                                    <TextBlock Grid.Column="0" Text="过敏史" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
                                                VerticalAlignment="Top" Margin="0,4,6,0"/>
                                     <TextBox Grid.Column="1"
-                                             Text="{Binding NewPatientAllergies, UpdateSourceTrigger=PropertyChanged}"
+                                             Text="{Binding NewPatientAllergies, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              VerticalContentAlignment="Center"
                                              ToolTip="如有药物过敏请填写，如：青霉素、磺胺类"
                                              Height="28"/>
@@ -212,10 +254,10 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="基础疾病" FontSize="11" Foreground="#6B7280"
+                                    <TextBlock Grid.Column="0" Text="基础疾病" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
                                                VerticalAlignment="Top" Margin="0,4,6,0"/>
                                     <TextBox Grid.Column="1"
-                                             Text="{Binding NewPatientChronicTags, UpdateSourceTrigger=PropertyChanged}"
+                                             Text="{Binding NewPatientChronicTags, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              VerticalContentAlignment="Center"
                                              ToolTip="如有慢性病请填写，如：高血压、糖尿病、冠心病"
                                              Height="28"/>
@@ -232,148 +274,6 @@
                                 </DockPanel>
                             </StackPanel>
                         </Border>
-
-                        <Border Visibility="{Binding SelectedPatient, Converter={StaticResource NullToCollapsed}}"
-                                Background="#F0FDF4" CornerRadius="6" Padding="10,8"
-                                Margin="0,8,0,0" BorderBrush="#A7F3D0" BorderThickness="1">
-                            <StackPanel>
-                                <DockPanel>
-                                    <Button DockPanel.Dock="Right" Style="{StaticResource BtnOutlineSm}"
-                                            Content="清除" FontSize="11" Padding="8,2"
-                                            Command="{Binding SelectPatientCommand}"
-                                            CommandParameter="{x:Null}"/>
-                                    <StackPanel>
-                                        <TextBlock FontWeight="SemiBold" FontSize="13">
-                                            <Run Text="已选患者：" Foreground="#6B7280"/>
-                                            <Run Text="{Binding SelectedPatient.Name, Mode=OneWay}" Foreground="#0D9488"/>
-                                        </TextBlock>
-                                        <TextBlock FontSize="11" Foreground="#6B7280" Margin="0,2,0,0">
-                                            <Run Text="{Binding SelectedPatient.Gender, Mode=OneWay}"/>
-                                            <Run Text=" | "/>
-                                            <Run Text="{Binding SelectedPatientAgeText, Mode=OneWay}"/>
-                                            <Run Text=" | "/>
-                                            <Run Text="{Binding SelectedPatient.Phone, Mode=OneWay}"/>
-                                        </TextBlock>
-                                        <TextBlock FontSize="11" Margin="0,2,0,0">
-                                            <Run Text="过敏史：" Foreground="#6B7280"/>
-                                            <Run Text="{Binding SelectedPatientAllergyText, Mode=OneWay}" Foreground="#DC2626"/>
-                                        </TextBlock>
-                                        <TextBlock FontSize="11" Margin="0,1,0,0">
-                                            <Run Text="基础疾病：" Foreground="#6B7280"/>
-                                            <Run Text="{Binding SelectedPatientChronicText, Mode=OneWay}" Foreground="#374151"/>
-                                        </TextBlock>
-                                    </StackPanel>
-                                </DockPanel>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </Border>
-
-                <!-- ── 就诊体征（实时变量，本次就诊测量，保存到处方记录） ── -->
-                <Border Style="{StaticResource CardBorder}" Margin="0,10,0,0">
-                    <StackPanel>
-                        <!-- 可折叠标题 -->
-                        <DockPanel Margin="0,0,0,0">
-                            <ToggleButton DockPanel.Dock="Right" IsChecked="{Binding IsVitalSignsExpanded, Mode=TwoWay}"
-                                          FontSize="10" Padding="4,0" Background="Transparent" BorderThickness="0" Cursor="Hand">
-                                <ToggleButton.Style>
-                                    <Style TargetType="ToggleButton">
-                                        <Setter Property="Content" Value="▶"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter Property="Content" Value="▼"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ToggleButton.Style>
-                            </ToggleButton>
-                            <TextBlock Text="就诊体征" Style="{StaticResource TextSectionHeader}"/>
-                        </DockPanel>
-                        <!-- 折叠内容 -->
-                        <StackPanel Visibility="{Binding IsVitalSignsExpanded, Converter={StaticResource BoolToVisibility}}">
-                        <TextBlock Text="本次就诊实时测量，保存到处方记录中（非患者长期数据）" Style="{StaticResource TextCaption}" Margin="0,0,0,8"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="55"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="45"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="45"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="55"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="体重:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
-                            <TextBox Grid.Column="1" Text="{Binding PatientWeight, Converter={StaticResource DecimalInput}, UpdateSourceTrigger=LostFocus}"
-                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Padding="4,1"
-                                     InputMethod.IsInputMethodEnabled="False"
-                                     PreviewTextInput="NumericOnly_PreviewTextInput"/>
-                            <TextBlock Grid.Column="2" Text="kg" VerticalAlignment="Center" FontSize="11" Foreground="#6B7280"/>
-                            <TextBlock Grid.Column="4" Text="体温:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
-                            <TextBox Grid.Column="5" Text="{Binding PatientTemperature, Converter={StaticResource DecimalInput}, UpdateSourceTrigger=LostFocus}"
-                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Padding="4,1"
-                                     InputMethod.IsInputMethodEnabled="False"
-                                     PreviewTextInput="NumericOnly_PreviewTextInput"/>
-                            <TextBlock Grid.Column="6" Text="°C" VerticalAlignment="Center" FontSize="11" Foreground="#6B7280"/>
-                            <TextBlock Grid.Column="8" Text="血压:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
-                            <TextBox Grid.Column="9" Text="{Binding PatientSystolicBP, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Padding="4,1"
-                                     InputMethod.IsInputMethodEnabled="False"
-                                     PreviewTextInput="NumericOnly_PreviewTextInput"/>
-                            <TextBlock Grid.Column="10" Text="/" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11"/>
-                            <TextBox Grid.Column="11" Text="{Binding PatientDiastolicBP, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Margin="2,0,0,0" Padding="4,1"
-                                     InputMethod.IsInputMethodEnabled="False"
-                                     PreviewTextInput="NumericOnly_PreviewTextInput"/>
-                            <TextBlock Grid.Column="13" Text="心率:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
-                            <TextBox Grid.Column="14" Text="{Binding PatientHeartRate, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                     VerticalContentAlignment="Center" FontSize="11" Height="24" Width="55" Padding="4,1"
-                                     InputMethod.IsInputMethodEnabled="False"
-                                     PreviewTextInput="NumericOnly_PreviewTextInput"/>
-                        </Grid>
-
-                        <!-- 正常参考范围提示 -->
-                        <TextBlock Margin="0,4,0,0" FontSize="10" Foreground="#9CA3AF" TextWrapping="Wrap"
-                                   Text="参考范围：体重2-200kg | 体温36-37.3°C | 血压90-140/60-90mmHg | 心率60-100次/分"/>
-
-                        <!-- 体征异常警告（实时检查，输入即验证） -->
-                        <Border Margin="0,6,0,0" CornerRadius="4" Padding="8,5"
-                                Visibility="{Binding HasVitalSignsWarning, Converter={StaticResource BoolToVisibility}}">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="#FEF3C7"/>
-                                    <Setter Property="BorderBrush" Value="#FCD34D"/>
-                                    <Setter Property="BorderThickness" Value="1"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding VitalSignsWarningLevel}" Value="2">
-                                            <Setter Property="Background" Value="#FEE2E2"/>
-                                            <Setter Property="BorderBrush" Value="#FCA5A5"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <TextBlock Text="{Binding VitalSignsWarning}" FontSize="11" TextWrapping="Wrap"
-                                       Foreground="#92400E">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding VitalSignsWarningLevel}" Value="2">
-                                                <Setter Property="Foreground" Value="#991B1B"/>
-                                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Border>
-                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -384,7 +284,7 @@
                         <!-- 可折叠标题 -->
                         <DockPanel>
                             <ToggleButton DockPanel.Dock="Right" IsChecked="{Binding IsHistoryExpanded, Mode=TwoWay}"
-                                          FontSize="10" Padding="4,0" Background="Transparent" BorderThickness="0" Cursor="Hand">
+                                          FontSize="{StaticResource FontSizeMicro}" Padding="4,0" Background="Transparent" BorderThickness="0" Cursor="Hand">
                                 <ToggleButton.Style>
                                     <Style TargetType="ToggleButton">
                                         <Setter Property="Content" Value="▶"/>
@@ -404,23 +304,23 @@
                         <ItemsControl ItemsSource="{Binding PatientHistory}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#F9FAFB" CornerRadius="4" Padding="8,6" Margin="0,0,0,4"
-                                            BorderBrush="#E5E7EB" BorderThickness="1">
+                                    <Border Background="{StaticResource Gray50Brush}" CornerRadius="4" Padding="8,6" Margin="0,0,0,4"
+                                            BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1">
                                         <StackPanel>
                                             <DockPanel>
-                                                <TextBlock DockPanel.Dock="Right" FontSize="11" Foreground="#6B7280"
+                                                <TextBlock DockPanel.Dock="Right" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
                                                            VerticalAlignment="Center"
                                                            Text="{Binding CreatedAt, StringFormat='yyyy-MM-dd HH:mm'}"/>
-                                                <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#0D9488">
+                                                <TextBlock FontSize="{StaticResource FontSizeCaption}" FontWeight="SemiBold" Foreground="{StaticResource PrimaryDarkBrush}">
                                                     <Run Text="{Binding NoYearSeq, Mode=OneWay}"/>
                                                 </TextBlock>
                                             </DockPanel>
-                                            <TextBlock FontSize="11" Foreground="#374151" Margin="0,2,0,0"
+                                            <TextBlock FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource Gray700Brush}" Margin="0,2,0,0"
                                                        Text="{Binding DiagnosisText}"
                                                        TextTrimming="CharacterEllipsis"
                                                        MaxWidth="280"/>
                                             <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                                <TextBlock FontSize="10" Foreground="#6B7280">
+                                                <TextBlock FontSize="{StaticResource FontSizeMicro}" Foreground="{StaticResource TextMutedBrush}">
                                                     <Run Text="{Binding DoctorName, Mode=OneWay}"/>
                                                     <Run Text=" | "/>
                                                     <Run Text="{Binding ItemCount, Mode=OneWay}"/>
@@ -433,147 +333,6 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- ── 主诉 ── -->
-                <Border Style="{StaticResource CardBorder}" Margin="0,10,0,0">
-                    <StackPanel>
-                        <!-- 可折叠标题 -->
-                        <DockPanel>
-                            <ToggleButton DockPanel.Dock="Right" IsChecked="{Binding IsChiefComplaintExpanded, Mode=TwoWay}"
-                                          FontSize="10" Padding="4,0" Background="Transparent" BorderThickness="0" Cursor="Hand">
-                                <ToggleButton.Style>
-                                    <Style TargetType="ToggleButton">
-                                        <Setter Property="Content" Value="▶"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter Property="Content" Value="▼"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ToggleButton.Style>
-                            </ToggleButton>
-                            <TextBlock Text="主诉" Style="{StaticResource TextSectionHeader}"/>
-                        </DockPanel>
-                        <!-- 折叠内容 -->
-                        <StackPanel Visibility="{Binding IsChiefComplaintExpanded, Converter={StaticResource BoolToVisibility}}">
-                        <TextBox Text="{Binding ChiefComplaint, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="点击下方常见主诉标签添加，也可手动输入"
-                                 Height="28" VerticalContentAlignment="Center"/>
-                        <TextBlock Text="常见主诉（点击添加，可多选）" Style="{StaticResource TextCaption}" Margin="0,6,0,3"/>
-                        <ScrollViewer MaxHeight="60" VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{Binding CommonChiefComplaints}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Content="{Binding}"
-                                                Command="{Binding DataContext.AddChiefComplaintCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"
-                                                Padding="6,2" Margin="0,0,4,4"
-                                                FontSize="11"
-                                                Background="#FFF3E0" BorderBrush="#FFCC80"
-                                                Foreground="#E65100"
-                                                Cursor="Hand"/>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- ── 诊断 ── -->
-                <Border Style="{StaticResource CardBorder}" Margin="0,10,0,0">
-                    <StackPanel>
-                        <!-- 可折叠标题（含处方类型和AI按钮） -->
-                        <DockPanel Margin="0,0,0,6">
-                            <ToggleButton DockPanel.Dock="Right" IsChecked="{Binding IsDiagnosisExpanded, Mode=TwoWay}"
-                                          FontSize="10" Padding="4,0" Background="Transparent" BorderThickness="0" Cursor="Hand"
-                                          VerticalAlignment="Center">
-                                <ToggleButton.Style>
-                                    <Style TargetType="ToggleButton">
-                                        <Setter Property="Content" Value="▶"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter Property="Content" Value="▼"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ToggleButton.Style>
-                            </ToggleButton>
-                            <TextBlock Text="诊断" Style="{StaticResource TextSectionHeader}" VerticalAlignment="Center"/>
-                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="0,0,8,0">
-                                <TextBlock Text="处方类型:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
-                                <ComboBox SelectedIndex="{Binding PrescriptionType}" Width="90" FontSize="11">
-                                    <ComboBoxItem Content="普通处方"/>
-                                    <ComboBoxItem Content="急诊处方"/>
-                                    <ComboBoxItem Content="儿科处方"/>
-                                </ComboBox>
-                                <Button Style="{StaticResource BtnOutlineSm}"
-                                        Content="AI生成病历"
-                                        Command="{Binding GenerateMedicalRecordCommand}"
-                                        Visibility="{Binding LlmIsAvailable, Converter={StaticResource BoolToVisibility}, FallbackValue=Collapsed}"
-                                        Margin="8,0,0,0"/>
-                            </StackPanel>
-                        </DockPanel>
-                        <!-- 折叠内容 -->
-                        <StackPanel Visibility="{Binding IsDiagnosisExpanded, Converter={StaticResource BoolToVisibility}}">
-
-                        <TextBox Text="{Binding DiagnosisText, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="点击下方常见诊断标签添加，也可手动输入"
-                                 Height="28" VerticalContentAlignment="Center"/>
-
-                        <TextBlock Text="常见诊断（点击添加，可多选）" Style="{StaticResource TextCaption}" Margin="0,6,0,3"/>
-                        <ScrollViewer MaxHeight="80" VerticalScrollBarVisibility="Auto">
-                            <ItemsControl x:Name="DiagnosisChips" ItemsSource="{Binding CommonDiagnoses}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Content="{Binding}"
-                                                Command="{Binding DataContext.AddDiagnosisCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"
-                                                Padding="6,2" Margin="0,0,4,4"
-                                                FontSize="11"
-                                                Background="#E8F4FD" BorderBrush="#B3D9F2"
-                                                Foreground="#1565C0"
-                                                Cursor="Hand"/>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-
-                        <!-- AI病历结果（可编辑，确认后使用） -->
-                        <Border Background="#F0F7FF" BorderBrush="#B3D9F2" BorderThickness="1"
-                                CornerRadius="4" Padding="8" Margin="0,6,0,0"
-                                Visibility="{Binding HasAiDiagnosisResult, Converter={StaticResource BoolToVisibility}}">
-                            <StackPanel>
-                                <TextBlock Text="AI生成病历（可编辑，确认后使用）" FontSize="11" FontWeight="SemiBold"
-                                           Foreground="#1565C0" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding AiDiagnosisResult, UpdateSourceTrigger=PropertyChanged}"
-                                         AcceptsReturn="True" TextWrapping="Wrap"
-                                         MinHeight="60" MaxHeight="120"
-                                         VerticalScrollBarVisibility="Auto"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
-                                    <Button Style="{StaticResource BtnOutlineSm}"
-                                            Content="放弃"
-                                            Command="{Binding ClearAiDiagnosisCommand}"
-                                            Margin="0,0,6,0"/>
-                                    <Button Style="{StaticResource BtnPrimarySm}"
-                                            Content="确认使用"
-                                            Command="{Binding ConfirmAiDiagnosisCommand}"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -592,33 +351,53 @@
                                             Command="{Binding ParsePrescriptionCommand}"
                                             Margin="4,0,0,0"/>
                                     <TextBox Text="{Binding LlmPrescriptionInput, UpdateSourceTrigger=PropertyChanged}"
-                                             Height="24" Width="160" FontSize="11"
+                                             Height="24" Width="200" FontSize="{StaticResource FontSizeTiny}"
                                              VerticalContentAlignment="Center"
-                                             ToolTip="如「阿莫西林一天三次一次两粒吃七天」"/>
+                                             ToolTip="支持一次输入多种药品，如「阿莫西林胶囊 0.5g 一天三次吃三天；布洛芬 0.3g 一天两次吃五天」"/>
                                 </DockPanel>
                             </Border>
                         </DockPanel>
 
                         <DockPanel Margin="0,0,0,6">
-                            <TextBlock DockPanel.Dock="Left" Text="🔍" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <ComboBox DockPanel.Dock="Left" SelectedIndex="{Binding DrugCategoryFilter}"
+                                      Width="110" Margin="0,0,8,0" VerticalContentAlignment="Center"
+                                      ToolTip="按药品分类筛选">
+                                <ComboBoxItem Content="全部药品"/>
+                                <ComboBoxItem Content="抗菌药"/>
+                                <ComboBoxItem Content="特殊管理"/>
+                                <ComboBoxItem Content="低库存"/>
+                            </ComboBox>
+                            <TextBlock DockPanel.Dock="Left" Text="🔍" FontSize="{StaticResource FontSizeSmall}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBox Text="{Binding DrugFilter, UpdateSourceTrigger=PropertyChanged}"
                                      VerticalContentAlignment="Center"
+                                     AutomationProperties.Name="药品搜索"
                                      ToolTip="输入药品名称或规格进行模糊搜索"/>
                         </DockPanel>
 
-                        <DataGrid x:Name="DrugDataGrid"
+                        <DataGrid EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" x:Name="DrugDataGrid"
                                   ItemsSource="{Binding Drugs}"
                                   SelectedItem="{Binding SelectedDrug}"
                                   IsReadOnly="True"
                                   SelectionMode="Single"
                                   AutoGenerateColumns="False"
-                                  Height="140"
+                                  Height="520"
                                   MouseDoubleClick="DrugDataGrid_MouseDoubleClick">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="药品名称" Binding="{Binding GenericNameCn}" Width="*"/>
                                 <DataGridTextColumn Header="规格" Binding="{Binding Spec}" Width="80"/>
                                 <DataGridTextColumn Header="单位" Binding="{Binding Unit}" Width="50"/>
                                 <DataGridTextColumn Header="单价" Binding="{Binding RetailPriceRef, StringFormat=F2}" Width="70"/>
+                                <DataGridTemplateColumn Header="库存" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding AvailableQty, StringFormat={}{0:0.##}}" FontSize="{StaticResource FontSizeCaption}"/>
+                                                <TextBlock Text=" 低库存" FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold" Foreground="{StaticResource ErrorBrush}"
+                                                           Visibility="{Binding IsLowStock, Converter={StaticResource BoolToVisibility}}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                         <TextBlock Text="提示：双击药品行可快速添加到处方明细，用法用量可在右侧处方单中直接修改"
@@ -629,21 +408,42 @@
             </StackPanel>
         </ScrollViewer>
 
-        <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Stretch" Background="#E5E7EB"/>
+        <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Stretch" Background="{StaticResource Gray200Brush}"/>
 
         <!-- ════════════════ 右侧：模拟病历单 + 处方单 ════════════════ -->
-        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Background="#F3F4F6">
+        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Background="{StaticResource SurfaceDarkBrush}">
             <StackPanel Margin="12">
 
-                <!-- ── 模拟病历单 ── -->
-                <Border Background="White" BorderBrush="#D1D5DB" BorderThickness="1" CornerRadius="2"
+                <!-- ── 门诊病历（医生核心工作区：主诉/病史/体征/诊断一站式输入） ── -->
+                <Border Background="White" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" CornerRadius="2"
                         Margin="0,0,0,10">
                     <StackPanel Margin="16,12">
-                        <!-- 病历标题 -->
-                        <TextBlock Text="陈医生诊所" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"
-                                   FontFamily="Microsoft YaHei"/>
-                        <TextBlock Text="门 诊 病 历" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"
-                                   Margin="0,2,0,8" FontFamily="Microsoft YaHei"/>
+                        <!-- 病历标题 + 操作栏 -->
+                        <DockPanel Margin="0,0,0,6">
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                                <!-- 处方类型 -->
+                                <TextBlock Text="处方类型:" VerticalAlignment="Center" FontSize="{StaticResource FontSizeTiny}" Margin="0,0,4,0"/>
+                                <ComboBox SelectedIndex="{Binding PrescriptionType}" Width="80" FontSize="{StaticResource FontSizeTiny}"
+                                          VerticalContentAlignment="Center">
+                                    <ComboBoxItem Content="普通"/>
+                                    <ComboBoxItem Content="急诊"/>
+                                    <ComboBoxItem Content="儿科"/>
+                                </ComboBox>
+                                <!-- AI辅助编写病历按钮 -->
+                                <Button Style="{StaticResource BtnOutlineSm}"
+                                        Content="✨ AI辅助编写"
+                                        Command="{Binding GenerateMedicalRecordCommand}"
+                                        Visibility="{Binding LlmIsAvailable, Converter={StaticResource BoolToVisibility}, FallbackValue=Collapsed}"
+                                        Margin="8,0,0,0"
+                                        ToolTip="根据主诉和诊断，AI生成规范病历内容"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="陈医生诊所" FontSize="{StaticResource FontSizeBody}" FontWeight="Bold"
+                                           FontFamily="Microsoft YaHei"/>
+                                <TextBlock Text="门 诊 病 历" FontSize="{StaticResource FontSizeSubtitle}" FontWeight="Bold"
+                                           Margin="0,2,0,0" FontFamily="Microsoft YaHei"/>
+                            </StackPanel>
+                        </DockPanel>
                         <Line X1="0" Y1="0" X2="1" Y2="0" Stretch="Fill" Stroke="#9CA3AF" StrokeThickness="1" Margin="0,0,0,8"/>
 
                         <!-- 患者基本信息 -->
@@ -658,14 +458,14 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="80"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="姓名：" FontSize="11" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="1" Text="{Binding SelectedPatient.Name, FallbackValue='—'}" FontSize="11" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="2" Text="性别：" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                            <TextBlock Grid.Column="3" Text="{Binding SelectedPatient.Gender, FallbackValue='—'}" FontSize="11" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="4" Text="电话：" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                            <TextBlock Grid.Column="5" Text="{Binding SelectedPatient.Phone, FallbackValue='—'}" FontSize="11" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="6" Text="日期：" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                            <TextBlock Grid.Column="7" Text="{Binding Source={x:Static sys:DateTime.Now}, StringFormat='yyyy-MM-dd'}" FontSize="11" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="0" Text="姓名：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedPatient.Name, FallbackValue='—'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="性别：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            <TextBlock Grid.Column="3" Text="{Binding SelectedPatient.Gender, FallbackValue='—'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="4" Text="电话：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            <TextBlock Grid.Column="5" Text="{Binding SelectedPatient.Phone, FallbackValue='—'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="6" Text="日期：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            <TextBlock Grid.Column="7" Text="{Binding Source={x:Static sys:DateTime.Now}, StringFormat='yyyy-MM-dd'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
                         </Grid>
 
                         <!-- 主诉 -->
@@ -674,44 +474,142 @@
                                 <ColumnDefinition Width="50"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="主  诉：" FontSize="11" VerticalAlignment="Top" Margin="0,4,0,0"/>
-                            <TextBox Grid.Column="1" Text="{Binding ChiefComplaint, UpdateSourceTrigger=PropertyChanged}"
-                                     FontSize="11" BorderThickness="0,0,0,1" BorderBrush="#D1D5DB"
+                            <TextBlock Grid.Column="0" Text="主  诉：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                            <TextBox Grid.Column="1" x:Name="ChiefComplaintTextBox"
+                                     Text="{Binding ChiefComplaint, UpdateSourceTrigger=PropertyChanged}"
+                                     FontSize="{StaticResource FontSizeTiny}" BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderDefaultBrush}"
                                      Background="Transparent" Padding="0,2"
                                      MinHeight="24" VerticalContentAlignment="Center"
-                                     ToolTip="可直接编辑主诉内容"/>
+                                     GotFocus="ChiefComplaintTextBox_GotFocus"
+                                     LostFocus="ChiefComplaintTextBox_LostFocus"
+                                     ToolTip="点击输入时显示常见主诉快捷选择"/>
                         </Grid>
 
-                        <!-- 病史/处置（AI生成病历） -->
+                        <!-- 主诉悬浮辅助工具栏 -->
+                        <Popup x:Name="ChiefComplaintPopup" PlacementTarget="{Binding ElementName=ChiefComplaintTextBox}"
+                               Placement="Bottom" HorizontalOffset="-50" VerticalOffset="2"
+                               StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade">
+                            <Border Background="White" BorderBrush="#10B981" BorderThickness="1" CornerRadius="8"
+                                    Padding="10,8" MaxWidth="420">
+                                <StackPanel>
+                                    <TextBlock Text="常见主诉（点击添加）" FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold"
+                                               Foreground="{StaticResource SuccessBrush}" Margin="0,0,0,6"/>
+                                    <ItemsControl ItemsSource="{Binding CommonChiefComplaints}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Content="{Binding}"
+                                                        Style="{StaticResource BtnTag}"
+                                                        Click="ChiefComplaintTag_Click"
+                                                        Margin="0,0,6,6"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
+
+                        <!-- 病史/处置（AI生成病历，可编辑） -->
                         <Grid Margin="0,4,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="50"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="病  史：" FontSize="11" VerticalAlignment="Top" Margin="0,4,0,0"/>
-                            <TextBox Grid.Column="1" Text="{Binding AiDiagnosisResult, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                     FontSize="11" BorderThickness="0,0,0,1" BorderBrush="#D1D5DB"
-                                     Background="Transparent" Padding="0,2"
-                                     AcceptsReturn="True" TextWrapping="Wrap"
-                                     MinHeight="50" MaxHeight="100"
-                                     VerticalScrollBarVisibility="Auto"
-                                     ToolTip="AI辅助生成病历内容，可直接编辑"/>
+                            <TextBlock Grid.Column="0" Text="病  史：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                            <StackPanel Grid.Column="1">
+                                <TextBox Text="{Binding AiDiagnosisResult, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
+                                         FontSize="{StaticResource FontSizeTiny}" BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderDefaultBrush}"
+                                         Background="Transparent" Padding="0,2"
+                                         AcceptsReturn="True" TextWrapping="Wrap"
+                                         MinHeight="50" MaxHeight="120"
+                                         VerticalScrollBarVisibility="Auto"
+                                         ToolTip="AI辅助生成病历内容，可直接编辑"/>
+                                <!-- AI结果操作按钮 -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0"
+                                            Visibility="{Binding HasAiDiagnosisResult, Converter={StaticResource BoolToVisibility}}">
+                                    <Button Style="{StaticResource BtnOutlineSm}"
+                                            Content="放弃AI结果"
+                                            Command="{Binding ClearAiDiagnosisCommand}"
+                                            Margin="0,0,6,0" FontSize="{StaticResource FontSizeMicro}"/>
+                                    <Button Style="{StaticResource BtnPrimarySm}"
+                                            Content="确认使用"
+                                            Command="{Binding ConfirmAiDiagnosisCommand}"
+                                            FontSize="{StaticResource FontSizeMicro}"/>
+                                </StackPanel>
+                            </StackPanel>
                         </Grid>
 
-                        <!-- 体征 -->
+                        <!-- 体征（可直接输入，保存到处方记录） -->
                         <Grid Margin="0,4,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="50"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="体  征：" FontSize="11" VerticalAlignment="Top" Margin="0,4,0,0"/>
-                            <TextBlock Grid.Column="1" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0">
-                                <Run Text="T "/><Run Text="{Binding PatientTemperature, FallbackValue='—'}"/><Run Text="°C    "/>
-                                <Run Text="P "/><Run Text="{Binding PatientHeartRate, FallbackValue='—'}"/><Run Text="次/分    "/>
-                                <Run Text="BP "/><Run Text="{Binding PatientSystolicBP, FallbackValue='—'}"/><Run Text="/"/><Run Text="{Binding PatientDiastolicBP, FallbackValue='—'}"/><Run Text="mmHg    "/>
-                                <Run Text="Wt "/><Run Text="{Binding PatientWeight, FallbackValue='—'}"/><Run Text="kg"/>
+                            <TextBlock Grid.Column="0" Text="体  征：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,2,0,0">
+                                <TextBlock Text="T " FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                                <TextBox Text="{Binding PatientTemperature, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
+                                         FontSize="{StaticResource FontSizeTiny}" Width="45" Height="22" Padding="2,0"
+                                         AutomationProperties.Name="体温"
+                                         VerticalContentAlignment="Center" BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderDefaultBrush}"/>
+                                <TextBlock Text="°C  P " FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                                <TextBox Text="{Binding PatientHeartRate, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
+                                         FontSize="{StaticResource FontSizeTiny}" Width="40" Height="22" Padding="2,0"
+                                         AutomationProperties.Name="心率"
+                                         VerticalContentAlignment="Center" BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderDefaultBrush}"/>
+                                <TextBlock Text="次/分  BP " FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                                <TextBox Text="{Binding PatientSystolicBP, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
+                                         FontSize="{StaticResource FontSizeTiny}" Width="35" Height="22" Padding="2,0"
+                                         AutomationProperties.Name="收缩压"
+                                         VerticalContentAlignment="Center" BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderDefaultBrush}"/>
+                                <TextBlock Text="/" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                                <TextBox Text="{Binding PatientDiastolicBP, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
+                                         FontSize="{StaticResource FontSizeTiny}" Width="35" Height="22" Padding="2,0"
+                                         AutomationProperties.Name="舒张压"
+                                         VerticalContentAlignment="Center" BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderDefaultBrush}"/>
+                                <TextBlock Text="mmHg  Wt " FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                                <TextBox Text="{Binding PatientWeight, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
+                                         FontSize="{StaticResource FontSizeTiny}" Width="40" Height="22" Padding="2,0"
+                                         AutomationProperties.Name="体重"
+                                         VerticalContentAlignment="Center" BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderDefaultBrush}"/>
+                                <TextBlock Text="kg" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- 体征异常警告 -->
+                        <Border Margin="0,4,0,0" CornerRadius="4" Padding="6,4"
+                                Visibility="{Binding HasVitalSignsWarning, Converter={StaticResource BoolToVisibility}}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="#FEF3C7"/>
+                                    <Setter Property="BorderBrush" Value="#FCD34D"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding VitalSignsWarningLevel}" Value="2">
+                                            <Setter Property="Background" Value="#FEE2E2"/>
+                                            <Setter Property="BorderBrush" Value="#FCA5A5"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="{Binding VitalSignsWarning}" FontSize="{StaticResource FontSizeMicro}" TextWrapping="Wrap"
+                                       Foreground="#92400E">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding VitalSignsWarningLevel}" Value="2">
+                                                <Setter Property="Foreground" Value="#991B1B"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
                             </TextBlock>
-                        </Grid>
+                        </Border>
 
                         <!-- 诊断 -->
                         <Grid Margin="0,4,0,0">
@@ -719,13 +617,44 @@
                                 <ColumnDefinition Width="50"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="诊  断：" FontSize="11" VerticalAlignment="Top" Margin="0,4,0,0"/>
-                            <TextBox Grid.Column="1" Text="{Binding DiagnosisText, UpdateSourceTrigger=PropertyChanged}"
-                                     FontSize="11" BorderThickness="0,0,0,1" BorderBrush="#D1D5DB"
+                            <TextBlock Grid.Column="0" Text="诊  断：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                            <TextBox Grid.Column="1" x:Name="DiagnosisTextBox"
+                                     Text="{Binding DiagnosisText, UpdateSourceTrigger=PropertyChanged}"
+                                     FontSize="{StaticResource FontSizeTiny}" BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderDefaultBrush}"
                                      Background="Transparent" Padding="0,2"
                                      MinHeight="24" VerticalContentAlignment="Center"
-                                     ToolTip="可直接编辑诊断内容"/>
+                                     GotFocus="DiagnosisTextBox_GotFocus"
+                                     LostFocus="DiagnosisTextBox_LostFocus"
+                                     ToolTip="点击输入时显示常见诊断快捷选择"/>
                         </Grid>
+
+                        <!-- 诊断悬浮辅助工具栏 -->
+                        <Popup x:Name="DiagnosisPopup" PlacementTarget="{Binding ElementName=DiagnosisTextBox}"
+                               Placement="Bottom" HorizontalOffset="-50" VerticalOffset="2"
+                               StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade">
+                            <Border Background="White" BorderBrush="#3B82F6" BorderThickness="1" CornerRadius="8"
+                                    Padding="10,8" MaxWidth="420">
+                                <StackPanel>
+                                    <TextBlock Text="常见诊断（点击添加）" FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold"
+                                               Foreground="#2563EB" Margin="0,0,0,6"/>
+                                    <ItemsControl ItemsSource="{Binding CommonDiagnoses}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Content="{Binding}"
+                                                        Style="{StaticResource BtnTag}"
+                                                        Click="DiagnosisTag_Click"
+                                                        Margin="0,0,6,6"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
 
                         <!-- 医生签名 -->
                         <Grid Margin="0,16,0,0">
@@ -733,7 +662,7 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="1" FontSize="11" VerticalAlignment="Center">
+                            <TextBlock Grid.Column="1" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center">
                                 <Run Text="医师签名："/>
                                 <Run Text="{Binding DoctorName, FallbackValue='_______________', Mode=OneWay}" FontWeight="SemiBold"/>
                             </TextBlock>
@@ -742,7 +671,7 @@
                 </Border>
 
                 <!-- ── 模拟处方单 ── -->
-                <Border BorderBrush="#9CA3AF" BorderThickness="1" CornerRadius="2" Margin="0,0,0,10">
+                <Border BorderBrush="{StaticResource Gray400Brush}" BorderThickness="1" CornerRadius="2" Margin="0,0,0,10">
                     <Border.Style>
                         <Style TargetType="Border">
                             <Setter Property="Background" Value="White"/>
@@ -759,17 +688,25 @@
                     <StackPanel Margin="16,12">
                         <!-- 处方标题 -->
                         <DockPanel Margin="0,0,0,4">
-                            <TextBlock Text="陈医生诊所" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
-                            <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" FontSize="10">
-                                <Run Text="日期："/><Run Text="{Binding Source={x:Static sys:DateTime.Now}, StringFormat='yyyy-MM-dd', Mode=OneWay}"/>
-                            </TextBlock>
+                            <TextBlock Text="陈医生诊所" FontSize="{StaticResource FontSizeSmall}" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <Button Content="循证辅助"
+                                        Command="{Binding RunEvidenceBasedAnalysisCommand}"
+                                        IsEnabled="{Binding CanRunEvidenceBased}"
+                                        FontSize="{StaticResource FontSizeMicro}" Padding="6,2" Margin="0,0,8,0"
+                                        Background="#ECFDF5" BorderBrush="#10B981" Foreground="#047857"
+                                        Cursor="Hand" VerticalAlignment="Center"/>
+                                <TextBlock VerticalAlignment="Center" FontSize="{StaticResource FontSizeMicro}">
+                                    <Run Text="日期："/><Run Text="{Binding Source={x:Static sys:DateTime.Now}, StringFormat='yyyy-MM-dd', Mode=OneWay}"/>
+                                </TextBlock>
+                            </StackPanel>
                         </DockPanel>
-                        <TextBlock Text="处 方 笺" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center"
+                        <TextBlock Text="处 方 笺" FontSize="{StaticResource FontSizeSubtitle}" FontWeight="Bold" HorizontalAlignment="Center"
                                    Margin="0,2,0,4" FontFamily="Microsoft YaHei"/>
 
                         <!-- 处方类型标签 -->
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,4">
-                            <TextBlock FontSize="10" FontWeight="Bold" Padding="4,1" Margin="0,0,0,0">
+                            <TextBlock FontSize="{StaticResource FontSizeMicro}" FontWeight="Bold" Padding="4,1" Margin="0,0,0,0">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Text" Value="普通处方"/>
@@ -805,25 +742,25 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="50"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="姓名：" FontSize="11" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="1" Text="{Binding SelectedPatient.Name, FallbackValue='—'}" FontSize="11" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="2" Text="性别：" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                            <TextBlock Grid.Column="3" Text="{Binding SelectedPatient.Gender, FallbackValue='—'}" FontSize="11" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="0" Text="姓名：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedPatient.Name, FallbackValue='—'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="性别：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            <TextBlock Grid.Column="3" Text="{Binding SelectedPatient.Gender, FallbackValue='—'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
                         </Grid>
 
                         <!-- 主诉 + 诊断 -->
-                        <TextBlock FontSize="11" Margin="0,0,0,2" TextWrapping="Wrap">
+                        <TextBlock FontSize="{StaticResource FontSizeTiny}" Margin="0,0,0,2" TextWrapping="Wrap">
                             <Run Text="主诉："/><Run Text="{Binding ChiefComplaint, FallbackValue='—'}"/>
                         </TextBlock>
-                        <TextBlock FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap">
+                        <TextBlock FontSize="{StaticResource FontSizeTiny}" Margin="0,0,0,6" TextWrapping="Wrap">
                             <Run Text="临床诊断："/><Run Text="{Binding DiagnosisText, FallbackValue='—'}"/>
                         </TextBlock>
 
                         <!-- Rp 标示 -->
-                        <TextBlock Text="Rp" FontSize="14" FontWeight="Bold" Margin="0,4,0,4"/>
+                        <TextBlock Text="Rp" FontSize="{StaticResource FontSizeBody}" FontWeight="Bold" Margin="0,4,0,4"/>
 
                         <!-- 处方明细（内联编辑） -->
-                        <DataGrid x:Name="ItemsDataGrid"
+                        <DataGrid EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" x:Name="ItemsDataGrid"
                                   ItemsSource="{Binding PrescriptionItems}"
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
@@ -851,7 +788,7 @@
                             </DataGrid.CellStyle>
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="药品名称" Binding="{Binding DrugName}" Width="*" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="规格" Binding="{Binding Spec}" Width="60" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="规格" Binding="{Binding Spec}" Width="70" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="剂量" Width="40">
                                     <DataGridTextColumn.Binding>
                                         <Binding Path="Dose" UpdateSourceTrigger="LostFocus" Converter="{StaticResource DecimalInput}"/>
@@ -867,18 +804,19 @@
                                                          SelectedItemBinding="{Binding Route, UpdateSourceTrigger=PropertyChanged}"
                                                          ItemsSource="{StaticResource Routes}"/>
                                 <DataGridTextColumn Header="天" Binding="{Binding DurationDays, UpdateSourceTrigger=PropertyChanged}" Width="35"/>
-                                <DataGridTextColumn Header="数量" Width="40">
+                                <DataGridTextColumn Header="数量" Width="45">
                                     <DataGridTextColumn.Binding>
                                         <Binding Path="Qty" UpdateSourceTrigger="LostFocus" Converter="{StaticResource DecimalInput}"/>
                                     </DataGridTextColumn.Binding>
                                 </DataGridTextColumn>
+                                <DataGridTextColumn Header="单价" Binding="{Binding UnitPricePerUnit, StringFormat=F2}" Width="45" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="金额" Binding="{Binding Subtotal, StringFormat=F2}" Width="50" IsReadOnly="True"/>
                                 <DataGridTemplateColumn Header="" Width="40">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Content="✕"
-                                                    FontSize="10" Padding="4,1" Margin="0"
-                                                    Background="#FEF2F2" BorderBrush="#FCA5A5" Foreground="#DC2626"
+                                                    FontSize="{StaticResource FontSizeMicro}" Padding="4,1" Margin="0"
+                                                    Background="#FEF2F2" BorderBrush="#FCA5A5" Foreground="{StaticResource ErrorBrush}"
                                                     Cursor="Hand"
                                                     Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                     CommandParameter="{Binding}"
@@ -890,15 +828,28 @@
                         </DataGrid>
 
                         <!-- 处方完毕标记 -->
-                        <TextBlock Text="/" FontSize="14" HorizontalAlignment="Right" Margin="0,2,0,4"/>
+                        <TextBlock Text="/" FontSize="{StaticResource FontSizeBody}" HorizontalAlignment="Right" Margin="0,2,0,4"/>
 
-                        <!-- 合计金额 -->
-                        <DockPanel Margin="0,4,0,8">
-                            <TextBlock DockPanel.Dock="Right" FontSize="12" FontWeight="Bold">
+                        <!-- 费用明细 -->
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="诊疗费：¥" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                                <TextBox Text="{Binding ConsultationFee, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="50" FontSize="{StaticResource FontSizeTiny}" Padding="2" Margin="2,0"
+                                         AutomationProperties.Name="诊疗费"
+                                         VerticalContentAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="3" FontSize="{StaticResource FontSizeCaption}" FontWeight="Bold" VerticalAlignment="Center">
                                 <Run Text="合计：¥"/>
                                 <Run Text="{Binding TotalAmount, StringFormat=F2, Mode=OneWay}"/>
                             </TextBlock>
-                        </DockPanel>
+                        </Grid>
 
                         <!-- 签名区 -->
                         <Grid Margin="0,8,0,0">
@@ -908,11 +859,11 @@
                                 <ColumnDefinition Width="20"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="1" FontSize="11" VerticalAlignment="Center">
+                            <TextBlock Grid.Column="1" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center">
                                 <Run Text="医师签名："/>
                                 <Run Text="{Binding DoctorName, FallbackValue='_________', Mode=OneWay}" FontWeight="SemiBold"/>
                             </TextBlock>
-                            <TextBlock Grid.Column="3" Text="审核/调配：_________" FontSize="11" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="3" Text="审核/调配：_________" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -942,11 +893,66 @@
                         </Style>
                     </Border.Style>
                     <StackPanel>
-                        <TextBlock FontSize="11" FontWeight="SemiBold" Margin="0,0,0,2">
+                        <TextBlock FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold" Margin="0,0,0,2">
                             <Run Text="📋 AI药师审核（仅供参考，最终由执业医生决定）"/>
                         </TextBlock>
-                        <TextBlock Text="{Binding AiPharmacistAdvice}" FontSize="11" TextWrapping="Wrap"
-                                   Foreground="#374151"/>
+                        <TextBlock Text="{Binding AiPharmacistAdvice}" FontSize="{StaticResource FontSizeTiny}" TextWrapping="Wrap"
+                                   Foreground="{StaticResource Gray700Brush}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── 循证医学辅助决策面板 ── -->
+                <Border Margin="0,0,0,8" Padding="10,8" CornerRadius="6"
+                        Background="#F0F9FF" BorderBrush="#7DD3FC" BorderThickness="1"
+                        Visibility="{Binding ShowEvidenceBasedPanel, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,4">
+                            <TextBlock FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold" Foreground="#0369A1"
+                                       Text="🔬 循证医学辅助决策（仅供参考，最终由执业医生决定）"/>
+                            <Button DockPanel.Dock="Right" Content="✕" FontSize="9" Padding="4,0"
+                                    Background="Transparent" BorderThickness="0" Foreground="{StaticResource TextMutedBrush}"
+                                    Cursor="Hand" Click="CloseEvidencePanel_Click"/>
+                        </DockPanel>
+
+                        <!-- 加载中 -->
+                        <TextBlock Text="正在分析..." FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
+                                   Visibility="{Binding IsEvidenceBasedLoading, Converter={StaticResource BoolToVisibility}}"/>
+
+                        <!-- 分析结果 -->
+                        <StackPanel Visibility="{Binding IsEvidenceBasedLoading, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}">
+                            <!-- 证据级别 -->
+                            <TextBlock FontSize="{StaticResource FontSizeMicro}" Foreground="#0369A1" Margin="0,0,0,4">
+                                <Run Text="证据级别："/><Run Text="{Binding EvidenceBasedAdvice.EvidenceLevel, FallbackValue='—'}"/>
+                            </TextBlock>
+
+                            <!-- 鉴别诊断 -->
+                            <TextBlock FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,1">鉴别诊断</TextBlock>
+                            <TextBlock Text="{Binding EvidenceBasedAdvice.DifferentialDiagnoses, FallbackValue='—'}"
+                                       FontSize="{StaticResource FontSizeMicro}" TextWrapping="Wrap" Foreground="{StaticResource Gray700Brush}" Margin="0,0,0,4"/>
+
+                            <!-- 建议检查 -->
+                            <TextBlock FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,1">建议检查</TextBlock>
+                            <TextBlock Text="{Binding EvidenceBasedAdvice.SuggestedExams, FallbackValue='—'}"
+                                       FontSize="{StaticResource FontSizeMicro}" TextWrapping="Wrap" Foreground="{StaticResource Gray700Brush}" Margin="0,0,0,4"/>
+
+                            <!-- 治疗方案 -->
+                            <TextBlock FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,1">治疗方案</TextBlock>
+                            <TextBlock Text="{Binding EvidenceBasedAdvice.TreatmentOptions, FallbackValue='—'}"
+                                       FontSize="{StaticResource FontSizeMicro}" TextWrapping="Wrap" Foreground="{StaticResource Gray700Brush}" Margin="0,0,0,4"/>
+
+                            <!-- 用药参考 -->
+                            <TextBlock FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,1">用药参考</TextBlock>
+                            <TextBlock Text="{Binding EvidenceBasedAdvice.MedicationReference, FallbackValue='—'}"
+                                       FontSize="{StaticResource FontSizeMicro}" TextWrapping="Wrap" Foreground="{StaticResource Gray700Brush}" Margin="0,0,0,4"/>
+
+                            <!-- 风险提示 -->
+                            <Border Background="#FEF2F2" CornerRadius="4" Padding="6,4" Margin="0,4,0,0">
+                                <TextBlock FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,1">
+                                    <Run Text="⚠ 风险提示："/>
+                                    <Run Text="{Binding EvidenceBasedAdvice.RiskWarnings, FallbackValue='无'}" Foreground="#991B1B"/>
+                                </TextBlock>
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -979,5 +985,6 @@
 
             </StackPanel>
         </ScrollViewer>
+        </Grid>
     </Grid>
 </UserControl>

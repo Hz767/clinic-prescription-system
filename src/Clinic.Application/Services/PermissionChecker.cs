@@ -6,9 +6,10 @@ namespace Clinic.Application.Services;
 /// <summary>
 /// 权限检查器实现。基于 IUserSession 中的用户角色进行权限校验。
 /// 权限矩阵：
-///   Doctor   — 全部操作
-///   Nurse    — 患者建档、入库、查看（不可开方、不可收费）
-///   Readonly — 仅查看（不可任何写操作）
+///   Doctor      — 全部操作
+///   Nurse       — 患者建档、入库、查看（不可开方、不可收费）
+///   Pharmacist  — 处方审核、发药、药房入库、库存查看（不可开方、不可收费）
+///   Readonly    — 仅查看（不可任何写操作）
 /// </summary>
 public class PermissionChecker : IPermissionChecker
 {
@@ -29,9 +30,9 @@ public class PermissionChecker : IPermissionChecker
     public void RequireCanBill()
         => RequireRole(UserRole.Doctor);
 
-    /// <summary>数据修改权限：Doctor + Nurse</summary>
+    /// <summary>数据修改权限：Doctor + Nurse + Pharmacist（药师负责药房入库）</summary>
     public void RequireCanModify()
-        => RequireRole(UserRole.Doctor, UserRole.Nurse);
+        => RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Pharmacist);
 
     /// <summary>
     /// 通用角色检查。未登录或角色不在允许列表中时抛出 UnauthorizedAccessException。
@@ -54,6 +55,7 @@ public class PermissionChecker : IPermissionChecker
         UserRole.Doctor => "医生",
         UserRole.Nurse => "护士",
         UserRole.Readonly => "只读用户",
+        UserRole.Pharmacist => "药师",
         _ => role.ToString()
     };
 }

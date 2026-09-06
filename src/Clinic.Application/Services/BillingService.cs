@@ -81,13 +81,29 @@ public class BillingService : IBillingService
             if (prescription is null)
                 throw new InvalidOperationException("处方不存在");
 
-            // 《处方管理办法》要求：处方须经药师审核后方可收费
-            if (prescription.Status == PrescriptionStatus.Saved)
-                throw new InvalidOperationException(
-                    "处方尚未经药师审核，请先在「药师审核」中审核通过后再收费");
-            if (prescription.Status != PrescriptionStatus.Reviewed)
-                throw new InvalidOperationException(
-                    $"处方当前状态为「{prescription.Status}」，仅「已审核」状态的处方可收费");
+            // 《处方管理办法》要求：处方须经药师审核后方可收费。
+            // F-03 修复：按状态给出明确语义提示，避免对已收费/已发药/已作废处方
+            // 统一提示"仅已审核可收费"造成误导。
+            switch (prescription.Status)
+            {
+                case PrescriptionStatus.Saved:
+                    throw new InvalidOperationException(
+                        "处方尚未经药师审核，请先在「药师审核」中审核通过后再收费");
+                case PrescriptionStatus.Paid:
+                    throw new InvalidOperationException(
+                        $"处方 {prescription.NoYearSeq} 已收费，不允许重复收费");
+                case PrescriptionStatus.Dispensed:
+                    throw new InvalidOperationException(
+                        $"处方 {prescription.NoYearSeq} 已发药，不允许收费");
+                case PrescriptionStatus.Voided:
+                    throw new InvalidOperationException(
+                        $"处方 {prescription.NoYearSeq} 已作废，不允许收费");
+                case PrescriptionStatus.Reviewed:
+                    break; // 可收费
+                default:
+                    throw new InvalidOperationException(
+                        $"处方当前状态为「{prescription.Status}」，仅「已审核」状态的处方可收费");
+            }
 
             // P1 H-02：金额校验——收费金额必须与处方金额一致
             if (amount != prescription.TotalAmount)
@@ -295,7 +311,7 @@ public class BillingService : IBillingService
     public async Task<DailyReportDto?> GetDailyReportAsync(DateTime date, CancellationToken ct = default)
     {
         // P1：权限检查——读取日报表需 Doctor/Nurse/Readonly 角色
-        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly);
+        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly, UserRole.Pharmacist);
 
         // 按 UTC 日期筛选（当天 00:00 ~ 次日 00:00）
         var dateStart = date.Date;
@@ -331,7 +347,7 @@ public class BillingService : IBillingService
         DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default)
     {
         // P1：权限检查——读取收费流水需 Doctor/Nurse/Readonly 角色
-        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly);
+        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly, UserRole.Pharmacist);
 
         var payments = await _paymentRepo.GetAllAsync(ct);
 

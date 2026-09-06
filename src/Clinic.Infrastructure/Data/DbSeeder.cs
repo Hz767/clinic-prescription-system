@@ -77,6 +77,16 @@ public static class DbSeeder
                 IsActive = true,
                 MustChangePassword = true,
                 CreatedAt = now
+            },
+            new SysUser
+            {
+                Username = "pharmacist",
+                DisplayName = "药师",
+                Role = UserRole.Pharmacist,
+                PasswordHash = defaultPassword,
+                IsActive = true,
+                MustChangePassword = true,
+                CreatedAt = now
             }
         );
     }
@@ -118,6 +128,7 @@ public static class DbSeeder
                 Allergies = allergies,
                 History = history,
                 ChronicTags = chronicTags,
+                Tags = name == "张三" ? "高血压随访" : null,
                 Weight = weight,
                 Temperature = temperature,
                 SystolicBP = systolicBP,
@@ -147,6 +158,9 @@ public static class DbSeeder
                 IsAntibiotic = true,
                 AntibioticLevel = AntibioticLevel.NonRestricted,
                 RetailPriceRef = 12.50m,
+                ReorderLevel = 20m,
+                // F-02 修复：补充类别标签，使类别型过敏（如"青霉素类"）可被过敏检查命中
+                ContraindicationTags = "青霉素类",
                 CreatedAt = DateTime.UtcNow
             },
             new DrugMaster
@@ -158,6 +172,8 @@ public static class DbSeeder
                 IsAntibiotic = false,
                 AntibioticLevel = AntibioticLevel.None,
                 RetailPriceRef = 8.00m,
+                ReorderLevel = 30m,
+                ContraindicationTags = "NSAIDs",
                 CreatedAt = DateTime.UtcNow
             },
             new DrugMaster
@@ -180,6 +196,8 @@ public static class DbSeeder
                 IsAntibiotic = true,
                 AntibioticLevel = AntibioticLevel.Restricted,
                 RetailPriceRef = 25.00m,
+                // F-02 修复：补充类别标签，使"头孢类"过敏可被命中
+                ContraindicationTags = "头孢类",
                 CreatedAt = DateTime.UtcNow
             },
             new DrugMaster

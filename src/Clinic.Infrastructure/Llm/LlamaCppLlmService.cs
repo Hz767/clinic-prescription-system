@@ -142,6 +142,61 @@ public sealed class LlamaCppLlmService : ILlmService, IDisposable
         }
     }
 
+    public async Task<IReadOnlyList<PrescriptionSuggestion>> ParsePrescriptionListAsync(
+        string freeText, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(freeText))
+            return Array.Empty<PrescriptionSuggestion>();
+
+        var prompt = LlmPromptTemplates.PrescriptionListPrompt(freeText);
+        var rawOutput = await CallChatCompletionAsync(prompt, ct);
+
+        if (rawOutput is null)
+            return Array.Empty<PrescriptionSuggestion>();
+
+        try
+        {
+            var doc = JsonDocument.Parse(rawOutput);
+            var root = doc.RootElement;
+
+            // 兼容两种输出：{ "items": [...] } 或直接返回数组
+            var itemsElement = root.ValueKind == JsonValueKind.Array
+                ? root
+                : (root.TryGetProperty("items", out var items) ? items : default);
+
+            if (itemsElement.ValueKind != JsonValueKind.Array)
+                return Array.Empty<PrescriptionSuggestion>();
+
+            var result = new List<PrescriptionSuggestion>();
+            foreach (var item in itemsElement.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object)
+                    continue;
+
+                var drugName = GetString(item, "drugName");
+                if (string.IsNullOrWhiteSpace(drugName))
+                    continue;
+
+                result.Add(new PrescriptionSuggestion(
+                    DrugName: drugName,
+                    Dose: GetDecimal(item, "dose"),
+                    DoseUnit: GetString(item, "doseUnit"),
+                    Frequency: GetString(item, "frequency"),
+                    Route: GetString(item, "route"),
+                    DurationDays: GetInt32(item, "durationDays"),
+                    TotalQty: GetDecimal(item, "totalQty"),
+                    RawOutput: rawOutput));
+            }
+
+            return result;
+        }
+        catch (JsonException ex)
+        {
+            _logger?.LogWarning(ex, "LLM 多药品清单结构化失败");
+            return Array.Empty<PrescriptionSuggestion>();
+        }
+    }
+
     public async Task<LlmStatus> GetStatusAsync(CancellationToken ct = default)
     {
         try
@@ -173,6 +228,40 @@ public sealed class LlamaCppLlmService : ILlmService, IDisposable
             _logger?.LogWarning(ex, "获取 LLM 状态失败");
             return new LlmStatus(false, _model, _http.BaseAddress?.ToString(),
                 $"状态检查异常：{ex.Message}");
+        }
+    }
+
+    public async Task<EvidenceBasedAdvice> GenerateEvidenceBasedAdviceAsync(
+        string patientInfo, string chiefComplaint, string diagnosis, string vitalSigns,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(chiefComplaint) && string.IsNullOrWhiteSpace(diagnosis))
+            return new EvidenceBasedAdvice(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
+
+        var prompt = LlmPromptTemplates.EvidenceBasedPrompt(patientInfo, chiefComplaint, diagnosis, vitalSigns);
+        var rawOutput = await CallChatCompletionAsync(prompt, ct);
+
+        if (rawOutput is null)
+            return new EvidenceBasedAdvice(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, null);
+
+        try
+        {
+            var doc = JsonDocument.Parse(rawOutput);
+            var root = doc.RootElement;
+
+            return new EvidenceBasedAdvice(
+                DifferentialDiagnoses: GetString(root, "differentialDiagnoses") ?? string.Empty,
+                SuggestedExams: GetString(root, "suggestedExams") ?? string.Empty,
+                TreatmentOptions: GetString(root, "treatmentOptions") ?? string.Empty,
+                MedicationReference: GetString(root, "medicationReference") ?? string.Empty,
+                RiskWarnings: GetString(root, "riskWarnings") ?? string.Empty,
+                EvidenceLevel: GetString(root, "evidenceLevel") ?? string.Empty,
+                RawOutput: rawOutput);
+        }
+        catch (JsonException ex)
+        {
+            _logger?.LogWarning(ex, "LLM 循证医学分析结构化失败，返回原始文本");
+            return new EvidenceBasedAdvice(rawOutput, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, rawOutput);
         }
     }
 

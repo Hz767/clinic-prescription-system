@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddScoped<IPrescriptionService, PrescriptionService>();
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<IBillingService, BillingService>();
+        services.AddScoped<IDoctorProfileService, DoctorProfileService>();
 
         // FluentValidation 验证器（Scoped：无状态，跟随服务生命周期）
         services.AddScoped<IValidator<LoginRequest>, LoginValidator>();

@@ -16,6 +16,25 @@ public partial class PrescriptionView : UserControl
     public PrescriptionView()
     {
         InitializeComponent();
+        IsVisibleChanged += PrescriptionView_IsVisibleChanged;
+    }
+
+    private void PrescriptionView_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        // 页面每次变为可见时，重新检查AI状态（用户可能在其他页面启动了AI）
+        if ((bool)e.NewValue && DataContext is PrescriptionViewModel vm)
+        {
+            _ = vm.CheckLlmStatusAsync();
+        }
+    }
+
+    /// <summary>关闭循证医学辅助面板</summary>
+    private void CloseEvidencePanel_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is PrescriptionViewModel vm)
+        {
+            vm.ShowEvidenceBasedPanel = false;
+        }
     }
 
     private void PrescriptionView_Loaded(object sender, RoutedEventArgs e)
@@ -24,40 +43,6 @@ public partial class PrescriptionView : UserControl
         {
             _ = vm.LoadDrugsCommand.ExecuteAsync(null);
             _ = vm.CheckLlmStatusAsync();
-        }
-    }
-
-    /// <summary>搜索框获得焦点时，若有已过滤的患者列表则重新显示下拉</summary>
-    private void PatientSearchBox_GotFocus(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is PrescriptionViewModel vm && vm.FilteredPatients.Count > 0)
-        {
-            vm.ShowPatientDropdown = true;
-        }
-    }
-
-    /// <summary>搜索框失去焦点时，延迟关闭下拉以允许点击列表项</summary>
-    private async void PatientSearchBox_LostFocus(object sender, RoutedEventArgs e)
-    {
-        await Task.Delay(200);
-        if (DataContext is PrescriptionViewModel vm)
-        {
-            // 如果焦点仍在列表或按钮上，保持下拉
-            if (PatientListBox.IsKeyboardFocusWithin || PatientListBox.IsMouseOver)
-                return;
-            vm.ShowPatientDropdown = false;
-        }
-    }
-
-    /// <summary>点击下拉列表中的患者行，触发选择</summary>
-    private void PatientListBox_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is ListBox listBox && listBox.SelectedItem is PatientDto patient)
-        {
-            if (DataContext is PrescriptionViewModel vm)
-            {
-                vm.SelectPatientCommand.Execute(patient);
-            }
         }
     }
 
@@ -89,10 +74,13 @@ public partial class PrescriptionView : UserControl
         if (e.Row.Item is not PrescriptionItemDto item) return;
         if (DataContext is not PrescriptionViewModel vm) return;
 
+        // 判断是否是数量列被修改（数量列只重算金额，不重算数量）
+        var isQtyColumn = e.Column?.Header?.ToString() == "数量";
+
         // 等待绑定更新完成后再处理
         await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
 
-        await vm.UpdateItemInlineAsync(item);
+        await vm.UpdateItemInlineAsync(item, isQtyColumn);
 
         // 刷新 DataGrid 以显示更新后的 Qty 和 Subtotal
         ItemsDataGrid.Items.Refresh();
@@ -123,6 +111,64 @@ public partial class PrescriptionView : UserControl
             {
                 e.Handled = true;
             }
+        }
+    }
+
+    // ── 悬浮辅助工具栏（主诉/诊断） ──
+
+    private void ChiefComplaintTextBox_GotFocus(object sender, RoutedEventArgs e)
+    {
+        ChiefComplaintPopup.IsOpen = true;
+    }
+
+    private void DiagnosisTextBox_GotFocus(object sender, RoutedEventArgs e)
+    {
+        DiagnosisPopup.IsOpen = true;
+    }
+
+    private void ChiefComplaintTextBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        // 延迟检查：如果焦点不在 Popup 内，则关闭
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (!ChiefComplaintPopup.IsKeyboardFocusWithin)
+                ChiefComplaintPopup.IsOpen = false;
+        }), System.Windows.Threading.DispatcherPriority.Background);
+    }
+
+    private void DiagnosisTextBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (!DiagnosisPopup.IsKeyboardFocusWithin)
+                DiagnosisPopup.IsOpen = false;
+        }), System.Windows.Threading.DispatcherPriority.Background);
+    }
+
+    private void ChiefComplaintTag_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Content is string tag)
+        {
+            if (DataContext is PrescriptionViewModel vm)
+            {
+                if (vm.AddChiefComplaintCommand.CanExecute(tag))
+                    vm.AddChiefComplaintCommand.Execute(tag);
+            }
+            // 保持 Popup 打开，不转移焦点，用户可继续选择多个标签
+            // 点击输入框外部时由 LostFocus 关闭
+        }
+    }
+
+    private void DiagnosisTag_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Content is string tag)
+        {
+            if (DataContext is PrescriptionViewModel vm)
+            {
+                if (vm.AddDiagnosisCommand.CanExecute(tag))
+                    vm.AddDiagnosisCommand.Execute(tag);
+            }
+            // 保持 Popup 打开，不转移焦点，用户可继续选择多个标签
         }
     }
 }

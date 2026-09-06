@@ -5,7 +5,9 @@ public enum UserRole
 {
     Doctor = 0,
     Nurse = 1,
-    Readonly = 2
+    Readonly = 2,
+    /// <summary>药师：负责处方审核与发药（诊所专职药师）</summary>
+    Pharmacist = 3
 }
 
 /// <summary>收费方式</summary>
@@ -35,7 +37,9 @@ public enum PrescriptionStatus
     /// <summary>已作废：处方已作废</summary>
     Voided = 3,
     /// <summary>已审核：药师已审核通过，可收费（《处方管理办法》要求药师审核）</summary>
-    Reviewed = 4
+    Reviewed = 4,
+    /// <summary>已发药：药师已按处方完成配药发药，库存已在发药时扣减</summary>
+    Dispensed = 5
 }
 
 /// <summary>药物交互风险等级（DDInter 2.0）</summary>

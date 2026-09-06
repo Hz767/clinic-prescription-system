@@ -1,4 +1,4 @@
-<UserControl x:Class="Clinic.Presentation.Views.PatientManagementView"
+﻿<UserControl x:Class="Clinic.Presentation.Views.PatientManagementView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -23,12 +23,32 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 搜索栏 -->
+        <!-- 搜索栏 + 标签筛选 + 导出 -->
         <DockPanel Grid.Row="0">
+            <Button DockPanel.Dock="Right"
+                    Style="{StaticResource BtnOutlineSm}"
+                    Command="{Binding ExportCsvCommand}"
+                    Margin="8,0,0,0"
+                    ToolTip="将当前列表导出为 CSV（Excel 可直接打开）">
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="{StaticResource IconDownload}"
+                          Width="14" Height="14" Stretch="Uniform"
+                          Stroke="{StaticResource Gray600Brush}" StrokeThickness="2"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                          VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <TextBlock Text="导出" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <TextBlock DockPanel.Dock="Right" Text="标签筛选" FontSize="{StaticResource FontSizeCaption}" Foreground="{StaticResource TextMutedBrush}"
+                       VerticalAlignment="Center" Margin="12,0,6,0"/>
+            <TextBox DockPanel.Dock="Right"
+                     Text="{Binding TagFilter, UpdateSourceTrigger=PropertyChanged}"
+                     Width="130"
+                     ToolTip="按标签/基础疾病/过敏史关键词过滤当前列表"/>
             <Button DockPanel.Dock="Right"
                     Style="{StaticResource BtnPrimary}"
                     Command="{Binding SearchCommand}"
-                    Margin="8,0,0,0">
+                    Margin="8,0,8,0">
                 <StackPanel Orientation="Horizontal">
                     <Path Data="{StaticResource IconSearch}"
                           Width="16" Height="16" Stretch="Uniform"
@@ -81,7 +101,7 @@
                             </StackPanel>
                         </Button>
                     </DockPanel>
-                    <DataGrid ItemsSource="{Binding Patients}"
+                    <DataGrid EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" ItemsSource="{Binding Patients}"
                               SelectedItem="{Binding SelectedPatient}"
                               BorderThickness="0"
                               AutoGenerateColumns="False">
@@ -107,15 +127,26 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
+                            <DataGridTextColumn Header="标签" Binding="{Binding Tags, TargetNullValue='—'}" Width="90">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                        <Setter Property="ToolTip" Value="{Binding Tags}"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
             </Border>
 
-            <!-- 患者 表单（新建/编辑共用） -->
+            <!-- 患者详情（档案 + 就诊历史） -->
             <Border Grid.Column="2" Style="{StaticResource CardBorder}">
+                <TabControl BorderThickness="0" Background="Transparent">
+                    <!-- Tab 1：患者档案 -->
+                    <TabItem Header="患者档案">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
+                    <StackPanel Margin="4">
                         <!-- 标题：根据模式切换 -->
                         <TextBlock Text="新建患者档案"
                                    Style="{StaticResource TextSectionHeader}"
@@ -128,25 +159,30 @@
 
                         <TextBlock Style="{StaticResource TextLabel}" Text="姓名 *" Margin="0,0,0,4"/>
                         <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}"
-                                 Margin="0,0,0,8"/>
+                                 Margin="0,0,0,2"/>
+                        <TextBlock Text="{Binding SameNameWarning}"
+                                   FontSize="{StaticResource FontSizeTiny}" Foreground="#B45309" Margin="0,0,0,8"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding SameNameWarning, Converter={StaticResource NullToCollapsed}}"/>
 
                         <TextBlock Style="{StaticResource TextLabel}" Text="性别" Margin="0,0,0,4"/>
-                        <ComboBox SelectedValue="{Binding NewGender}"
+                        <ComboBox SelectedValue="{Binding NewGender, Mode=TwoWay}"
                                   SelectedValuePath="Content"
                                   Margin="0,0,0,8">
-                            <ComboBoxItem Content="男" IsSelected="True"/>
+                            <ComboBoxItem Content="男"/>
                             <ComboBoxItem Content="女"/>
                         </ComboBox>
 
                         <TextBlock Style="{StaticResource TextLabel}" Text="出生日期" Margin="0,0,0,4"/>
-                        <DatePicker SelectedDate="{Binding NewDob}"
+                        <DatePicker SelectedDate="{Binding NewDob, Mode=TwoWay}"
+                                    Language="zh-CN"
                                     Margin="0,0,0,8"/>
 
                         <TextBlock Style="{StaticResource TextLabel}" Text="联系电话 *" Margin="0,0,0,4"/>
                         <TextBox Text="{Binding NewPhone, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="0,0,0,2"/>
                         <TextBlock Text="{Binding NewPhoneError}"
-                                   FontSize="11" Foreground="#DC2626" Margin="0,0,0,8"
+                                   FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource ErrorBrush}" Margin="0,0,0,8"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding NewPhoneError, Converter={StaticResource NullToCollapsed}}"/>
 
@@ -182,8 +218,13 @@
 
                         <TextBlock Style="{StaticResource TextLabel}" Text="基础疾病" Margin="0,0,0,4"/>
                         <TextBox Text="{Binding NewChronicTags, UpdateSourceTrigger=PropertyChanged}"
-                                 Margin="0,0,0,12"
+                                 Margin="0,0,0,8"
                                  ToolTip="如：高血压、糖尿病、冠心病等慢性病"/>
+
+                        <TextBlock Style="{StaticResource TextLabel}" Text="标签" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding NewTags, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,12"
+                                 ToolTip="自定义标签，逗号分隔。如：孕妇、高血压随访、慢病随访（用于列表筛选）"/>
 
                         <!-- 新建模式：创建档案按钮 -->
                         <Button Style="{StaticResource BtnPrimaryLg}"
@@ -219,6 +260,56 @@
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
+                    </TabItem>
+
+                    <!-- Tab 2：就诊历史（患者 360° 视图） -->
+                    <TabItem Header="就诊历史">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="4">
+                                <!-- 就诊统计 -->
+                                <DockPanel Margin="0,0,0,10">
+                                    <TextBlock Text="就诊次数：" FontSize="{StaticResource FontSizeCaption}" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding SelectedPatientVisitCount}" FontSize="{StaticResource FontSizeSubtitle}" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text=" 次" FontSize="{StaticResource FontSizeCaption}" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
+                                </DockPanel>
+
+                                <!-- 未选中患者提示 -->
+                                <StackPanel Visibility="{Binding SelectedPatient, Converter={StaticResource NullToCollapsed}, ConverterParameter=Invert}"
+                                            HorizontalAlignment="Center" Margin="0,40,0,0">
+                                    <TextBlock Text="请在左侧选择患者" FontSize="{StaticResource FontSizeSmall}" Foreground="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- 就诊历史列表 -->
+                                <DataGrid EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" ItemsSource="{Binding PatientPrescriptionHistory}"
+                                          IsReadOnly="True"
+                                          AutoGenerateColumns="False"
+                                          GridLinesVisibility="Horizontal"
+                                          HeadersVisibility="Column"
+                                          MaxHeight="400"
+                                          Visibility="{Binding SelectedPatient, Converter={StaticResource NullToCollapsed}}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="处方编号" Binding="{Binding NoYearSeq}" Width="110"/>
+                                        <DataGridTextColumn Header="诊断" Binding="{Binding DiagnosisText}" Width="*"/>
+                                        <DataGridTextColumn Header="金额" Binding="{Binding TotalAmount, StringFormat=¥{0:F2}}" Width="80"/>
+                                        <DataGridTextColumn Header="日期" Binding="{Binding CreatedAt, StringFormat=yyyy-MM-dd}" Width="90"/>
+                                        <DataGridTextColumn Header="状态" Width="70">
+                                            <DataGridTextColumn.Binding>
+                                                <Binding Path="Status">
+                                                    <Binding.Converter>
+                                                        <conv:PrescriptionTypeStatusConverter xmlns:conv="clr-namespace:Clinic.Presentation.Converters"/>
+                                                    </Binding.Converter>
+                                                </Binding>
+                                            </DataGridTextColumn.Binding>
+                                        </DataGridTextColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <TextBlock Text="暂无就诊记录" FontSize="{StaticResource FontSizeCaption}" Foreground="{StaticResource TextDisabledBrush}" HorizontalAlignment="Center" Margin="0,20,0,0"
+                                           Visibility="{Binding SelectedPatientVisitCount, Converter={StaticResource NullToCollapsed}}"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                </TabControl>
             </Border>
         </Grid>
     </Grid>

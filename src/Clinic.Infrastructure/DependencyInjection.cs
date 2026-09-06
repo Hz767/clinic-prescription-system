@@ -95,6 +95,9 @@ public static class DependencyInjection
             sp.GetRequiredService<IClock>(),
             sp.GetRequiredService<IAuditService>()));
 
+        // ── 国内药品清单数据源（Scoped：无状态，HttpClient 为进程级单例）──
+        services.AddScoped<INationalDrugListSource, NationalDrugListSource>();
+
         // ── llama.cpp 本地推理引擎管理 ──
         // 注册 LlamaCppSettings 供 ILlamaServerManager 使用
         if (llamaCppSettings is { Enabled: true })

@@ -47,6 +47,7 @@ public class PatientService : IPatientService
         string? chronicTags,
         decimal? weight = null, decimal? temperature = null,
         int? systolicBP = null, int? diastolicBP = null, int? heartRate = null,
+        string? tags = null,
         CancellationToken ct = default)
     {
         // 权限检查：建档需要 Doctor 或 Nurse 权限
@@ -74,6 +75,7 @@ public class PatientService : IPatientService
             Allergies = allergies?.Trim(),
             History = history?.Trim(),
             ChronicTags = chronicTags?.Trim(),
+            Tags = tags?.Trim(),
             Weight = weight,
             Temperature = temperature,
             SystolicBP = systolicBP,
@@ -100,7 +102,7 @@ public class PatientService : IPatientService
     public async Task<PatientDto?> GetPatientByIdAsync(long id, CancellationToken ct = default)
     {
         // P1：权限检查——读取患者档案需 Doctor/Nurse/Readonly 角色
-        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly);
+        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly, UserRole.Pharmacist);
 
         var patient = await _patientRepo.GetByIdAsync(id, ct);
         return patient is null ? null : ToDto(patient);
@@ -109,7 +111,7 @@ public class PatientService : IPatientService
     public async Task<PatientDto?> FindByPhoneAsync(string phone, CancellationToken ct = default)
     {
         // P1：权限检查——读取患者档案需 Doctor/Nurse/Readonly 角色
-        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly);
+        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly, UserRole.Pharmacist);
 
         if (string.IsNullOrWhiteSpace(phone))
             return null;
@@ -124,7 +126,7 @@ public class PatientService : IPatientService
         string nameKeyword, CancellationToken ct = default)
     {
         // P1：权限检查——读取患者档案需 Doctor/Nurse/Readonly 角色
-        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly);
+        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly, UserRole.Pharmacist);
 
         if (string.IsNullOrWhiteSpace(nameKeyword))
             return [];
@@ -138,7 +140,7 @@ public class PatientService : IPatientService
     public async Task<IReadOnlyList<PatientDto>> GetAllPatientsAsync(CancellationToken ct = default)
     {
         // P1：权限检查——读取患者档案需 Doctor/Nurse/Readonly 角色
-        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly);
+        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly, UserRole.Pharmacist);
 
         var patients = await _patientRepo.GetAllAsync(ct);
         return patients.Select(ToDto).ToList();
@@ -152,7 +154,7 @@ public class PatientService : IPatientService
     public async Task<bool> UpdatePatientAsync(
         long id, string name, string gender, DateOnly? dob,
         string phone, string? allergies, string? history,
-        string? chronicTags, CancellationToken ct = default)
+        string? chronicTags, string? tags = null, CancellationToken ct = default)
     {
         // 权限检查：修改患者档案需要 Doctor 或 Nurse 权限
         _permissionChecker.RequireCanModify();
@@ -168,6 +170,7 @@ public class PatientService : IPatientService
         patient.Allergies = allergies?.Trim();
         patient.History = history?.Trim();
         patient.ChronicTags = chronicTags?.Trim();
+        patient.Tags = tags?.Trim();
 
         // 手机号变更时重新加密和哈希
         var newPhoneHash = _encryption.HashPhone(phone);
@@ -244,6 +247,7 @@ public class PatientService : IPatientService
         return new PatientDto(
             p.Id, p.Name, p.Gender, p.Dob,
             phone, p.Allergies, p.History, p.ChronicTags,
-            p.Weight, p.Temperature, p.SystolicBP, p.DiastolicBP, p.HeartRate);
+            p.Weight, p.Temperature, p.SystolicBP, p.DiastolicBP, p.HeartRate,
+            p.Tags);
     }
 }

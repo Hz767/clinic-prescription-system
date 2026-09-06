@@ -17,6 +17,7 @@ public class ClinicDbContext : DbContext
 
     // ── 用户权限 ──
     public DbSet<SysUser> SysUsers => Set<SysUser>();
+    public DbSet<DoctorProfile> DoctorProfiles => Set<DoctorProfile>();
 
     // ── 患者与病历 ──
     public DbSet<Patient> Patients => Set<Patient>();
@@ -68,6 +69,30 @@ public class ClinicDbContext : DbContext
             e.Property(u => u.Username).HasMaxLength(50).IsRequired();
             e.Property(u => u.DisplayName).HasMaxLength(100).IsRequired();
             e.Property(u => u.PasswordHash).HasMaxLength(512).IsRequired();
+        });
+
+        // ── DoctorProfile ──
+        modelBuilder.Entity<DoctorProfile>(e =>
+        {
+            e.HasIndex(d => d.UserId).IsUnique();
+            e.Property(d => d.FullName).HasMaxLength(50).IsRequired();
+            e.Property(d => d.Gender).HasMaxLength(10).IsRequired();
+            e.Property(d => d.IdCard).HasMaxLength(18);
+            e.Property(d => d.Phone).HasMaxLength(20);
+            e.Property(d => d.Email).HasMaxLength(100);
+            e.Property(d => d.Address).HasMaxLength(200);
+            e.Property(d => d.MedicalLicenseNo).HasMaxLength(50);
+            e.Property(d => d.PracticeLicenseNo).HasMaxLength(50);
+            e.Property(d => d.Specialty).HasMaxLength(100);
+            e.Property(d => d.Title).HasMaxLength(50);
+            e.Property(d => d.Department).HasMaxLength(50);
+            e.Property(d => d.Hospital).HasMaxLength(200);
+            e.Property(d => d.AvatarPath).HasMaxLength(500);
+            e.Property(d => d.IdCardFrontPath).HasMaxLength(500);
+            e.Property(d => d.IdCardBackPath).HasMaxLength(500);
+            e.Property(d => d.MedicalLicensePhotoPath).HasMaxLength(500);
+            e.Property(d => d.PracticeLicensePhotoPath).HasMaxLength(500);
+            e.Property(d => d.Remark).HasMaxLength(500);
         });
 
         // ── Patient ──
@@ -139,7 +164,8 @@ public class ClinicDbContext : DbContext
         {
             e.HasIndex(d => d.GenericNameEn).IsUnique();
             e.Property(d => d.GenericNameCn).HasMaxLength(100).IsRequired();
-            e.Property(d => d.GenericNameEn).HasMaxLength(100).IsRequired();
+            // 英文名可空：国内药品清单（医保目录）无英文名；唯一索引不约束 NULL
+            e.Property(d => d.GenericNameEn).HasMaxLength(100);
             e.Property(d => d.Spec).HasMaxLength(50).IsRequired();
             e.Property(d => d.Unit).HasMaxLength(20).IsRequired();
             e.Property(d => d.DefaultUsage).HasMaxLength(200);
@@ -258,6 +284,13 @@ public class ClinicDbContext : DbContext
         // 显式定义外键关系，启用 PRAGMA foreign_keys=ON 后由 SQLite 强制引用完整性。
         // 使用 Restrict 删除行为：物理删除被引用的父记录时抛出异常，
         // 业务层通过软删除（DeletedAt）处理数据生命周期，不做级联删除。
+
+        // DoctorProfile → SysUser
+        modelBuilder.Entity<DoctorProfile>()
+            .HasOne<SysUser>()
+            .WithMany()
+            .HasForeignKey(d => d.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // MedicalRecord → Patient / SysUser
         modelBuilder.Entity<MedicalRecord>()

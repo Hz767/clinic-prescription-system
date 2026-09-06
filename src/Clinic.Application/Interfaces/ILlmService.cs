@@ -46,8 +46,29 @@ public interface ILlmService
     Task<PrescriptionSuggestion> ParsePrescriptionAsync(string freeText, CancellationToken ct = default);
 
     /// <summary>
+    /// 将包含多种药品的自由文本（多行/整段口述）整理为标准化处方明细列表。
+    /// 例如「阿莫西林胶囊 0.5g tid×3天；布洛芬缓释胶囊 0.3g bid×5天」
+    /// 返回列表中的每条建议均可独立加入处方；LLM 不可用时返回空列表。
+    /// </summary>
+    Task<IReadOnlyList<PrescriptionSuggestion>> ParsePrescriptionListAsync(string freeText, CancellationToken ct = default);
+
+    /// <summary>
     /// 获取 LLM 服务的当前状态。
     /// 用于 UI 层判断是否显示 LLM 辅助功能入口。
     /// </summary>
     Task<LlmStatus> GetStatusAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// 基于患者信息生成循证医学辅助决策建议。
+    /// 包括鉴别诊断、建议检查、治疗方案、用药参考、风险提示。
+    /// </summary>
+    /// <param name="patientInfo">患者信息（年龄、性别、过敏史、既往史等）</param>
+    /// <param name="chiefComplaint">主诉</param>
+    /// <param name="diagnosis">初步诊断</param>
+    /// <param name="vitalSigns">体征（体温、血压、心率等）</param>
+    /// <param name="ct">取消令牌</param>
+    /// <returns>循证医学建议；LLM 不可用时返回空结果</returns>
+    Task<EvidenceBasedAdvice> GenerateEvidenceBasedAdviceAsync(
+        string patientInfo, string chiefComplaint, string diagnosis, string vitalSigns,
+        CancellationToken ct = default);
 }
