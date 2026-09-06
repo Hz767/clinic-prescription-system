@@ -8,6 +8,8 @@ public class Prescription : Common.Entity
     public long PatientId { get; set; }
     public long DoctorId { get; set; }
     public long? VisitId { get; set; }
+    /// <summary>关联的病历ID（同一次就诊的病历与处方对应）</summary>
+    public long? MedicalRecordId { get; set; }
     public string? DiagnosisCode { get; set; }
     public string? ChiefComplaint { get; set; }
 
@@ -23,6 +25,8 @@ public class Prescription : Common.Entity
     public int? HeartRate { get; set; }
 
     public string DiagnosisText { get; set; } = string.Empty;
+    /// <summary>诊疗费（元），默认0，不含在药品明细中</summary>
+    public decimal ConsultationFee { get; set; }
     public decimal TotalAmount { get; set; }
     public PrescriptionType Type { get; set; }
     public string? ExtendedReason { get; set; }
@@ -30,4 +34,13 @@ public class Prescription : Common.Entity
     public PrescriptionStatus Status { get; set; }
     public string? VoidReason { get; set; }
     public bool IsPaperSigned { get; set; }
+
+    /// <summary>临床覆盖理由：存在阻断项（过敏/交互/禁忌症）时医生坚持开具的理由，入审计日志</summary>
+    public string? OverrideReason { get; set; }
+
+    /// <summary>发药时间（药师按处方配药发药完成时记录）</summary>
+    public DateTime? DispensedAt { get; set; }
+
+    /// <summary>发药操作人 ID（药师/护士/医生）</summary>
+    public long? DispensedBy { get; set; }
 }

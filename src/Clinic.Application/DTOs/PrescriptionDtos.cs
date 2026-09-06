@@ -13,10 +13,30 @@ public class PrescriptionItemDto
     public string Route { get; set; } = string.Empty;
     public int DurationDays { get; set; }
     public decimal Qty { get; set; }
+    /// <summary>零售价（每包装价格，如每盒10元）</summary>
     public decimal UnitPrice { get; set; }
+    /// <summary>每包装数量（从规格解析，如12片/盒）</summary>
+    public decimal PackQuantity { get; set; } = 1;
+    /// <summary>每单位价格（零售价÷包装数量，如每片0.83元）</summary>
+    public decimal UnitPricePerUnit { get; set; }
     public decimal Subtotal { get; set; }
 
-    /// <summary>重新计算数量=剂量×每日次数×天数，及小计=数量×单价</summary>
+    /// <summary>从规格字符串解析每包装数量，如 "0.25g×12片" → 12</summary>
+    public static decimal ParsePackQuantity(string spec)
+    {
+        if (string.IsNullOrWhiteSpace(spec)) return 1;
+        // 匹配 ×数字 或 *数字 模式
+        var match = System.Text.RegularExpressions.Regex.Match(spec, @"[×x*]\s*(\d+(?:\.\d+)?)\s*(片|粒|袋|支|瓶|包|盒|枚|贴)");
+        if (match.Success && decimal.TryParse(match.Groups[1].Value, out var qty))
+            return qty;
+        // 匹配 数字+单位 在末尾
+        match = System.Text.RegularExpressions.Regex.Match(spec, @"(\d+(?:\.\d+)?)\s*(片|粒|袋|支|瓶|包|枚|贴)");
+        if (match.Success && decimal.TryParse(match.Groups[1].Value, out qty))
+            return qty;
+        return 1;
+    }
+
+    /// <summary>重新计算数量=剂量×每日次数×天数，及小计（按整盒计价，向上取整）</summary>
     public void Recalculate()
     {
         var timesPerDay = Frequency switch
@@ -25,9 +45,43 @@ public class PrescriptionItemDto
             "每晚一次" => 1, "必要时" => 1, _ => 3
         };
         Qty = Dose * timesPerDay * DurationDays;
-        Subtotal = Math.Round(UnitPrice * Qty, 2, MidpointRounding.AwayFromZero);
+        RecalculateSubtotalOnly();
+    }
+
+    /// <summary>
+    /// 仅重新计算金额（手动修改数量时调用）。
+    /// 计价规则：包装数量>1时按整盒计价（向上取整），包装数量=1时按实际数量计价。
+    /// 例如：12片/盒，单价10元，开9片 → 1盒 × 10元 = 10元；开24片 → 2盒 × 10元 = 20元。
+    /// </summary>
+    public void RecalculateSubtotalOnly()
+    {
+        // 每单位价格（用于显示参考）
+        var pricePerUnit = PackQuantity > 0 ? UnitPrice / PackQuantity : UnitPrice;
+        UnitPricePerUnit = Math.Round(pricePerUnit, 4, MidpointRounding.AwayFromZero);
+
+        if (PackQuantity > 1 && Qty > 0)
+        {
+            // 按整盒计价：向上取整(数量 / 每盒数量) × 每盒单价
+            var packsNeeded = Math.Ceiling(Qty / PackQuantity);
+            Subtotal = Math.Round(packsNeeded * UnitPrice, 2, MidpointRounding.AwayFromZero);
+        }
+        else
+        {
+            // 包装数量=1（如中药饮片按克计价），按实际数量计价
+            Subtotal = Math.Round(UnitPrice * Qty, 2, MidpointRounding.AwayFromZero);
+        }
     }
 }
+
+/// <summary>循证医学辅助建议 DTO</summary>
+public record EvidenceBasedAdvice(
+    string DifferentialDiagnoses,
+    string SuggestedExams,
+    string TreatmentOptions,
+    string MedicationReference,
+    string RiskWarnings,
+    string EvidenceLevel,
+    string? RawOutput = null);
 
 /// <summary>处方概览 DTO（含本次就诊体征数据）</summary>
 public record PrescriptionDto(
@@ -56,7 +110,7 @@ public record PrescriptionDto(
 public record DrugDto(
     long Id,
     string GenericNameCn,
-    string GenericNameEn,
+    string? GenericNameEn,
     string Spec,
     string Unit,
     string? DefaultUsage,
@@ -64,7 +118,13 @@ public record DrugDto(
     int AntibioticLevel,
     bool IsToxicDrug,
     string? ContraindicationTags,
-    decimal? RetailPriceRef);
+    decimal? RetailPriceRef,
+    /// <summary>补货阈值（null 表示未设置补货线）</summary>
+    decimal? ReorderLevel = null,
+    /// <summary>当前可用库存总量</summary>
+    decimal AvailableQty = 0m,
+    /// <summary>是否低于补货线（库存不足）</summary>
+    bool IsLowStock = false);
 
 /// <summary>库存批次 DTO</summary>
 public record StockBatchDto(
@@ -96,7 +156,11 @@ public record DrugStockSummaryDto(
     decimal TotalQty,
     int BatchCount,
     DateOnly? EarliestExpiry,
-    decimal? RetailPrice);
+    decimal? RetailPrice,
+    /// <summary>补货阈值（null 表示未设置补货线）</summary>
+    decimal? ReorderLevel = null,
+    /// <summary>是否低于补货线</summary>
+    bool IsLowStock = false);
 
 /// <summary>入库流水记录 DTO</summary>
 public record StockInRecordDto(
@@ -149,3 +213,17 @@ public record HashChainVerificationResult(
     int VerifiedRecords,
     long? FirstBrokenId,
     string? ErrorMessage);
+
+/// <summary>病历列表 DTO</summary>
+public record MedicalRecordListDto(
+    long Id,
+    long PatientId,
+    string PatientName,
+    string PatientGender,
+    string DoctorName,
+    DateTime VisitAt,
+    string ChiefComplaint,
+    string Diagnosis,
+    string? PresentIllness,
+    string? Exam,
+    string? Plan);

@@ -14,5 +14,7 @@ public class PrescriptionItem : Common.Entity
     public decimal Qty { get; set; }
     public long? BatchIdOut { get; set; }
     public decimal UnitPrice { get; set; }
+    /// <summary>每包装数量（从药品规格解析，如12片/盒）。用于按整盒计价。</summary>
+    public decimal PackQuantity { get; set; } = 1;
     public decimal Subtotal { get; set; }
 }

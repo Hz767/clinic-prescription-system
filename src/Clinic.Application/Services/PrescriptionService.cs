@@ -96,6 +96,7 @@ public class PrescriptionService : IPrescriptionService
         string? extendedReason,
         decimal? weight = null, decimal? temperature = null,
         int? systolicBP = null, int? diastolicBP = null, int? heartRate = null,
+        decimal consultationFee = 0m,
         CancellationToken ct = default)
     {
         // 权限检查：处方开具仅限 Doctor
@@ -127,7 +128,8 @@ public class PrescriptionService : IPrescriptionService
             Type = (PrescriptionType)prescriptionType,
             ExtendedReason = extendedReason?.Trim(),
             Status = PrescriptionStatus.Draft,
-            TotalAmount = 0m,
+            ConsultationFee = consultationFee,
+            TotalAmount = consultationFee,
             // 本次就诊体征（实时变量，保存到处方记录中）
             Weight = weight,
             Temperature = temperature,
@@ -215,14 +217,25 @@ public class PrescriptionService : IPrescriptionService
                     $"{typeText}处方用药天数不得超过 {maxDays} 天，当前为 {durationDays} 天{extendHint}");
             }
 
-            // 3. 过敏史匹配拦截：检查药品名称是否与患者过敏史匹配
-            await CheckAllergyAsync(prescription.PatientId, drug, ct);
-
-            // 药品交互检查：阻断 Major 级交互，记录 Moderate 级警告
-            await CheckDrugInteractionsAsync(prescriptionId, drug, existingItems, ct);
+            // 3. 过敏/交互不再在此处硬拦截（F-01 修复）：
+            //    添加药品阶段仅收集，由保存前 GetPrescriptionBlockersCoreAsync 统一检查；
+            //    医生填写临床覆盖理由（OverrideReason）后即可放行，与禁忌症处理方式一致。
+            //    交互检查仅记录 Moderate 级警告（Major 级由保存前阻断检查统一拦截）。
 
             var unitPrice = drug.RetailPriceRef ?? 0m;
-            var subtotal = Math.Round(unitPrice * qty, 2, MidpointRounding.AwayFromZero);
+            // 从药品规格解析每包装数量（如12片/盒），用于按整盒计价
+            var packQuantity = Clinic.Application.DTOs.PrescriptionItemDto.ParsePackQuantity(drug.Spec);
+            // 按整盒计价：包装数量>1时向上取整(数量/包装数量)×单价；包装数量=1时按实际数量计价
+            decimal subtotal;
+            if (packQuantity > 1 && qty > 0)
+            {
+                var packsNeeded = Math.Ceiling(qty / packQuantity);
+                subtotal = Math.Round(packsNeeded * unitPrice, 2, MidpointRounding.AwayFromZero);
+            }
+            else
+            {
+                subtotal = Math.Round(unitPrice * qty, 2, MidpointRounding.AwayFromZero);
+            }
 
             var item = new PrescriptionItem
             {
@@ -237,6 +250,7 @@ public class PrescriptionService : IPrescriptionService
                 DurationDays = durationDays,
                 Qty = qty,
                 UnitPrice = unitPrice,
+                PackQuantity = packQuantity,
                 Subtotal = subtotal
             };
 
@@ -287,7 +301,18 @@ public class PrescriptionService : IPrescriptionService
 
         var drug = await _drugRepo.GetByIdAsync(item.DrugId, ct);
         var unitPrice = drug?.RetailPriceRef ?? item.UnitPrice;
-        var subtotal = Math.Round(unitPrice * qty, 2, MidpointRounding.AwayFromZero);
+        // 使用已保存的PackQuantity（添加明细时从规格解析），按整盒计价
+        var packQuantity = item.PackQuantity > 0 ? item.PackQuantity : 1m;
+        decimal subtotal;
+        if (packQuantity > 1 && qty > 0)
+        {
+            var packsNeeded = Math.Ceiling(qty / packQuantity);
+            subtotal = Math.Round(packsNeeded * unitPrice, 2, MidpointRounding.AwayFromZero);
+        }
+        else
+        {
+            subtotal = Math.Round(unitPrice * qty, 2, MidpointRounding.AwayFromZero);
+        }
 
         item.Dose = dose;
         item.DoseUnit = doseUnit;
@@ -341,7 +366,17 @@ public class PrescriptionService : IPrescriptionService
             $"ItemId:{itemId} Drug:{item.DrugName}", ct);
     }
 
-    public async Task<bool> SavePrescriptionAsync(long prescriptionId, CancellationToken ct = default)
+    /// <summary>
+    /// 保存处方（草稿 → 已保存，待药师审核）。
+    /// 保存前执行完整阻断检查（过敏匹配 / 药物相互作用 Major / 禁忌症匹配）。
+    /// - 无阻断项：直接保存；
+    /// - 存在阻断项且未提供 overrideReason：抛出异常，列出全部阻断问题；
+    /// - 存在阻断项但医生填写了 overrideReason（临床覆盖）：放行保存，
+    ///   覆盖理由与阻断项写入审计日志（PRESCRIPTION_SAVE_OVERRIDE）。
+    /// 库存策略：保存时不扣减库存（仅做可用性检查），在「发药」时按 FIFO 扣减。
+    /// </summary>
+    public async Task<bool> SavePrescriptionAsync(
+        long prescriptionId, string? overrideReason = null, CancellationToken ct = default)
     {
         // 权限检查：处方保存仅限 Doctor
         _permissionChecker.RequireCanPrescribe();
@@ -356,42 +391,58 @@ public class PrescriptionService : IPrescriptionService
         if (items.Count == 0)
             throw new InvalidOperationException("处方没有明细，无法保存");
 
-        // ── P2 领域规则：禁忌症检查 ──
-        // 获取患者慢病标签，与药品禁忌症标签交叉匹配
-        var patient = await _patientRepo.GetByIdAsync(prescription.PatientId, ct);
-        if (patient?.ChronicTags is not null)
+        // ── 保存前完整阻断检查：过敏 + Major 交互 + 禁忌症 ──
+        var blockers = await GetPrescriptionBlockersCoreAsync(prescription, items, ct);
+        if (blockers.Count > 0 && string.IsNullOrWhiteSpace(overrideReason))
         {
-            var chronicTags = patient.ChronicTags.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var item in items)
-            {
-                var drug = await _drugRepo.GetByIdAsync(item.DrugId, ct);
-                if (drug?.ContraindicationTags is not null)
-                {
-                    var contraTags = drug.ContraindicationTags.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                    var matched = chronicTags.Intersect(contraTags, StringComparer.OrdinalIgnoreCase).FirstOrDefault();
-                    if (matched is not null)
-                        throw new InvalidOperationException($"药品「{drug.GenericNameCn}」禁忌症包含患者慢病「{matched}」，禁止开具");
-                }
-            }
+            throw new InvalidOperationException(
+                "处方存在阻断性问题，如医生坚持开具请填写临床覆盖理由：\n- " +
+                string.Join("\n- ", blockers));
         }
 
         await _unitOfWork.BeginTransactionAsync(ct);
         try
         {
-            // 1. 计算总金额
-            prescription.TotalAmount = Math.Round(
-                items.Sum(i => i.Subtotal), 2, MidpointRounding.AwayFromZero);
-            // 保存后状态变为 Saved（草稿 → 已保存），待药师审核
+            // 1. 重新计算每条明细的金额（不信任前端传入的Subtotal，确保按整盒计价逻辑一致）
+            foreach (var item in items)
+            {
+                var packQty = item.PackQuantity > 0 ? item.PackQuantity : 1m;
+                if (packQty > 1 && item.Qty > 0)
+                {
+                    var packsNeeded = Math.Ceiling(item.Qty / packQty);
+                    item.Subtotal = Math.Round(packsNeeded * item.UnitPrice, 2, MidpointRounding.AwayFromZero);
+                }
+                else
+                {
+                    item.Subtotal = Math.Round(item.UnitPrice * item.Qty, 2, MidpointRounding.AwayFromZero);
+                }
+                _itemRepo.Update(item);
+            }
+
+            // 2. 计算总金额 = 药品明细金额 + 诊疗费
+            var drugsAmount = items.Sum(i => i.Subtotal);
+            prescription.TotalAmount = Math.Round(drugsAmount + prescription.ConsultationFee, 2, MidpointRounding.AwayFromZero);
+
+            // 3. 临床覆盖：存在阻断项但医生填写了理由 → 保存理由并审计
+            if (blockers.Count > 0)
+            {
+                prescription.OverrideReason = overrideReason?.Trim();
+                await _auditService.LogAsync("PRESCRIPTION_SAVE_OVERRIDE",
+                    $"Prescription:{prescriptionId}",
+                    $"Reason:{overrideReason?.Trim()} Blockers:{string.Join("; ", blockers)}", ct);
+            }
+
+            // 4. 保存后状态变为 Saved（草稿 → 已保存），待药师审核
             prescription.Status = PrescriptionStatus.Saved;
             _prescriptionRepo.Update(prescription);
 
-            // 2. 库存扣减（FIFO：效期优先，库存不足时抛异常触发回滚）
-            await DeductInventoryAsync(items, prescriptionId, prescription.DoctorId, ct);
+            // 5. 库存可用性检查（不扣减，发药时再按 FIFO 扣减）
+            await CheckStockAvailabilityAsync(items, prescriptionId, ct);
 
-            // 3. 审计日志（事务内，与业务操作原子提交）
+            // 6. 审计日志（事务内，与业务操作原子提交）
             await _auditService.LogAsync("PRESCRIPTION_SAVE",
                 $"Prescription:{prescriptionId}",
-                $"Amount:{prescription.TotalAmount} Items:{items.Count}", ct);
+                $"Amount:{prescription.TotalAmount} Drugs:{drugsAmount} ConsultFee:{prescription.ConsultationFee} Items:{items.Count}", ct);
 
             await _unitOfWork.CommitAsync(ct);
             return true;
@@ -404,6 +455,191 @@ public class PrescriptionService : IPrescriptionService
     }
 
     /// <summary>
+    /// 保存前校验：返回阻断性问题的清单（过敏匹配 / 药物相互作用 Major / 禁忌症匹配）。
+    /// 列表为空表示可正常保存；非空时医生需填写临床覆盖理由（OverrideReason）后方可保存。
+    /// 仅 Draft 状态的处方可执行校验（已保存/已作废的处方不再校验）。
+    /// </summary>
+    public async Task<IReadOnlyList<string>> GetPrescriptionBlockersAsync(
+        long prescriptionId, CancellationToken ct = default)
+    {
+        _permissionChecker.RequireCanPrescribe();
+
+        var prescription = await _prescriptionRepo.GetByIdAsync(prescriptionId, ct);
+        if (prescription is null)
+            return [];
+
+        var items = await _itemRepo.FindAsync(i => i.PrescriptionId == prescriptionId, ct);
+        if (items.Count == 0)
+            return [];
+
+        return await GetPrescriptionBlockersCoreAsync(prescription, items, ct);
+    }
+
+    /// <summary>
+    /// 阻断检查核心：收集过敏匹配、Major 级药物相互作用、禁忌症匹配三类阻断问题。
+    /// 不抛异常，返回问题清单供保存前校验与临床覆盖决策使用。
+    /// </summary>
+    private async Task<IReadOnlyList<string>> GetPrescriptionBlockersCoreAsync(
+        Prescription prescription, IReadOnlyList<PrescriptionItem> items, CancellationToken ct)
+    {
+        var blockers = new List<string>();
+        var patient = await _patientRepo.GetByIdAsync(prescription.PatientId, ct);
+
+        foreach (var item in items)
+        {
+            var drug = await _drugRepo.GetByIdAsync(item.DrugId, ct);
+            if (drug is null)
+                continue;
+
+            // 1) 过敏史匹配
+            if (patient is not null && !string.IsNullOrWhiteSpace(patient.Allergies))
+            {
+                var allergyHit = TryMatchAllergy(patient.Allergies, drug);
+                if (allergyHit is not null)
+                    blockers.Add($"过敏史拦截：患者过敏史中包含「{allergyHit}」，与药品「{drug.GenericNameCn}」匹配");
+            }
+
+            // 2) 禁忌症匹配（患者慢病标签 ↔ 药品禁忌症标签）
+            if (patient?.ChronicTags is not null && drug.ContraindicationTags is not null)
+            {
+                var chronicTags = patient.ChronicTags.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                var contraTags = drug.ContraindicationTags.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                var matched = chronicTags.Intersect(contraTags, StringComparer.OrdinalIgnoreCase).FirstOrDefault();
+                if (matched is not null)
+                    blockers.Add($"禁忌症拦截：药品「{drug.GenericNameCn}」禁忌症包含患者慢病「{matched}」");
+            }
+        }
+
+        // 3) Major 级药物相互作用（两两检查）
+        var allInteractions = await _interactionRepo.GetAllAsync(ct);
+        if (allInteractions.Count > 0)
+        {
+            var itemsWithDrugs = new List<(PrescriptionItem Item, DrugMaster Drug)>();
+            foreach (var item in items)
+            {
+                var drug = await _drugRepo.GetByIdAsync(item.DrugId, ct);
+                if (drug is not null)
+                    itemsWithDrugs.Add((item, drug));
+            }
+
+            for (var i = 0; i < itemsWithDrugs.Count; i++)
+            {
+                for (var j = i + 1; j < itemsWithDrugs.Count; j++)
+                {
+                    var (itemA, drugA) = itemsWithDrugs[i];
+                    var (itemB, drugB) = itemsWithDrugs[j];
+
+                    var drugANames = new[] { drugA.GenericNameCn, drugA.GenericNameEn }
+                        .Where(n => !string.IsNullOrEmpty(n)).Select(n => n!.Trim()).ToList();
+                    var drugBNames = new[] { drugB.GenericNameCn, drugB.GenericNameEn }
+                        .Where(n => !string.IsNullOrEmpty(n)).Select(n => n!.Trim()).ToList();
+
+                    foreach (var interaction in allInteractions)
+                    {
+                        var aHit = (NamesMatch(interaction.DrugNameA, drugANames) && NamesMatch(interaction.DrugNameB, itemB.DrugName)) ||
+                                   (NamesMatch(interaction.DrugNameA, itemB.DrugName) && NamesMatch(interaction.DrugNameB, drugANames));
+                        var bHit = (NamesMatch(interaction.DrugNameA, drugBNames) && NamesMatch(interaction.DrugNameB, itemA.DrugName)) ||
+                                   (NamesMatch(interaction.DrugNameA, itemA.DrugName) && NamesMatch(interaction.DrugNameB, drugBNames));
+
+                        if ((aHit || bHit) && interaction.Level == DrugInteractionLevel.Major)
+                        {
+                            blockers.Add($"药物相互作用（Major）：「{drugA.GenericNameCn}」与「{drugB.GenericNameCn}」存在严重交互风险");
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return blockers;
+    }
+
+    /// <summary>
+    /// 发药（药房配药发药）：仅「已收费」状态处方可发药。
+    /// 发药时按 FIFO 扣减库存并生成出库流水；若处方已有非冲正出库记录
+    /// （历史数据已在保存时扣减过库存），则跳过扣减，保证幂等。
+    /// 药师 / 护士 / 医生角色均可执行。发药后状态变为 Dispensed（已发药）。
+    /// </summary>
+    public async Task<bool> DispensePrescriptionAsync(
+        long prescriptionId, CancellationToken ct = default)
+    {
+        // 权限检查：发药需 Doctor / Nurse / Pharmacist 角色
+        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Pharmacist);
+
+        var prescription = await _prescriptionRepo.GetByIdAsync(prescriptionId, ct);
+        if (prescription is null)
+            return false;
+
+        if (prescription.Status != PrescriptionStatus.Paid)
+            throw new InvalidOperationException(
+                $"处方当前状态为「{GetStatusText(prescription.Status)}」，仅「已收费」状态的处方可发药");
+
+        var items = await _itemRepo.FindAsync(i => i.PrescriptionId == prescriptionId, ct);
+        if (items.Count == 0)
+            throw new InvalidOperationException("处方没有明细，无法发药");
+
+        var operatorId = _session.UserId ?? prescription.DoctorId;
+
+        await _unitOfWork.BeginTransactionAsync(ct);
+        try
+        {
+            // 幂等扣减：已有非冲正出库记录（历史数据保存时已扣）则跳过，避免重复扣减
+            var existingOuts = await _drugOutRepo.FindAsync(
+                o => o.PrescriptionId == prescriptionId && !o.IsReversal, ct);
+            if (existingOuts.Count == 0)
+            {
+                await DeductInventoryAsync(items, prescriptionId, operatorId, ct);
+            }
+
+            // 更新处方状态为已发药
+            prescription.Status = PrescriptionStatus.Dispensed;
+            prescription.DispensedAt = _clock.UtcNow;
+            prescription.DispensedBy = operatorId;
+            _prescriptionRepo.Update(prescription);
+
+            // 审计日志（事务内，与业务操作原子提交）
+            await _auditService.LogAsync("PRESCRIPTION_DISPENSE",
+                $"Prescription:{prescriptionId}",
+                $"Operator:{operatorId} Items:{items.Count}", ct);
+
+            await _unitOfWork.CommitAsync(ct);
+            return true;
+        }
+        catch
+        {
+            await _unitOfWork.RollbackAsync(ct);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 库存可用性检查：保存处方时确认每个药品有可用库存且数量充足（不扣减）。
+    /// 过期批次视为不可用。实际扣减在发药时执行。
+    /// </summary>
+    private async Task CheckStockAvailabilityAsync(
+        IReadOnlyList<PrescriptionItem> items, long prescriptionId, CancellationToken ct)
+    {
+        var today = DateOnly.FromDateTime(_clock.UtcNow);
+
+        foreach (var item in items)
+        {
+            var stocks = await _stockRepo.FindAsync(
+                s => s.DrugId == item.DrugId && s.QtyRemaining > 0, ct);
+
+            var validStocks = stocks.Where(b => b.ExpiryDate > today).ToList();
+
+            if (validStocks.Count == 0 && stocks.Count > 0)
+                throw new InvalidOperationException(
+                    $"药品「{item.DrugName}」所有库存批次均已过期，无法开具");
+
+            var totalAvailable = validStocks.Sum(s => s.QtyRemaining);
+            if (totalAvailable < item.Qty)
+                throw new InvalidOperationException(
+                    $"药品「{item.DrugName}」库存不足：需要 {item.Qty}，可用 {totalAvailable}");
+        }
+    }
+
+    /// <summary>
     /// 药师审核处方（《处方管理办法》要求药师审核后方可收费）。
     /// 仅 Saved 状态处方可审核，审核后变为 Reviewed 状态。
     /// Doctor 或 Nurse 角色可执行审核（诊所场景下医生可兼任药师）。
@@ -411,8 +647,8 @@ public class PrescriptionService : IPrescriptionService
     public async Task<bool> ReviewPrescriptionAsync(
         long prescriptionId, string? reviewNote, CancellationToken ct = default)
     {
-        // 权限检查：药师审核需 Doctor 或 Nurse 角色
-        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse);
+        // 权限检查：药师审核需 Doctor、Nurse 或 Pharmacist 角色（专职药师负责审核）
+        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Pharmacist);
 
         var prescription = await _prescriptionRepo.GetByIdAsync(prescriptionId, ct);
         if (prescription is null)
@@ -427,11 +663,12 @@ public class PrescriptionService : IPrescriptionService
         if (items.Count == 0)
             throw new InvalidOperationException("处方没有明细，无法审核");
 
-        // 复查过敏史
+        // 复查过敏史（F-01 修复）：仅对无临床覆盖理由的处方硬拦截；
+        // 医生已填写覆盖理由（OverrideReason）的处方，由药师审核时专业判断，不自动拦截。
         foreach (var item in items)
         {
             var drug = await _drugRepo.GetByIdAsync(item.DrugId, ct);
-            if (drug is not null)
+            if (drug is not null && string.IsNullOrWhiteSpace(prescription.OverrideReason))
                 await CheckAllergyAsync(prescription.PatientId, drug, ct);
         }
 
@@ -470,7 +707,7 @@ public class PrescriptionService : IPrescriptionService
     public async Task<string> GetAiReviewSuggestionsAsync(
         long prescriptionId, CancellationToken ct = default)
     {
-        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly);
+        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly, UserRole.Pharmacist);
 
         var prescription = await _prescriptionRepo.GetByIdAsync(prescriptionId, ct);
         if (prescription is null)
@@ -565,35 +802,20 @@ public class PrescriptionService : IPrescriptionService
             }
         }
 
-        // 6. 过敏史检查
+        // 6. 过敏史检查（F-02 修复：使用名称+类别标签双重匹配）
         if (patient?.Allergies is not null)
         {
-            var allergyKeywords = patient.Allergies
-                .Split([',', '，', '、', ';', '；'], StringSplitOptions.RemoveEmptyEntries)
-                .Select(k => k.Trim())
-                .Where(k => !string.IsNullOrEmpty(k))
-                .ToList();
-
             foreach (var item in items)
             {
                 var drug = await _drugRepo.GetByIdAsync(item.DrugId, ct);
                 if (drug is null) continue;
 
-                var drugNames = new[] { drug.GenericNameCn, drug.GenericNameEn }
-                    .Where(n => !string.IsNullOrEmpty(n))
-                    .Select(n => n!.Trim().ToLowerInvariant())
-                    .ToList();
-
-                foreach (var keyword in allergyKeywords)
+                foreach (var keyword in SplitAndCleanAllergyKeywords(patient.Allergies))
                 {
-                    var kw = keyword.ToLowerInvariant();
-                    foreach (var drugName in drugNames)
+                    if (MatchAllergyKeyword(drug, keyword))
                     {
-                        if (drugName.Contains(kw))
-                        {
-                            sb.AppendLine($"【严重】过敏史匹配：患者对「{keyword}」过敏，处方含「{item.DrugName}」");
-                            hasBlockers = true;
-                        }
+                        sb.AppendLine($"【严重】过敏史匹配：患者对「{keyword}」过敏，处方含「{item.DrugName}」");
+                        hasBlockers = true;
                     }
                 }
             }
@@ -642,6 +864,7 @@ public class PrescriptionService : IPrescriptionService
         PrescriptionStatus.Saved => "已保存（待审核）",
         PrescriptionStatus.Reviewed => "已审核",
         PrescriptionStatus.Paid => "已收费",
+        PrescriptionStatus.Dispensed => "已发药",
         PrescriptionStatus.Voided => "已作废",
         _ => status.ToString()
     };
@@ -696,12 +919,13 @@ public class PrescriptionService : IPrescriptionService
                 if ((nameAMatchesNew && nameBMatchesExisting) ||
                     (nameAMatchesExisting && nameBMatchesNew))
                 {
+                    // F-01 修复：Major 级交互不再在添加药品时抛异常拦截，
+                    // 交由保存前阻断检查统一收集（医生可填临床覆盖理由放行）。
+                    // 此处仅记录警告审计，便于追踪。
                     if (interaction.Level == DrugInteractionLevel.Major)
                     {
-                        // Major 级交互：阻断操作
-                        throw new InvalidOperationException(
-                            $"药品交互警告（Major）：「{newDrug.GenericNameCn}」与「{existingItem.DrugName}」" +
-                            $"存在严重交互风险，不可同时开具。");
+                        moderateWarnings.Add(
+                            $"「{newDrug.GenericNameCn}」与「{existingItem.DrugName}」存在严重交互风险（Major，需临床覆盖理由）");
                     }
                     else if (interaction.Level == DrugInteractionLevel.Moderate)
                     {
@@ -752,10 +976,12 @@ public class PrescriptionService : IPrescriptionService
     }
 
     /// <summary>
-    /// 过敏史匹配检查：检查药品名称是否与患者过敏史中的任何关键词匹配。
+    /// 过敏史匹配检查：检查药品是否与患者过敏史中的任何关键词匹配。
     /// 过敏史为自由文本（如"青霉素过敏、磺胺类"），按逗号/顿号/分号分割后逐项匹配。
-    /// 匹配规则：先剥离常见后缀词（过敏、过敏性、过敏史），再检查药品中文名或英文名是否包含关键词（忽略大小写）。
-    /// 发现匹配时抛出 InvalidOperationException，阻止添加。
+    /// F-02 修复：匹配同时覆盖「药品名称」与「药品类别标签（ContraindicationTags）」，
+    /// 解决"青霉素类/头孢类/NSAIDs"等类别型过敏关键词无法命中药名的问题
+    /// （如阿莫西林药名不含"青霉素"，但其类别标签为"青霉素类"）。
+    /// 发现匹配时抛出 InvalidOperationException，阻止操作。
     /// </summary>
     private async Task CheckAllergyAsync(long patientId, DrugMaster drug, CancellationToken ct)
     {
@@ -763,21 +989,43 @@ public class PrescriptionService : IPrescriptionService
         if (patient is null || string.IsNullOrWhiteSpace(patient.Allergies))
             return;
 
-        // 分割过敏史关键词（支持中英文逗号、顿号、分号）
-        var allergyKeywords = patient.Allergies
+        foreach (var keyword in SplitAndCleanAllergyKeywords(patient.Allergies))
+        {
+            if (MatchAllergyKeyword(drug, keyword))
+            {
+                throw new InvalidOperationException(
+                    $"过敏史拦截：患者过敏史中包含「{keyword}」，" +
+                    $"与药品「{drug.GenericNameCn}」匹配，不可开具此药品");
+            }
+        }
+    }
+
+    /// <summary>
+    /// 过敏史匹配（非抛出版）：返回命中的过敏关键词；未命中返回 null。
+    /// 与 CheckAllergyAsync 使用相同的清洗与匹配规则（含类别标签匹配）。
+    /// </summary>
+    private static string? TryMatchAllergy(string allergies, DrugMaster drug)
+    {
+        foreach (var keyword in SplitAndCleanAllergyKeywords(allergies))
+        {
+            if (MatchAllergyKeyword(drug, keyword))
+                return keyword;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 分割并清洗过敏史关键词：支持中英文逗号/顿号/分号分隔，剥离"过敏/过敏性/不耐受"等描述后缀。
+    /// </summary>
+    private static List<string> SplitAndCleanAllergyKeywords(string allergies)
+    {
+        return allergies
             .Split([',', '，', '、', ';', '；'], StringSplitOptions.RemoveEmptyEntries)
             .Select(k => k.Trim())
             .Where(k => !string.IsNullOrEmpty(k))
-            .ToList();
-
-        if (allergyKeywords.Count == 0)
-            return;
-
-        // 剥离过敏史描述中的常见后缀词，提取药物关键词
-        var cleanedKeywords = allergyKeywords
             .Select(k =>
             {
-                // 去掉尾部描述词：过敏、过敏性、过敏史、不耐受、皮疹、荨麻疹等
                 var trimmed = k;
                 var suffixes = new[] { "过敏", "过敏性", "过敏史", "不耐受", "皮疹", "荨麻疹", "呼吸困难" };
                 foreach (var suffix in suffixes)
@@ -792,30 +1040,44 @@ public class PrescriptionService : IPrescriptionService
             })
             .Where(k => !string.IsNullOrEmpty(k))
             .ToList();
+    }
 
-        if (cleanedKeywords.Count == 0)
-            return;
+    /// <summary>
+    /// 过敏匹配核心（F-02 修复）：同时匹配药品名称与类别标签。
+    /// 1) 药品中文名/英文名包含过敏关键词（原有规则）；
+    /// 2) 药品类别标签 ContraindicationTags 中的任一项与关键词互相包含
+    ///    （"青霉素类"↔"青霉素"、"头孢类"↔"头孢"、精确词"NSAIDs" 等均命中）。
+    /// </summary>
+    private static bool MatchAllergyKeyword(DrugMaster drug, string keyword)
+    {
+        var kw = keyword.Trim().ToLowerInvariant();
+        if (kw.Length == 0)
+            return false;
 
+        // 1) 药品名称包含匹配（中/英文名）
         var drugNames = new[] { drug.GenericNameCn, drug.GenericNameEn }
             .Where(n => !string.IsNullOrEmpty(n))
-            .Select(n => n!.Trim().ToLowerInvariant())
-            .ToList();
-
-        foreach (var keyword in cleanedKeywords)
+            .Select(n => n!.Trim().ToLowerInvariant());
+        foreach (var name in drugNames)
         {
-            var kw = keyword.ToLowerInvariant();
-            foreach (var drugName in drugNames)
+            if (name.Contains(kw))
+                return true;
+        }
+
+        // 2) 类别标签匹配（F-02）：药品禁忌/类别标签与过敏关键词互相包含
+        if (!string.IsNullOrWhiteSpace(drug.ContraindicationTags))
+        {
+            foreach (var tag in drug.ContraindicationTags.Split(',', StringSplitOptions.RemoveEmptyEntries))
             {
-                // P1 优化：单向匹配——药品名称包含过敏关键词即拦截
-                // 去掉 kw.Contains(drugName) 反向匹配，避免短药品名误匹配长过敏描述
-                if (drugName.Contains(kw))
-                {
-                    throw new InvalidOperationException(
-                        $"过敏史拦截：患者过敏史中包含「{keyword}」，" +
-                        $"与药品「{drug.GenericNameCn}」匹配，不可开具此药品");
-                }
+                var t = tag.Trim().ToLowerInvariant();
+                if (t.Length == 0)
+                    continue;
+                if (t.Contains(kw) || kw.Contains(t))
+                    return true;
             }
         }
+
+        return false;
     }
 
     /// <summary>
@@ -902,7 +1164,8 @@ public class PrescriptionService : IPrescriptionService
             return false;
         if (prescription.Status is not (
             PrescriptionStatus.Draft or PrescriptionStatus.Saved
-            or PrescriptionStatus.Reviewed or PrescriptionStatus.Paid))
+            or PrescriptionStatus.Reviewed or PrescriptionStatus.Paid
+            or PrescriptionStatus.Dispensed))
             throw new InvalidOperationException("当前处方状态不可作废");
 
         await _unitOfWork.BeginTransactionAsync(ct);
@@ -1168,7 +1431,7 @@ public class PrescriptionService : IPrescriptionService
         long prescriptionId, CancellationToken ct = default)
     {
         // P1：权限检查——读取处方详情需 Doctor/Nurse/Readonly 角色
-        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly);
+        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly, UserRole.Pharmacist);
 
         var prescription = await _prescriptionRepo.GetByIdAsync(prescriptionId, ct);
         if (prescription is null)
@@ -1180,20 +1443,25 @@ public class PrescriptionService : IPrescriptionService
 
         var itemDtos = items
             .OrderBy(i => i.Id)
-            .Select(i => new PrescriptionItemDto
+            .Select(i =>
             {
-                Id = i.Id,
-                DrugId = i.DrugId,
-                DrugName = i.DrugName,
-                Spec = i.Spec,
-                Dose = i.Dose,
-                DoseUnit = i.DoseUnit,
-                Frequency = i.Frequency,
-                Route = i.Route,
-                DurationDays = i.DurationDays,
-                Qty = i.Qty,
-                UnitPrice = i.UnitPrice,
-                Subtotal = i.Subtotal
+                var dto = new PrescriptionItemDto
+                {
+                    Id = i.Id,
+                    DrugId = i.DrugId,
+                    DrugName = i.DrugName,
+                    Spec = i.Spec,
+                    Dose = i.Dose,
+                    DoseUnit = i.DoseUnit,
+                    Frequency = i.Frequency,
+                    Route = i.Route,
+                    DurationDays = i.DurationDays,
+                    Qty = i.Qty,
+                    UnitPrice = i.UnitPrice,
+                    PackQuantity = PrescriptionItemDto.ParsePackQuantity(i.Spec),
+                    Subtotal = i.Subtotal
+                };
+                return dto;
             })
             .ToList();
 
@@ -1228,7 +1496,7 @@ public class PrescriptionService : IPrescriptionService
         CancellationToken ct = default)
     {
         // P1：权限检查——读取处方历史需 Doctor/Nurse/Readonly 角色
-        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly);
+        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Readonly, UserRole.Pharmacist);
 
         var prescriptions = await _prescriptionRepo.GetAllAsync(ct);
 
