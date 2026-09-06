@@ -8,14 +8,15 @@
 
 | 组件 | 技术 | 版本 |
 |------|------|------|
-| 运行时 | .NET | 10.0 |
-| UI 框架 | WPF | .NET 10 |
-| ORM | EF Core | 10.0 |
+| 运行时 | .NET | 9.0 |
+| UI 框架 | WPF | .NET 9 |
+| ORM | EF Core | 9.0 |
 | 数据库 | SQLite (WAL) | — |
 | MVVM | CommunityToolkit.Mvvm | 8.4.0 |
 | PDF 生成 | QuestPDF | 2026.7.2 |
 | 验证 | FluentValidation | 12.1.1 |
-| LLM | Ollama (qwen2.5:7b) | 可选 |
+| 测试 | xUnit + Moq | — |
+| LLM | llama.cpp (qwen2.5-7b) | 可选 |
 
 ## 项目结构
 
