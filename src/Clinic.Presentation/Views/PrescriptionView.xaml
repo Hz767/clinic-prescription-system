@@ -60,6 +60,40 @@
             <DockPanel>
                 <!-- 右侧操作 -->
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- AI智能问诊按钮组 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0" Visibility="{Binding AiScribeAvailable, Converter={StaticResource BoolToVisibility}}">
+                        <Button x:Name="BtnStartScribe"
+                                Style="{StaticResource BtnPrimarySm}"
+                                Content="🎙 开始问诊"
+                                Command="{Binding StartScribeCommand}"
+                                Visibility="{Binding IsScribeRecording, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}"/>
+                        <Button x:Name="BtnStopScribe"
+                                Style="{StaticResource BtnDangerSm}"
+                                Content="⏹ 停止并生成病历"
+                                Command="{Binding StopScribeCommand}"
+                                Visibility="{Binding IsScribeRecording, Converter={StaticResource BoolToVisibility}}"/>
+                        <!-- 录音中状态指示 -->
+                        <Border x:Name="ScribeRecordingIndicator"
+                                Background="#FEF2F2" CornerRadius="4" Padding="8,4"
+                                VerticalAlignment="Center" Margin="8,0,0,0"
+                                Visibility="{Binding IsScribeRecording, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" Fill="#EF4444" VerticalAlignment="Center">
+                                    <Ellipse.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0.2" Duration="0:0:0.8" AutoReverse="True"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Ellipse.Triggers>
+                                </Ellipse>
+                                <TextBlock Text=" 录音中 " FontSize="{StaticResource FontSizeTiny}" Foreground="#991B1B" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding ScribeDuration, StringFormat={}{0:F0}s}" FontSize="{StaticResource FontSizeTiny}" Foreground="#991B1B" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                     <Button Style="{StaticResource BtnOutlineSm}"
                             Content="清除患者"
                             Command="{Binding SelectPatientCommand}"
@@ -865,6 +899,70 @@
                             </TextBlock>
                             <TextBlock Grid.Column="3" Text="审核/调配：_________" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
                         </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── AI智能问诊病历预览 ── -->
+                <Border Margin="0,0,0,8" Padding="12,10" CornerRadius="6"
+                        Background="#F0FDF4" BorderBrush="#86EFAC" BorderThickness="1"
+                        Visibility="{Binding ShowAiDraft, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,6">
+                            <TextBlock FontSize="{StaticResource FontSizeCaption}" FontWeight="SemiBold" Foreground="#166534">
+                                <Run Text="🎙 AI智能问诊病历草稿"/>
+                                <Run Text="  置信度：" Foreground="#166534"/>
+                                <Run Text="{Binding AiConfidence, StringFormat={}{0:P0}}" FontWeight="Bold" Foreground="#15803D"/>
+                            </TextBlock>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <Button Style="{StaticResource BtnPrimarySm}"
+                                        Content="应用到处方"
+                                        Command="{Binding ApplyAiDraftCommand}"
+                                        Margin="0,0,8,0"/>
+                                <Button Content="✕" FontSize="10" Padding="6,2"
+                                        Background="Transparent" BorderThickness="0" Foreground="#166534"
+                                        Cursor="Hand" Click="CloseAiDraft_Click"/>
+                            </StackPanel>
+                        </DockPanel>
+
+                        <!-- 警告信息 -->
+                        <Border Background="#FEF2F2" CornerRadius="4" Padding="8,4" Margin="0,0,0,6"
+                                Visibility="{Binding AiWarnings, Converter={StaticResource NullToCollapsed}}">
+                            <TextBlock Text="{Binding AiWarnings}" FontSize="{StaticResource FontSizeMicro}"
+                                       Foreground="#991B1B" TextWrapping="Wrap"/>
+                        </Border>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="主诉" FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold" Foreground="#166534"/>
+                                <TextBlock Text="{Binding AiChiefComplaint}" FontSize="{StaticResource FontSizeCaption}"
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,6"/>
+                                <TextBlock Text="诊断" FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold" Foreground="#166534"/>
+                                <TextBlock Text="{Binding AiDiagnosis}" FontSize="{StaticResource FontSizeCaption}"
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,6"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="现病史" FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold" Foreground="#166534"/>
+                                <TextBlock Text="{Binding AiPresentIllness}" FontSize="{StaticResource FontSizeCaption}"
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,6" MaxHeight="80" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="治疗建议" FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold" Foreground="#166534"/>
+                                <TextBlock Text="{Binding AiTreatmentPlan}" FontSize="{StaticResource FontSizeCaption}"
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,0" MaxHeight="60" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- 转写原文（可折叠） -->
+                        <Expander Header="查看医患对话原文" FontSize="{StaticResource FontSizeMicro}" Foreground="#166534" Margin="0,6,0,0">
+                            <TextBox Text="{Binding ScribeTranscript, Mode=OneWay}"
+                                     IsReadOnly="True" TextWrapping="Wrap"
+                                     FontSize="{StaticResource FontSizeMicro}"
+                                     MaxHeight="120" VerticalScrollBarVisibility="Auto"
+                                     Background="White" BorderBrush="#A7F3D0" BorderThickness="1"
+                                     Padding="6" Margin="0,4,0,0"/>
+                        </Expander>
                     </StackPanel>
                 </Border>
 

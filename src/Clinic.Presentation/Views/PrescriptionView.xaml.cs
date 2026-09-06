@@ -25,6 +25,7 @@ public partial class PrescriptionView : UserControl
         if ((bool)e.NewValue && DataContext is PrescriptionViewModel vm)
         {
             _ = vm.CheckLlmStatusAsync();
+            _ = vm.CheckAiScribeAvailabilityAsync();
         }
     }
 
@@ -37,12 +38,22 @@ public partial class PrescriptionView : UserControl
         }
     }
 
+    /// <summary>关闭AI问诊病历预览</summary>
+    private void CloseAiDraft_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is PrescriptionViewModel vm)
+        {
+            vm.ShowAiDraft = false;
+        }
+    }
+
     private void PrescriptionView_Loaded(object sender, RoutedEventArgs e)
     {
         if (DataContext is PrescriptionViewModel vm)
         {
             _ = vm.LoadDrugsCommand.ExecuteAsync(null);
             _ = vm.CheckLlmStatusAsync();
+            _ = vm.CheckAiScribeAvailabilityAsync();
         }
     }
 
