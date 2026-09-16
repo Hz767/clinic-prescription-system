@@ -48,6 +48,11 @@ crash_*.log
 run-*.log
 test_*.txt
 
+# ── AI 模型 / 运行时二进制（体积大且可重新下载，不进版本库） ──
+*.gguf
+src/Clinic.AiScribe/Models/
+src/Clinic.AiScribe/tools/
+
 # ── PDF 输出（运行时生成） ──
 Pdf/
 
