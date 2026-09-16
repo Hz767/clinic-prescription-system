@@ -53,8 +53,8 @@ test_*.txt
 src/Clinic.AiScribe/Models/
 src/Clinic.AiScribe/tools/
 
-# ── PDF 输出（运行时生成） ──
-Pdf/
+# ── PDF 输出（运行时生成，仅根目录） ──
+/Pdf/
 
 # ── 临时文件 ──
 *.tmp
