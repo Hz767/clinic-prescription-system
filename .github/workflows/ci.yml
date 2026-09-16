@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    name: Build & Test (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore dependencies
+        run: dotnet restore Clinic.sln
+
+      - name: Build (Release)
+        run: dotnet build Clinic.sln --configuration Release --no-restore
+
+      - name: Run unit tests
+        run: dotnet test tests/Clinic.UnitTests/Clinic.UnitTests.csproj --configuration Release --no-build --logger "trx;LogFileName=unit.trx"
+
+      - name: Run integration tests
+        run: dotnet test tests/Clinic.IntegrationTests/Clinic.IntegrationTests.csproj --configuration Release --no-build --logger "trx;LogFileName=integration.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            **/TestResults/*.trx
+          retention-days: 7
