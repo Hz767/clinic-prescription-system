@@ -2,12 +2,17 @@
 
 感谢你为陈医生诊所处方系统做出贡献！本文档定义了项目的开发流程、代码规范和协作方式。
 
+- **仓库地址**：https://github.com/Hz767/clinic-prescription-system
+- **问题反馈**：在仓库提交 Issue 时请附上：复现步骤、期望行为、实际行为、错误日志（`crash_*.log` / `run-*.log`）
+
 ## 目录
 
 - [开发环境准备](#开发环境准备)
 - [开发流程](#开发流程)
 - [Git 工作流](#git-工作流)
 - [代码规范](#代码规范)
+- [安全与合规](#安全与合规)
+- [关键业务约束](#关键业务约束)
 - [提交规范](#提交规范)
 - [代码审查](#代码审查)
 - [发布流程](#发布流程)
@@ -56,6 +61,8 @@ dotnet run --project src/Clinic.Presentation/Clinic.Presentation.csproj
 
 - 用户名：`admin`
 - 密码：`admin123`
+
+> 种子账户默认标记 `MustChangePassword`，首次登录后必须立即修改密码，严禁将默认密码用于生产环境。
 
 ---
 
@@ -225,6 +232,32 @@ Presentation → Application → Domain ← Infrastructure
 - Application层：依赖Domain，不依赖Infrastructure
 - Infrastructure层：实现Domain/Application定义的接口
 - Presentation层：只调用Application层服务
+
+---
+
+## 安全与合规
+
+> 本项目处理患者医疗数据，安全合规为最高优先级，违反以下约定将阻止合并。
+
+1. **密钥外置**：加密密钥与 Pepper 存放于 gitignored 的 `secrets/` 目录（`encryption.key` / `pepper.key`），**严禁**硬编码进 `appsettings.json` 或任何源代码
+2. **禁止提交敏感信息**：数据库（`*.db`）、密钥（`*.key`）、日志（`*.log`）、备份（`Backups/`）均已被 `.gitignore` 排除，提交前用 `git status` 复查
+3. **权限在应用层强制**：所有写操作必须在 Application 层服务入口执行权限检查（`IPermissionChecker`）；UI 层隐藏按钮仅为 UX，不构成安全边界
+4. **审计日志**：所有系统操作写入 AuditLog，`PayloadHash + PrevHash + HashChain` 构成防篡改哈希链，业务修改不得绕过审计
+5. **加密与哈希**：患者敏感字段使用 AES-GCM 加密，密码使用 PBKDF2 + Pepper 哈希，不得自行实现加密算法或降低强度
+
+---
+
+## 关键业务约束
+
+> 修改以下业务逻辑前必读，违规修改即使编译通过也会被审查拒绝。
+
+1. **金额按整盒计价**：药品金额 = `ceil(数量 / 包装数量) × 单价`；总金额 = 明细合计 + 诊疗费（ConsultationFee）；金额一律使用 `decimal`，四舍五入 `MidpointRounding.AwayFromZero`
+2. **保存处方时重算金额**：服务端必须重新计算所有明细 Subtotal，不信任前端传入值
+3. **库存并发**：所有库存操作（入库/出库/扣减/退库）必须使用共享互斥锁 `InventoryLock.Instance`，事务隔离级别 `Serializable`（SQLite: BEGIN IMMEDIATE）
+4. **FIFO 扣减**：处方扣库存按有效期优先（FIFO），库存不足必须阻断保存并回滚全部变更
+5. **处方规则**：处方药品 ≤ 5 种；时限 急诊3天/常规7天/慢病84天；保存时执行过敏史匹配检查（命中则阻断并告警）
+6. **收费冲正**：已收费处方作废必须生成冲正支付记录（`IsReversal` 标记）并在同一事务内回退库存
+7. **事务边界在应用层**：Application 层负责事务管理，禁止在 Presentation 层直接操作 DbContext 或仓储
 
 ---
 
