@@ -1,5 +1,5 @@
 using System.Windows;
-using Clinic.Infrastructure.Data;
+using Clinic.Application.Interfaces;
 using Clinic.Presentation.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,16 +26,16 @@ public partial class MedicalRecordDetailWindow : Window
         InitializeComponent();
         _dialogService = App.Services.GetRequiredService<IDialogService>();
         RecordId = recordId;
-        LoadData(recordId);
+        _ = LoadDataAsync(recordId);
         DataContext = this;
     }
 
-    private void LoadData(long recordId)
+    private async System.Threading.Tasks.Task LoadDataAsync(long recordId)
     {
         using var scope = App.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ClinicDbContext>();
+        var service = scope.ServiceProvider.GetRequiredService<IMedicalRecordService>();
 
-        var record = db.MedicalRecords.FirstOrDefault(m => m.Id == recordId);
+        var record = await service.GetByIdAsync(recordId);
         if (record is null)
         {
             _dialogService.ShowWarning("病历不存在");
@@ -43,12 +43,9 @@ public partial class MedicalRecordDetailWindow : Window
             return;
         }
 
-        var patient = db.Patients.FirstOrDefault(p => p.Id == record.PatientId);
-        var doctor = db.SysUsers.FirstOrDefault(u => u.Id == record.DoctorId);
-
-        PatientName = patient?.Name ?? "—";
-        PatientGender = patient?.Gender ?? "—";
-        DoctorName = doctor?.DisplayName ?? "—";
+        PatientName = record.PatientName;
+        PatientGender = record.PatientGender;
+        DoctorName = record.DoctorName;
         VisitAt = record.VisitAt.ToString("yyyy-MM-dd HH:mm");
         ChiefComplaint = record.ChiefComplaint;
         PresentIllness = record.PresentIllness;

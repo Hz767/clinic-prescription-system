@@ -1,3 +1,4 @@
+using System.Data;
 using Clinic.Domain.Interfaces;
 using Clinic.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -27,12 +28,10 @@ public class UnitOfWork : IUnitOfWork
         if (_transaction is not null)
             throw new InvalidOperationException("事务已存在，不支持嵌套事务");
 
-        // 使用 EF Core API 开启事务。
-        // SQLite EF Core 默认使用 DEFERRED 事务，配合 DependencyInjection 中
-        // 配置的 PRAGMA busy_timeout=5000 可有效避免 writer 饥饿和死锁。
-        // 如需强制 IMMEDIATE 事务，可在连接初始化时设置 PRAGMA，或在此处
-        // 通过 ExecuteSqlRawAsync("BEGIN IMMEDIATE TRANSACTION") 手动开启。
-        _transaction = await _context.Database.BeginTransactionAsync(ct);
+        // P0 修复：使用 BEGIN IMMEDIATE 事务（IsolationLevel.Serializable 在 SQLite 提供程序中
+        // 映射为 BEGIN IMMEDIATE），在事务一开始就获取保留写锁。配合 DependencyInjection 中
+        // 配置的 PRAGMA busy_timeout=5000，避免多个延迟事务并发升级写锁时发生死锁/写冲突。
+        _transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
     }
 
     public async Task CommitAsync(CancellationToken ct = default)

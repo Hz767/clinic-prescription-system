@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using Clinic.Application.DTOs;
 using Clinic.Application.Interfaces;
@@ -17,6 +18,58 @@ public partial class PrescriptionView : UserControl
     {
         InitializeComponent();
         IsVisibleChanged += PrescriptionView_IsVisibleChanged;
+        DataContextChanged += PrescriptionView_DataContextChanged;
+        Unloaded += PrescriptionView_Unloaded;
+    }
+
+    private DrugPickerSecondaryWindow? _secondaryWindow;
+
+    /// <summary>绑定或解绑副屏窗口事件（按当前 ViewModel）</summary>
+    private void PrescriptionView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (DataContext is not PrescriptionViewModel vm)
+            return;
+
+        if (e.NewValue is PrescriptionViewModel)
+            vm.OpenDrugPickerSecondaryRequested -= OnOpenDrugPickerSecondary;
+        vm.OpenDrugPickerSecondaryRequested += OnOpenDrugPickerSecondary;
+    }
+
+    /// <summary>页面卸载时释放副屏窗口与事件，避免泄漏</summary>
+    private void PrescriptionView_Unloaded(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is PrescriptionViewModel vm)
+        {
+            vm.OpenDrugPickerSecondaryRequested -= OnOpenDrugPickerSecondary;
+            vm.IsDrugPickerSecondaryOpen = false;
+        }
+        _secondaryWindow?.Close();
+        _secondaryWindow = null;
+    }
+
+    /// <summary>打开副屏药品选择窗口：共享同一 ViewModel，数据实时同步</summary>
+    private void OnOpenDrugPickerSecondary()
+    {
+        if (DataContext is not PrescriptionViewModel vm)
+            return;
+
+        if (_secondaryWindow is { IsLoaded: true })
+        {
+            _secondaryWindow.Activate();
+            return;
+        }
+
+        _secondaryWindow = new DrugPickerSecondaryWindow(vm)
+        {
+            Owner = Window.GetWindow(this)
+        };
+        _secondaryWindow.Closed += (_, _) =>
+        {
+            vm.IsDrugPickerSecondaryOpen = false;
+            _secondaryWindow = null;
+        };
+        vm.IsDrugPickerSecondaryOpen = true;
+        _secondaryWindow.Show();
     }
 
     private void PrescriptionView_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -182,4 +235,63 @@ public partial class PrescriptionView : UserControl
             // 保持 Popup 打开，不转移焦点，用户可继续选择多个标签
         }
     }
+
+    // ── 快捷词键盘选择：弹出时按数字 1~9 添加，Esc 关闭 ──
+
+    private void ChiefComplaintTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        => HandleQuickPhraseKey(e, ChiefComplaintPopup, (vm, i) =>
+            TryExecuteQuickPhrase(vm.CommonChiefComplaints, i, vm.AddChiefComplaintCommand));
+
+    private void DiagnosisTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        => HandleQuickPhraseKey(e, DiagnosisPopup, (vm, i) =>
+            TryExecuteQuickPhrase(vm.CommonDiagnoses, i, vm.AddDiagnosisCommand));
+
+    private void HandleQuickPhraseKey(KeyEventArgs e, Popup popup, Action<PrescriptionViewModel, int> select)
+    {
+        if (DataContext is not PrescriptionViewModel)
+            return;
+
+        if (e.Key == Key.Escape && popup.IsOpen)
+        {
+            popup.IsOpen = false;
+            e.Handled = true;
+            return;
+        }
+
+        if (!popup.IsOpen)
+            return;
+
+        var index = QuickPhraseIndex(e.Key);
+        if (index >= 0)
+        {
+            select((PrescriptionViewModel)DataContext, index);
+            e.Handled = true;
+        }
+    }
+
+    private static void TryExecuteQuickPhrase(
+        System.Collections.ObjectModel.ObservableCollection<string> phrases, int index,
+        CommunityToolkit.Mvvm.Input.IRelayCommand<string> command)
+    {
+        if (index < phrases.Count)
+        {
+            var phrase = phrases[index];
+            if (command.CanExecute(phrase))
+                command.Execute(phrase);
+        }
+    }
+
+    private static int QuickPhraseIndex(Key key) => key switch
+    {
+        Key.D1 or Key.NumPad1 => 0,
+        Key.D2 or Key.NumPad2 => 1,
+        Key.D3 or Key.NumPad3 => 2,
+        Key.D4 or Key.NumPad4 => 3,
+        Key.D5 or Key.NumPad5 => 4,
+        Key.D6 or Key.NumPad6 => 5,
+        Key.D7 or Key.NumPad7 => 6,
+        Key.D8 or Key.NumPad8 => 7,
+        Key.D9 or Key.NumPad9 => 8,
+        _ => -1
+    };
 }

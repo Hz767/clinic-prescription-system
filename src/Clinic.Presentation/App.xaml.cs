@@ -52,6 +52,7 @@ public partial class App : System.Windows.Application
             {
                 // 读取配置
                 var dbPath = context.Configuration["Database:Path"] ?? "clinic.db";
+                var secretsDir = context.Configuration["Secrets:Dir"];
                 var encryptionKey = context.Configuration["Encryption:EncryptionKey"]
                     ?? context.Configuration["Security:EncryptionKey"];
                 var pepper = context.Configuration["Encryption:Pepper"];
@@ -80,7 +81,7 @@ public partial class App : System.Windows.Application
                     : null;
 
                 // 注册各层服务
-                services.AddInfrastructure(dbPath, encryptionKey, pepper, llmEnabled, llmEndpoint, llmModel, llamaCppSettings);
+                services.AddInfrastructure(dbPath, encryptionKey, pepper, secretsDir, llmEnabled, llmEndpoint, llmModel, llamaCppSettings);
                 services.AddApplication();
 
                 // 注册 AI 辅助管理器（全局单例）
@@ -135,6 +136,7 @@ public partial class App : System.Windows.Application
                 await db.Database.EnsureCreatedAsync();
                 await MigratePrescriptionVitalsAsync(db);
                 await MigrateP0P1ColumnsAsync(db);
+                await MigrateBrokenForeignKeysAsync(db);
                 await DbSeeder.SeedAsync(db, passwordHasher, encryption);
 
                 // 注意：不再自动启动 llama.cpp，改为用户在登录时选择是否启用 AI 辅助
@@ -218,6 +220,84 @@ public partial class App : System.Windows.Application
                 // 列已存在或表不存在，忽略错误
             }
         }
+    }
+
+    /// <summary>
+    /// 手动迁移：修复子表外键指向已删除旧表 drug_master_old 的问题。
+    /// 历史版本重建 drug_master 表时未同步更新 drug_in/drug_stock/drug_out 的外键定义，
+    /// 导致连接开启 PRAGMA foreign_keys=ON 后写入库存/出库表时报
+    /// 「SQLite Error 1: no such table: main.drug_master_old」，发药扣库存事务整体回滚。
+    /// 修复方式：双重重命名——ALTER TABLE RENAME 会同步更新所有引用该表的外键定义，
+    /// 先把 drug_master 改名为 drug_master_old 再改回，即可把错误引用全部纠正为 drug_master。
+    /// </summary>
+    private static async Task MigrateBrokenForeignKeysAsync(ClinicDbContext db)
+    {
+        var conn = db.Database.GetDbConnection();
+        if (conn.State != System.Data.ConnectionState.Open)
+            await conn.OpenAsync();
+
+        var tables = new List<string>();
+        using (var listCmd = conn.CreateCommand())
+        {
+            listCmd.CommandText =
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';";
+            using var reader = await listCmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                tables.Add(reader.GetString(0));
+        }
+
+        var affected = new List<string>();
+        foreach (var table in tables)
+        {
+            using var fkCmd = conn.CreateCommand();
+            fkCmd.CommandText = $"PRAGMA foreign_key_list(\"{table}\");";
+            using var fkReader = await fkCmd.ExecuteReaderAsync();
+            while (await fkReader.ReadAsync())
+            {
+                if (fkReader.GetString(2) == "drug_master_old")
+                    affected.Add(table);
+            }
+        }
+
+        if (affected.Count == 0)
+            return;
+
+        // drug_master 表本身必须存在（否则无可重命名的目标）
+        using (var checkCmd = conn.CreateCommand())
+        {
+            checkCmd.CommandText =
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='drug_master';";
+            var exists = Convert.ToInt64(await checkCmd.ExecuteScalarAsync()) > 0;
+            if (!exists)
+                return;
+        }
+
+        using (var offCmd = conn.CreateCommand())
+        {
+            offCmd.CommandText = "PRAGMA foreign_keys=OFF;";
+            await offCmd.ExecuteNonQueryAsync();
+        }
+
+        try
+        {
+            using var renameOut = conn.CreateCommand();
+            renameOut.CommandText = "ALTER TABLE drug_master RENAME TO drug_master_old;";
+            await renameOut.ExecuteNonQueryAsync();
+
+            using var renameBack = conn.CreateCommand();
+            renameBack.CommandText = "ALTER TABLE drug_master_old RENAME TO drug_master;";
+            await renameBack.ExecuteNonQueryAsync();
+        }
+        finally
+        {
+            using var onCmd = conn.CreateCommand();
+            onCmd.CommandText = "PRAGMA foreign_keys=ON;";
+            await onCmd.ExecuteNonQueryAsync();
+        }
+
+        Logger.LogInformation(
+            "[Migration] Fixed broken foreign keys (drug_master_old -> drug_master) in: {Tables}",
+            string.Join(", ", affected));
     }
 
     /// <summary>显示登录窗口，登录成功后切换到主窗口</summary>

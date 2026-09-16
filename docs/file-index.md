@@ -1,8 +1,8 @@
 # 个体诊所处方系统 — 开发文件检索目录
 
-> 最后更新：2026-08-13
+> 最后更新：2026-09-16
 > 用途：AI 开发时快速查找关键文件、接口、实现和配置位置
-> 当前状态：v1.0.0 正式版（界面优化 + 字段完善 + Git 版本控制）
+> 当前状态：v1.3.0（阶段三 个性化配置/销量报表/双屏布局 + P0 安全修复 + UI 渲染修复）
 
 ---
 
@@ -598,3 +598,78 @@ BillingViewModel.LoadPaymentHistoryCommand
     → 返回 PaymentRecordDto 列表（含 MethodText 中文）
   → 填充 PaymentHistory 列表
 ```
+
+---
+
+## 阶段一 键盘优先交互优化（新增，2026-09-16）
+
+### 功能文档
+
+| 文件 | 说明 |
+|------|------|
+| `docs/阶段一-交互优化使用说明.md` | 面向医生的功能使用手册（快捷键/模板/复制上次/快捷词） |
+
+### 实现文件
+
+| 功能 | 位置 |
+|------|------|
+| 全局快捷键（Alt+1~7） | `Presentation/MainWindow.xaml` → Window.InputBindings |
+| 导航当前页高亮 | `Presentation/Styles/Buttons.xaml` → BtnNav 样式 + `MainViewModel.CurrentNavKey` |
+| 处方局部快捷键（F5/Ctrl+S/N/P） | `Presentation/Views/PrescriptionView.xaml` → UserControl.InputBindings |
+| 处方模板 / 复制上次处方业务逻辑 | `Presentation/ViewModels/PrescriptionViewModel.cs`（Templates/SelectedTemplate/TemplateNameInput + CopyLastPrescription/ApplySelectedTemplate/SaveCurrentAsTemplate/DeleteSelectedTemplate） |
+| 处方模板本地存储（按医生隔离 JSON） | `Presentation/Services/PrescriptionTemplateStore.cs`（`usertemplates/{登录名}_templates.json`） |
+| 快捷词键盘交互（数字1~9/Esc） | `Presentation/Views/PrescriptionView.xaml.cs`（HandleQuickPhraseKey / QuickPhraseIndex / TryExecuteQuickPhrase） + 依赖 `PrescriptionViewModel.cs`（CommonChiefComplaints/CommonDiagnoses） |
+
+## 阶段二 待办进度条 + 全局反馈（新增，2026-09-16）
+
+| 功能 | 位置 |
+|------|------|
+| 待办项"下一步"命令 + 跳转事件 | `Presentation/ViewModels/DashboardViewModel.cs`（HandlePendingPrescriptionCommand / NavigateToPendingHandleRequested） |
+| 待办进度条 + 处方编号 + 下一步按钮 | `Presentation/Views/DashboardView.xaml`（待审核/待收费/待发药三个队列 ItemTemplate） |
+| 首页跳转收费页办理区分发 | `Presentation/ViewModels/MainViewModel.cs`（OnDashboardNavigateToPendingHandle） |
+| 收费页按状态预填办理区 | `Presentation/ViewModels/BillingViewModel.cs`（ProcessPendingPrescription：状态1→审核区、4→收费区、2→发药区） |
+| 全局 Toast 服务 | `Presentation/Services/ToastService.cs`（静态单例 + ObservableCollection\<ToastMessage>） |
+| Toast 宿主控件 | `Presentation/Views/ToastHostControl.xaml`（右下角 3s 自动消失，按类型变色），挂载于 `MainWindow.xaml` 内容区顶层 |
+
+## 阶段三 个性化配置 · 销量报表 · 双屏布局（新增，2026-09-16）
+
+### 功能文档
+
+| 文件 | 说明 |
+|------|------|
+| `docs/阶段三-个性化配置与双屏布局使用说明.md` | 面向医生的功能使用手册（快捷词库/药品套餐/默认用药/销量Top/双屏选药） |
+
+### 实现文件
+
+| 功能 | 位置 |
+|------|------|
+| 个性化配置本地存储（按医生登录名隔离 JSON） | `Presentation/Services/DoctorPreferencesStore.cs`（`preferences/{登录名}_preferences.json`） |
+| 个性化配置业务逻辑（快捷词/套餐/默认用药） | `Presentation/ViewModels/PrescriptionViewModel.Personalization.cs`（按登录名加载/覆盖内置词库） |
+| 个性化配置 UI 面板 | `Presentation/Views/PrescriptionView.xaml`（⚙ 个性化设置：套餐库 + 快捷词库 + 默认用药） |
+| 药品销量 Top 统计接口 | `Application/Interfaces/IServices.cs` → `IBillingService.GetTopDrugSalesAsync` + `DrugSalesDto` |
+| 药品销量 Top 统计实现（多表聚合） | `Application/Services/BillingService.cs` → `GetTopDrugSalesAsync`（Paid/Dispensed 成交口径） |
+| 销量 Top 数据加载 / 范围切换 | `Presentation/ViewModels/DashboardViewModel.cs`（TopDrugSales / SelectedSalesRange / SalesMaxAmount / RefreshTopDrugSalesAsync） |
+| 销量 Top 条形图 UI | `Presentation/Views/DashboardView.xaml`（药品销量 Top 区块，ProgressBar 模拟条形图，近7天/30天/本月切换） |
+| 双屏选药命令 / 状态 / 事件 | `Presentation/ViewModels/PrescriptionViewModel.cs`（ToggleDrugPickerSecondaryCommand / IsDrugPickerSecondaryOpen / OpenDrugPickerSecondaryRequested） |
+| 双屏窗口 UI | `Presentation/Views/DrugPickerSecondaryWindow.xaml`（药品列表 + 分类筛选 + 当前处方明细概览） |
+| 双屏窗口逻辑（共享 ViewModel、双击添加） | `Presentation/Views/DrugPickerSecondaryWindow.xaml.cs` |
+| 双屏窗口生命周期（打开/关闭/事件绑定） | `Presentation/Views/PrescriptionView.xaml.cs`（PrescriptionView_DataContextChanged / OnOpenDrugPickerSecondary / Unloaded） |
+
+## 阶段三修补：P0 安全 + UI 渲染修复（2026-09-16）
+
+### 安全与健壮性
+
+| 修复 | 位置 |
+|------|------|
+| 库存并发共享互斥锁 | `Application/Services/InventoryLock.cs`（`InventoryLock.Instance`），应用于 入库/出库/扣减/退库 全链路 |
+| 事务隔离升级 Serializable（BEGIN IMMEDIATE） | `Infrastructure/Repositories/UnitOfWork.cs` → `BeginTransactionAsync` |
+| 软删除唯一索引过滤 | `Infrastructure/Data/ClinicDbContext.cs`（5 个唯一索引加 `[deleted_at] IS NULL`） |
+| 密钥/Pepper 外置 | 从 `appsettings.json` 迁至 gitignored `secrets/`（`encryption.key` / `pepper.key`） |
+
+### UI 渲染
+
+| 修复 | 位置 |
+|------|------|
+| `SurfaceBgBrush` 缺失崩溃（级联异常弹窗堆叠） | `Styles/Colors.xaml` → 新增 `SurfaceBgBrush` |
+| 新患者字段文字被布局裁剪不可见 | `Styles/Inputs.xaml` → DatePicker 模板 DatePickerTextBox Padding 改紧凑；`Views/PrescriptionView.xaml` → 性别 ComboBox 加宽、过敏史/基础疾病 TextBox 加紧凑 Padding |
+| 处方笺姓名/性别不同步（新患者回退为「—」） | `ViewModels/PrescriptionViewModel.Patient.cs` → `PrescriptionPatientName`/`PrescriptionPatientGender` 显示属性；`Views/PrescriptionView.xaml` 处方笺绑定改用该属性 |

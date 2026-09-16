@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
-using Clinic.Infrastructure.Data;
+using Clinic.Application.Interfaces;
 using Clinic.Presentation.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,16 +26,16 @@ public partial class PrescriptionDetailWindow : Window
     {
         InitializeComponent();
         _dialogService = App.Services.GetRequiredService<IDialogService>();
-        LoadData(prescriptionId);
+        _ = LoadDataAsync(prescriptionId);
         DataContext = this;
     }
 
-    private void LoadData(long prescriptionId)
+    private async System.Threading.Tasks.Task LoadDataAsync(long prescriptionId)
     {
         using var scope = App.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ClinicDbContext>();
+        var service = scope.ServiceProvider.GetRequiredService<IPrescriptionService>();
 
-        var rx = db.Prescriptions.FirstOrDefault(p => p.Id == prescriptionId);
+        var rx = await service.GetPrescriptionByIdAsync(prescriptionId);
         if (rx is null)
         {
             _dialogService.ShowWarning("处方不存在");
@@ -43,18 +43,15 @@ public partial class PrescriptionDetailWindow : Window
             return;
         }
 
-        var patient = db.Patients.FirstOrDefault(p => p.Id == rx.PatientId);
-        var doctor = db.SysUsers.FirstOrDefault(u => u.Id == rx.DoctorId);
-
         PrescriptionNo = rx.NoYearSeq;
-        PatientName = patient?.Name ?? "—";
-        DoctorName = doctor?.DisplayName ?? "—";
+        PatientName = rx.PatientName;
+        DoctorName = rx.DoctorName;
         DiagnosisText = rx.DiagnosisText;
         ChiefComplaint = rx.ChiefComplaint;
         CreatedAt = rx.CreatedAt.ToString("yyyy-MM-dd HH:mm");
         TotalAmount = rx.TotalAmount;
 
-        PrescriptionTypeText = ((int)rx.Type) switch
+        PrescriptionTypeText = rx.Type switch
         {
             0 => "普通处方",
             1 => "急诊处方",
@@ -62,7 +59,7 @@ public partial class PrescriptionDetailWindow : Window
             _ => "未知"
         };
 
-        StatusText = ((int)rx.Status) switch
+        StatusText = rx.Status switch
         {
             0 => "草稿",
             1 => "已保存(待审核)",
@@ -73,13 +70,8 @@ public partial class PrescriptionDetailWindow : Window
             _ => "未知"
         };
 
-        var items = db.PrescriptionItems
-            .Where(i => i.PrescriptionId == prescriptionId)
-            .OrderBy(i => i.Id)
-            .ToList();
-
-        ItemCount = items.Count;
-        foreach (var item in items)
+        ItemCount = rx.Items.Count;
+        foreach (var item in rx.Items.OrderBy(i => i.Id))
         {
             Items.Add(new PrescriptionItemDisplay
             {

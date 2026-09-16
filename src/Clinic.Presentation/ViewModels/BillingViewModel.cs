@@ -94,6 +94,26 @@ public partial class BillingViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(DispenseCommand))]
     private bool _isBusy;
 
+    // ── 模块级消息（收费/审核/发药各自独立显示，避免错误信息串位）──
+
+    [ObservableProperty] private string? _billingErrorMessage;
+    [ObservableProperty] private string? _billingStatusMessage;
+    [ObservableProperty] private string? _reviewErrorMessage;
+    [ObservableProperty] private string? _reviewStatusMessage;
+    [ObservableProperty] private string? _dispenseErrorMessage;
+    [ObservableProperty] private string? _dispenseStatusMessage;
+
+    /// <summary>按当前激活的搜索字段（0=收费 1=审核 2=发药）写入对应模块的消息</summary>
+    private void SetActiveModuleMessages(string? error, string? status)
+    {
+        switch (ActivePrescriptionSearchField)
+        {
+            case 0: BillingErrorMessage = error; BillingStatusMessage = status; break;
+            case 1: ReviewErrorMessage = error; ReviewStatusMessage = status; break;
+            case 2: DispenseErrorMessage = error; DispenseStatusMessage = status; break;
+        }
+    }
+
     // ── 收费流水查询 ──
 
     [ObservableProperty]
@@ -229,11 +249,43 @@ public partial class BillingViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// 从首页（Dashboard）待办队列跳转处理某处方：切换到业务办理Tab、刷新待办队列，
+    /// 并按状态预填对应办理区（状态1→审核区、4→收费区、2→发药区）。
+    /// 形成"审核→收费→发药"一条龙的引导主线。
+    /// </summary>
+    public async Task ProcessPendingPrescription(PrescriptionHistoryDto? prescription)
+    {
+        if (prescription is null) return;
+
+        SelectedPendingPrescription = prescription;
+        ActiveTabIndex = 1; // 跳转到业务办理Tab
+        var idStr = prescription.Id.ToString();
+
+        switch (prescription.Status)
+        {
+            case 1: // 待审核→审核区域
+                ReviewPrescriptionIdInput = idStr;
+                break;
+            case 4: // 待收费→收费区域（预填金额）
+                PrescriptionIdInput = idStr;
+                AmountInput = prescription.TotalAmount.ToString("F2");
+                break;
+            case 2: // 待发药→发药区域并加载处方
+                DispensePrescriptionIdInput = idStr;
+                if (CanLoadDispensePrescription())
+                    await LoadDispensePrescriptionAsync();
+                break;
+        }
+
+        // 刷新待办队列（处理完一项后队列应更新）
+        await LoadPendingWorkbenchAsync();
+    }
+
     /// <summary>搜索处方（按处方编号/患者姓名/诊断关键词）</summary>
     [RelayCommand]
     private async Task SearchPrescriptionsAsync()
     {
-        ErrorMessage = null;
         var keyword = ActivePrescriptionSearchField switch
         {
             0 => PrescriptionIdInput?.Trim(),
@@ -263,11 +315,11 @@ public partial class BillingViewModel : ViewModelBase
 
             IsPrescriptionSearchOpen = PrescriptionSearchResults.Count > 0;
             if (PrescriptionSearchResults.Count == 0)
-                StatusMessage = $"未找到匹配「{keyword}」的处方";
+                SetActiveModuleMessages(null, $"未找到匹配「{keyword}」的处方");
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"搜索处方失败：{ExceptionFormatter.GetMessage(ex)}";
+            SetActiveModuleMessages($"搜索处方失败：{ExceptionFormatter.GetMessage(ex)}", null);
         }
     }
 
@@ -293,7 +345,7 @@ public partial class BillingViewModel : ViewModelBase
         }
 
         IsPrescriptionSearchOpen = false;
-        StatusMessage = $"已选择处方 {prescription.NoYearSeq}（{prescription.PatientName}）";
+        SetActiveModuleMessages(null, $"已选择处方 {prescription.NoYearSeq}（{prescription.PatientName}）");
     }
 
     /// <summary>关闭搜索下拉</summary>
@@ -375,24 +427,24 @@ public partial class BillingViewModel : ViewModelBase
         {
             if (!long.TryParse(PrescriptionIdInput.Trim(), out var prescriptionId) || prescriptionId <= 0)
             {
-                ErrorMessage = "请输入有效的处方 ID";
+                BillingErrorMessage = "请输入有效的处方 ID";
                 return;
             }
 
             if (!decimal.TryParse(AmountInput.Trim(), out var amount) || amount <= 0)
             {
-                ErrorMessage = "请输入有效的收费金额";
+                BillingErrorMessage = "请输入有效的收费金额";
                 return;
             }
 
             if (_session.UserId is null)
             {
-                ErrorMessage = "未登录，请先登录";
+                BillingErrorMessage = "未登录，请先登录";
                 return;
             }
 
-            ErrorMessage = null;
-            StatusMessage = null;
+            BillingErrorMessage = null;
+            BillingStatusMessage = null;
 
             using var scope = _scopeFactory.CreateScope();
             var billingService = scope.ServiceProvider.GetRequiredService<IBillingService>();
@@ -406,14 +458,17 @@ public partial class BillingViewModel : ViewModelBase
                 Note?.Trim());
 
             var methodText = PaymentMethod == 0 ? "现金" : "POS";
-            StatusMessage = $"收费成功：{methodText} ¥{amount:F2}（流水号 {paymentId}）。已自动载入发药区，请完成配药发药";
+            BillingStatusMessage = $"收费成功：{methodText} ¥{amount:F2}（流水号 {paymentId}）。已自动载入发药区，请完成配药发药";
+            ToastService.Instance.Success($"收费成功：{methodText} ¥{amount:F2}，已载入发药区");
 
             // 收费成功后自动填充发药区（发药时扣减库存）
             DispensePrescriptionIdInput = prescriptionId.ToString();
+            DispenseErrorMessage = null;
+            DispenseStatusMessage = null;
             HasDispensePrescription = false;
             await LoadDispensePrescriptionCoreAsync(prescriptionId);
 
-            // 清空表单
+            // 清空收费表单
             PrescriptionIdInput = string.Empty;
             AmountInput = string.Empty;
             PosSerialNo = null;
@@ -429,7 +484,8 @@ public partial class BillingViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"收费失败：{ExceptionFormatter.GetMessage(ex)}";
+            BillingErrorMessage = $"收费失败：{ExceptionFormatter.GetMessage(ex)}";
+            ToastService.Instance.Error(BillingErrorMessage);
         }
         finally
         {
@@ -565,6 +621,7 @@ public partial class BillingViewModel : ViewModelBase
                 Note?.Trim());
 
             StatusMessage = $"退费成功：处方 {target.PrescriptionNo} ¥{target.Amount:F2}";
+            ToastService.Instance.Success($"退费成功：{target.PrescriptionNo} ¥{target.Amount:F2}");
 
             // 刷新收费流水
             var records = await billingService.GetPaymentHistoryAsync(HistoryFromDate, HistoryToDate);
@@ -594,14 +651,14 @@ public partial class BillingViewModel : ViewModelBase
     private async Task LoadDispensePrescriptionAsync()
     {
         IsBusy = true;
-        ErrorMessage = null;
-        StatusMessage = null;
+        DispenseErrorMessage = null;
+        DispenseStatusMessage = null;
 
         try
         {
             if (!long.TryParse(DispensePrescriptionIdInput.Trim(), out var prescriptionId) || prescriptionId <= 0)
             {
-                ErrorMessage = "请输入有效的处方 ID";
+                DispenseErrorMessage = "请输入有效的处方 ID";
                 return;
             }
 
@@ -609,7 +666,7 @@ public partial class BillingViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"加载发药信息失败：{ExceptionFormatter.GetMessage(ex)}";
+            DispenseErrorMessage = $"加载发药信息失败：{ExceptionFormatter.GetMessage(ex)}";
         }
         finally
         {
@@ -629,7 +686,7 @@ public partial class BillingViewModel : ViewModelBase
 
         if (rx is null)
         {
-            ErrorMessage = "处方不存在";
+            DispenseErrorMessage = "处方不存在";
             HasDispensePrescription = false;
             return;
         }
@@ -642,7 +699,7 @@ public partial class BillingViewModel : ViewModelBase
 
         if (rx.Status != 2)
         {
-            ErrorMessage = $"处方状态为「{GetStatusText(rx.Status)}」，仅「已收费」状态的处方可发药";
+            DispenseErrorMessage = $"处方状态为「{GetStatusText(rx.Status)}」，仅「已收费」状态的处方可发药";
         }
     }
 
@@ -653,14 +710,14 @@ public partial class BillingViewModel : ViewModelBase
     private async Task DispenseAsync()
     {
         IsBusy = true;
-        ErrorMessage = null;
-        StatusMessage = null;
+        DispenseErrorMessage = null;
+        DispenseStatusMessage = null;
 
         try
         {
             if (!long.TryParse(DispensePrescriptionIdInput.Trim(), out var prescriptionId) || prescriptionId <= 0)
             {
-                ErrorMessage = "请输入有效的处方 ID";
+                DispenseErrorMessage = "请输入有效的处方 ID";
                 return;
             }
 
@@ -670,7 +727,8 @@ public partial class BillingViewModel : ViewModelBase
             var success = await rxSvc.DispensePrescriptionAsync(prescriptionId);
             if (success)
             {
-                StatusMessage = $"发药成功：处方 {DispensePrescriptionNo ?? prescriptionId.ToString()} 已完成配药发药，库存已扣减";
+                DispenseStatusMessage = $"发药成功：处方 {DispensePrescriptionNo ?? prescriptionId.ToString()} 已完成配药发药，库存已扣减";
+                ToastService.Instance.Success($"发药成功：{DispensePrescriptionNo ?? prescriptionId.ToString()}，库存已扣减");
                 DispensePrescriptionIdInput = string.Empty;
                 HasDispensePrescription = false;
                 DispensePrescriptionNo = null;
@@ -680,12 +738,13 @@ public partial class BillingViewModel : ViewModelBase
             }
             else
             {
-                ErrorMessage = "发药失败，处方不存在";
+                DispenseErrorMessage = "发药失败，处方不存在";
             }
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"发药失败：{ExceptionFormatter.GetMessage(ex)}";
+            DispenseErrorMessage = $"发药失败：{ExceptionFormatter.GetMessage(ex)}";
+            ToastService.Instance.Error(DispenseErrorMessage);
         }
         finally
         {
@@ -700,14 +759,14 @@ public partial class BillingViewModel : ViewModelBase
     private async Task AiPreReviewAsync()
     {
         IsBusy = true;
-        ErrorMessage = null;
-        StatusMessage = null;
+        ReviewErrorMessage = null;
+        ReviewStatusMessage = null;
 
         try
         {
             if (!long.TryParse(ReviewPrescriptionIdInput.Trim(), out var prescriptionId) || prescriptionId <= 0)
             {
-                ErrorMessage = "请输入有效的处方 ID";
+                ReviewErrorMessage = "请输入有效的处方 ID";
                 return;
             }
 
@@ -718,11 +777,11 @@ public partial class BillingViewModel : ViewModelBase
 
             AiReviewResult = suggestions;
             HasAiReviewResult = true;
-            StatusMessage = "智能预审完成，请参考建议进行人工审核";
+            ReviewStatusMessage = "智能预审完成，请参考建议进行人工审核";
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"智能预审失败：{ExceptionFormatter.GetMessage(ex)}";
+            ReviewErrorMessage = $"智能预审失败：{ExceptionFormatter.GetMessage(ex)}";
         }
         finally
         {
@@ -739,7 +798,7 @@ public partial class BillingViewModel : ViewModelBase
     {
         if (!long.TryParse(ReviewPrescriptionIdInput.Trim(), out var prescriptionId) || prescriptionId <= 0)
         {
-            ErrorMessage = "请输入有效的处方 ID";
+            ReviewErrorMessage = "请输入有效的处方 ID";
             return;
         }
 
@@ -754,8 +813,8 @@ public partial class BillingViewModel : ViewModelBase
             return;
 
         IsBusy = true;
-        ErrorMessage = null;
-        StatusMessage = null;
+        ReviewErrorMessage = null;
+        ReviewStatusMessage = null;
 
         try
         {
@@ -770,6 +829,8 @@ public partial class BillingViewModel : ViewModelBase
             {
                 // 审核通过后自动填充收费区，医生无需重新输入处方ID
                 PrescriptionIdInput = prescriptionId.ToString();
+                BillingErrorMessage = null;
+                BillingStatusMessage = null;
                 try
                 {
                     using var scope2 = _scopeFactory.CreateScope();
@@ -780,22 +841,21 @@ public partial class BillingViewModel : ViewModelBase
                 }
                 catch { /* 查询金额失败不影响手动输入 */ }
 
-                StatusMessage = $"处方 {prescriptionId} 审核通过，请在下方收费区确认收费";
+                ReviewStatusMessage = $"处方 {prescriptionId} 审核通过，请在下方收费区确认收费";
+                ToastService.Instance.Success($"处方审核通过，已预填收费金额");
 
-                // 清空审核表单
-                ReviewPrescriptionIdInput = string.Empty;
-                ReviewNote = null;
-                AiReviewResult = null;
-                HasAiReviewResult = false;
+                // 保留审核表单内容（处方ID、审核备注、智能预审结果），便于核对留档；
+                // 审核完成后无需重复操作，后续流程在收费区继续
             }
             else
             {
-                ErrorMessage = "审核失败：处方不存在或当前状态不允许审核";
+                ReviewErrorMessage = "审核失败：处方不存在或当前状态不允许审核";
             }
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"审核失败：{ExceptionFormatter.GetMessage(ex)}";
+            ReviewErrorMessage = $"审核失败：{ExceptionFormatter.GetMessage(ex)}";
+            ToastService.Instance.Error(ReviewErrorMessage);
         }
         finally
         {

@@ -10,6 +10,13 @@
              d:DataContext="{d:DesignInstance Type=vm:PrescriptionViewModel}"
              Background="{StaticResource SurfaceDarkBrush}"
              Loaded="PrescriptionView_Loaded">
+    <UserControl.InputBindings>
+        <!-- 阶段一：处方开具局部快捷键（键盘优先） -->
+        <KeyBinding Key="F5" Command="{Binding SavePrescriptionCommand}"/>
+        <KeyBinding Key="S" Command="{Binding SaveAndReviewCommand}" Modifiers="Control"/>
+        <KeyBinding Key="N" Command="{Binding NewPrescriptionCommand}" Modifiers="Control"/>
+        <KeyBinding Key="P" Command="{Binding GeneratePdfCommand}" Modifiers="Control"/>
+    </UserControl.InputBindings>
     <UserControl.Resources>
         <conv:NullToCollapsedConverter x:Key="NullToCollapsed"
                                         xmlns:conv="clr-namespace:Clinic.Presentation.Converters"/>
@@ -141,178 +148,267 @@
             </DockPanel>
         </Border>
 
-        <!-- ════════════════ 中间内容区（左右两栏） ════════════════ -->
+        <!-- ════════════════ 中间内容区（左右两栏：病历/处方笺 70% + 药品选择 30%） ════════════════ -->
         <Grid Grid.Row="1">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="7*"/>
             <ColumnDefinition Width="6"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="3*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ════════════════ 左侧：输入面板 ════════════════ -->
-        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Background="White">
-            <StackPanel Margin="12">
+        <!-- ════════════════ 右侧：药品选择（30%，占满整栏高度） ════════════════ -->
+        <Border Grid.Column="2" Style="{StaticResource CardBorder}" Margin="12">
+            <DockPanel>
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                <TextBlock Text="药品选择" Style="{StaticResource TextSectionHeader}"/>
+                <Button DockPanel.Dock="Right" Content="双屏选药" FontSize="{StaticResource FontSizeMicro}"
+                        Height="22" Padding="8,0" Style="{StaticResource BtnOutlineSm}"
+                        Command="{Binding ToggleDrugPickerSecondaryCommand}"
+                        ToolTip="将药品选择开到副屏，主屏专注录入（数据实时同步）"/>
+            </DockPanel>
 
-                <!-- ── 患者搜索（AutoCompleteTextBox 带防抖） ── -->
-                <Border Style="{StaticResource CardBorder}">
+                <!-- 快捷开方（阶段一）：复制上次处方 / 常用处方模板 -->
+                <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceBgBrush}" CornerRadius="6"
+                        BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                        Padding="8,7" Margin="0,0,0,8">
                     <StackPanel>
-                        <TextBlock Text="患者搜索" Style="{StaticResource TextSectionHeader}" Margin="0,0,0,8"/>
-                        <TextBlock Text="输入姓名或手机号，自动联想匹配" Style="{StaticResource TextCaption}" Margin="0,0,0,6"/>
+                        <Button Style="{StaticResource BtnPrimarySm}" Content="复制上次处方" Height="26"
+                                Command="{Binding CopyLastPrescriptionCommand}"
+                                ToolTip="一键带入选区患者最近一次处方的诊断与全部药品用法（本按钮需先选择患者）"
+                                Margin="0,0,0,6"/>
+                        <DockPanel Margin="0,0,0,6">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource BtnOutlineSm}" Content="套用"
+                                    Width="44" Margin="6,0,0,0" Height="24"
+                                    Command="{Binding ApplySelectedTemplateCommand}"
+                                    ToolTip="将所选模板的诊断与药品带入当前处方"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource BtnOutlineSm}" Content="✕"
+                                    Width="26" Padding="0" Margin="4,0,0,0" Height="24"
+                                    Command="{Binding DeleteSelectedTemplateCommand}"
+                                    ToolTip="删除所选模板"/>
+                            <ComboBox Height="24" VerticalContentAlignment="Center"
+                                      ItemsSource="{Binding Templates}"
+                                      SelectedItem="{Binding SelectedTemplate, Mode=TwoWay}"
+                                      DisplayMemberPath="Name"
+                                      ToolTip="选择常用处方模板"/>
+                        </DockPanel>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource BtnPrimarySm}" Content="存为"
+                                    Width="44" Margin="6,0,0,0" Height="24"
+                                    Command="{Binding SaveCurrentAsTemplateCommand}"
+                                    ToolTip="将当前处方（诊断+处方类型+全部药品用法用量）保存为常用模板"/>
+                            <TextBox Text="{Binding TemplateNameInput, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="24" FontSize="{StaticResource FontSizeTiny}" VerticalContentAlignment="Center"
+                                     VerticalAlignment="Stretch"
+                                     ToolTip="输入模板名称后点击「存为」保存当前处方为模板"/>
+                        </DockPanel>
 
-                        <controls:AutoCompleteTextBox
-                            x:Name="PatientSearchBox"
-                            Text="{Binding PatientSearchKeyword, UpdateSourceTrigger=PropertyChanged}"
-                            ItemsSource="{Binding FilteredPatients}"
-                            SelectedItem="{Binding SelectedPatient, Mode=TwoWay}"
-                            IsDropDownOpen="{Binding ShowPatientDropdown, Mode=TwoWay}"
-                            MinSearchLength="1">
-                            <controls:AutoCompleteTextBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock FontWeight="SemiBold">
-                                                <Run Text="{Binding Name, Mode=OneWay}"/>
-                                                <Run Text="  " FontSize="{StaticResource FontSizeMicro}"/>
-                                                <Run Text="{Binding Gender, Mode=OneWay}" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"/>
-                                            </TextBlock>
-                                            <TextBlock Text="{Binding Phone}" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"/>
-                                        </StackPanel>
-                                        <TextBlock Grid.Column="1" VerticalAlignment="Center"
-                                                   FontSize="9" Foreground="{StaticResource TextMutedBrush}"
-                                                   Text="{Binding ChronicTags}"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </controls:AutoCompleteTextBox.ItemTemplate>
-                        </controls:AutoCompleteTextBox>
-
-                        <!-- 新建患者档案按钮（始终可见） -->
-                        <Button Style="{StaticResource BtnOutlineSm}"
-                                Command="{Binding ToggleQuickRegistrationCommand}"
-                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                                Margin="0,6,0,0" Padding="8,4">
+                        <!-- 个性化配置开关 -->
+                        <ToggleButton Margin="0,7,0,0" Height="22" FontSize="{StaticResource FontSizeMicro}"
+                                      IsChecked="{Binding IsPersonalizationOpen, Mode=TwoWay}"
+                                      Foreground="{StaticResource Gray600Brush}"
+                                      BorderBrush="{StaticResource BorderDefaultBrush}"
+                                      Background="Transparent">
                             <StackPanel Orientation="Horizontal">
-                                <Path Data="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
-                                      Width="12" Height="12" Stretch="Uniform" Margin="0,0,4,0"
-                                      VerticalAlignment="Center"
-                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
-                                <TextBlock Text="新建患者档案" VerticalAlignment="Center" FontSize="{StaticResource FontSizeTiny}"/>
+                                <TextBlock Text="⚙ 个性化设置" FontSize="{StaticResource FontSizeMicro}"/>
                             </StackPanel>
-                        </Button>
-
-                        <Border Visibility="{Binding IsQuickRegistration, Converter={StaticResource BoolToVisibility}}"
-                                Background="{StaticResource Gray50Brush}" CornerRadius="6" Padding="12,10" Margin="0,6,0,0"
-                                BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1">
-                            <StackPanel>
-                                <TextBlock Text="快速建档" FontWeight="SemiBold" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,8"/>
-
-                                <!-- 姓名 + 性别 -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="8"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="80"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="姓名" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
-                                               VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <TextBox Grid.Column="1"
-                                             Text="{Binding NewPatientName, UpdateSourceTrigger=PropertyChanged}"
-                                             VerticalContentAlignment="Center"/>
-                                    <TextBlock Grid.Column="3" Text="性别" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
-                                               VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <ComboBox Grid.Column="4"
-                                              SelectedValue="{Binding NewPatientGender, Mode=TwoWay}"
-                                              SelectedValuePath="Content"
-                                              VerticalContentAlignment="Center">
-                                        <ComboBoxItem Content="男"/>
-                                        <ComboBoxItem Content="女"/>
-                                    </ComboBox>
-                                </Grid>
-
-                                <!-- 手机号 -->
-                                <Grid Margin="0,6,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="手机号" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
-                                               VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <TextBox Grid.Column="1"
-                                             Text="{Binding NewPatientPhone, UpdateSourceTrigger=PropertyChanged}"
-                                             VerticalContentAlignment="Center"/>
-                                </Grid>
-                                <!-- 手机号验证错误提示 -->
-                                <TextBlock Text="{Binding NewPatientPhoneError}"
-                                           FontSize="{StaticResource FontSizeMicro}" Foreground="{StaticResource ErrorBrush}" Margin="44,2,0,0"
-                                           TextWrapping="Wrap"
-                                           Visibility="{Binding NewPatientPhoneError, Converter={StaticResource NullToCollapsed}}"/>
-
-                                <!-- 出生日期 -->
-                                <Grid Margin="0,6,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="出生日期" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
-                                               VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <DatePicker Grid.Column="1"
-                                                SelectedDate="{Binding NewPatientDob, Mode=TwoWay}"
-                                                VerticalContentAlignment="Center"
-                                                Height="28"
-                                                Language="zh-CN"/>
-                                </Grid>
-
-                                <!-- 过敏史 -->
-                                <Grid Margin="0,6,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="过敏史" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
-                                               VerticalAlignment="Top" Margin="0,4,6,0"/>
-                                    <TextBox Grid.Column="1"
-                                             Text="{Binding NewPatientAllergies, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             VerticalContentAlignment="Center"
-                                             ToolTip="如有药物过敏请填写，如：青霉素、磺胺类"
-                                             Height="28"/>
-                                </Grid>
-
-                                <!-- 基础疾病（慢病史） -->
-                                <Grid Margin="0,6,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="基础疾病" FontSize="{StaticResource FontSizeTiny}" Foreground="{StaticResource TextMutedBrush}"
-                                               VerticalAlignment="Top" Margin="0,4,6,0"/>
-                                    <TextBox Grid.Column="1"
-                                             Text="{Binding NewPatientChronicTags, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             VerticalContentAlignment="Center"
-                                             ToolTip="如有慢性病请填写，如：高血压、糖尿病、冠心病"
-                                             Height="28"/>
-                                </Grid>
-
-                                <DockPanel Margin="0,8,0,0">
-                                    <Button DockPanel.Dock="Right"
-                                            Style="{StaticResource BtnPrimarySm}"
-                                            Content="确认建档并选择"
-                                            Command="{Binding CreateNewPatientCommand}"/>
-                                    <Button Style="{StaticResource BtnOutlineSm}"
-                                            Content="取消"
-                                            Command="{Binding ToggleQuickRegistrationCommand}"/>
-                                </DockPanel>
-                            </StackPanel>
-                        </Border>
+                        </ToggleButton>
                     </StackPanel>
                 </Border>
 
+                <!-- 个性化配置（阶段三）：套餐库 + 快捷词库 + 默认用药 -->
+                <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceBgBrush}" CornerRadius="6"
+                        BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
+                        Padding="8,7" Margin="0,0,0,8">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsPersonalizationOpen}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel>
+                        <!-- 常用药品套餐 -->
+                        <TextBlock Text="常用药品套餐" FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Gray600Brush}" Margin="0,0,0,4"/>
+                        <DockPanel Margin="0,0,0,4">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource BtnOutlineSm}" Content="套用"
+                                    Width="44" Margin="6,0,0,0" Height="22"
+                                    Command="{Binding ApplySelectedPackageCommand}"
+                                    ToolTip="将所选套餐的全部药品带入当前处方"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource BtnOutlineSm}" Content="✕"
+                                    Width="26" Padding="0" Margin="4,0,0,0" Height="22"
+                                    Command="{Binding DeleteSelectedPackageCommand}"
+                                    ToolTip="删除所选套餐"/>
+                            <ComboBox Height="22" VerticalContentAlignment="Center"
+                                      ItemsSource="{Binding Packages}"
+                                      SelectedItem="{Binding SelectedPackage, Mode=TwoWay}"
+                                      DisplayMemberPath="Name"
+                                      ToolTip="选择常用药品套餐"/>
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,6">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource BtnPrimarySm}" Content="存为"
+                                    Width="44" Margin="6,0,0,0" Height="22"
+                                    Command="{Binding SaveCurrentAsPackageCommand}"
+                                    ToolTip="将当前处方的全部药品组合保存为常用套餐（不含诊断）"/>
+                            <TextBox Text="{Binding PackageNameInput, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="22" FontSize="{StaticResource FontSizeMicro}" VerticalContentAlignment="Center"
+                                     ToolTip="输入套餐名称后点击「存为」"/>
+                        </DockPanel>
+
+                        <!-- 快捷词库：主诉 -->
+                        <TextBlock Text="快捷词 · 主诉（点击后新增/删除）" FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Gray600Brush}" Margin="0,8,0,4"/>
+                        <DockPanel Margin="0,0,0,4">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource BtnPrimarySm}" Content="＋"
+                                    Width="26" Padding="0" Margin="6,0,0,0" Height="22"
+                                    Command="{Binding AddChiefComplaintCustomCommand}"/>
+                            <TextBox Text="{Binding NewChiefComplaint, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="22" FontSize="{StaticResource FontSizeMicro}" VerticalContentAlignment="Center"
+                                     ToolTip="输入主诉快捷词后点击 ＋ 添加到个人词库"/>
+                        </DockPanel>
+                        <ItemsControl ItemsSource="{Binding CommonChiefComplaints}" Margin="0,0,0,4">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="0,2,6,0">
+                                        <Button DockPanel.Dock="Right" Content="✕" Width="16" Height="16" Padding="0"
+                                                FontSize="9" Margin="2,0,0,0"
+                                                BorderThickness="0" Background="Transparent" Foreground="{StaticResource Gray400Brush}"
+                                                Command="{Binding DataContext.RemoveChiefComplaintCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"/>
+                                        <Border Background="{StaticResource SurfaceBgBrush}" BorderBrush="{StaticResource BorderDefaultBrush}"
+                                                BorderThickness="1" CornerRadius="3" Padding="5,1">
+                                            <TextBlock Text="{Binding}" FontSize="{StaticResource FontSizeMicro}" Foreground="{StaticResource Gray600Brush}"/>
+                                        </Border>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- 快捷词库：诊断 -->
+                        <TextBlock Text="快捷词 · 诊断（点击后新增/删除）" FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Gray600Brush}" Margin="0,8,0,4"/>
+                        <DockPanel Margin="0,0,0,4">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource BtnPrimarySm}" Content="＋"
+                                    Width="26" Padding="0" Margin="6,0,0,0" Height="22"
+                                    Command="{Binding AddDiagnosisCustomCommand}"/>
+                            <TextBox Text="{Binding NewDiagnosis, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="22" FontSize="{StaticResource FontSizeMicro}" VerticalContentAlignment="Center"
+                                     ToolTip="输入诊断快捷词后点击 ＋ 添加到个人词库"/>
+                        </DockPanel>
+                        <ItemsControl ItemsSource="{Binding CommonDiagnoses}" Margin="0,0,0,4">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="0,2,6,0">
+                                        <Button DockPanel.Dock="Right" Content="✕" Width="16" Height="16" Padding="0"
+                                                FontSize="9" Margin="2,0,0,0"
+                                                BorderThickness="0" Background="Transparent" Foreground="{StaticResource Gray400Brush}"
+                                                Command="{Binding DataContext.RemoveDiagnosisCustomCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"/>
+                                        <Border Background="{StaticResource SurfaceBgBrush}" BorderBrush="{StaticResource BorderDefaultBrush}"
+                                                BorderThickness="1" CornerRadius="3" Padding="5,1">
+                                            <TextBlock Text="{Binding}" FontSize="{StaticResource FontSizeMicro}" Foreground="{StaticResource Gray600Brush}"/>
+                                        </Border>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- 默认用药 -->
+                        <TextBlock Text="默认用药（新建处方时自动预填当前值）" FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Gray600Brush}" Margin="0,8,0,4"/>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource BtnPrimarySm}" Content="保存为默认"
+                                    Width="70" Margin="6,0,0,0" Height="22"
+                                    Command="{Binding SaveMedicationDefaultsCommand}"/>
+                            <TextBlock Text="每次 {Dose}{DoseUnit} · {Frequency} · {Route} · {DurationDays}天"
+                                       FontSize="{StaticResource FontSizeMicro}" Foreground="{StaticResource Gray600Brush}"
+                                       VerticalAlignment="Center" TextWrapping="Wrap"/>
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- AI 整理（LLM 可用时显示） -->
+                <Border DockPanel.Dock="Top" Style="{StaticResource AiPanelBorder}" Margin="0,0,0,8"
+                        Visibility="{Binding LlmIsAvailable, Converter={StaticResource BoolToVisibility}, FallbackValue=Collapsed}">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right"
+                                Style="{StaticResource BtnOutlineSm}"
+                                Content="AI整理"
+                                Command="{Binding ParsePrescriptionCommand}"
+                                Margin="4,0,0,0"/>
+                        <TextBox Text="{Binding LlmPrescriptionInput, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="24" FontSize="{StaticResource FontSizeTiny}"
+                                 VerticalContentAlignment="Center"
+                                 ToolTip="支持一次输入多种药品，如「阿莫西林胶囊 0.5g 一天三次吃三天；布洛芬 0.3g 一天两次吃五天」"/>
+                    </DockPanel>
+                </Border>
+
+                <!-- 分类筛选 + 模糊搜索 -->
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                    <ComboBox DockPanel.Dock="Left" SelectedIndex="{Binding DrugCategoryFilter}"
+                              Width="96" Margin="0,0,8,0" VerticalContentAlignment="Center"
+                              ToolTip="按药品分类筛选">
+                        <ComboBoxItem Content="全部药品"/>
+                        <ComboBoxItem Content="抗菌药"/>
+                        <ComboBoxItem Content="特殊管理"/>
+                        <ComboBoxItem Content="低库存"/>
+                    </ComboBox>
+                    <TextBlock DockPanel.Dock="Left" Text="🔍" FontSize="{StaticResource FontSizeSmall}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox Text="{Binding DrugFilter, UpdateSourceTrigger=PropertyChanged}"
+                             VerticalContentAlignment="Center"
+                             AutomationProperties.Name="药品搜索"
+                             ToolTip="输入药品名称或规格进行模糊搜索"/>
+                </DockPanel>
+
+                <TextBlock DockPanel.Dock="Bottom" Text="提示：双击药品行可快速添加到处方明细，用法用量可在左侧处方单中直接修改"
+                           Style="{StaticResource TextCaption}" Margin="0,6,0,0"/>
+
+                <!-- 药品列表（填满剩余高度） -->
+                <DataGrid EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" x:Name="DrugDataGrid"
+                          ItemsSource="{Binding Drugs}"
+                          SelectedItem="{Binding SelectedDrug}"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          AutoGenerateColumns="False"
+                          MouseDoubleClick="DrugDataGrid_MouseDoubleClick">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="药品名称" Binding="{Binding GenericNameCn}" Width="*"/>
+                        <DataGridTextColumn Header="规格" Binding="{Binding Spec}" Width="65"/>
+                        <DataGridTextColumn Header="单位" Binding="{Binding Unit}" Width="40"/>
+                        <DataGridTextColumn Header="单价" Binding="{Binding RetailPriceRef, StringFormat=F2}" Width="55"/>
+                        <DataGridTemplateColumn Header="库存" Width="65">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding AvailableQty, StringFormat={}{0:0.##}}" FontSize="{StaticResource FontSizeCaption}"/>
+                                        <TextBlock Text=" 低库存" FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold" Foreground="{StaticResource ErrorBrush}"
+                                                   Visibility="{Binding IsLowStock, Converter={StaticResource BoolToVisibility}}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Border>
+
+        <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Stretch" Background="{StaticResource Gray200Brush}"/>
+
+        <!-- ════════════════ 左侧：历史病历 + 门诊病历 + 处方笺（70%） ════════════════ -->
+        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Background="{StaticResource SurfaceDarkBrush}">
+            <StackPanel Margin="12">
+
                 <!-- ── 历史病历（选中患者后自动展示，帮助医生快速了解病史） ── -->
-                <Border Style="{StaticResource CardBorder}" Margin="0,10,0,0"
+                <Border Style="{StaticResource CardBorder}" Margin="0,0,0,10"
                         Visibility="{Binding HasPatientHistory, Converter={StaticResource BoolToVisibility}}">
                     <StackPanel>
                         <!-- 可折叠标题 -->
@@ -370,84 +466,6 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
-
-                <!-- ── 药品选择 ── -->
-                <Border Style="{StaticResource CardBorder}" Margin="0,10,0,0">
-                    <StackPanel>
-                        <DockPanel Margin="0,0,0,8">
-                            <TextBlock Text="药品选择" Style="{StaticResource TextSectionHeader}" VerticalAlignment="Center"/>
-                            <Border DockPanel.Dock="Right" Style="{StaticResource AiPanelBorder}" Margin="8,0,0,0"
-                                    Visibility="{Binding LlmIsAvailable, Converter={StaticResource BoolToVisibility}, FallbackValue=Collapsed}">
-                                <DockPanel>
-                                    <Button DockPanel.Dock="Right"
-                                            Style="{StaticResource BtnOutlineSm}"
-                                            Content="AI整理"
-                                            Command="{Binding ParsePrescriptionCommand}"
-                                            Margin="4,0,0,0"/>
-                                    <TextBox Text="{Binding LlmPrescriptionInput, UpdateSourceTrigger=PropertyChanged}"
-                                             Height="24" Width="200" FontSize="{StaticResource FontSizeTiny}"
-                                             VerticalContentAlignment="Center"
-                                             ToolTip="支持一次输入多种药品，如「阿莫西林胶囊 0.5g 一天三次吃三天；布洛芬 0.3g 一天两次吃五天」"/>
-                                </DockPanel>
-                            </Border>
-                        </DockPanel>
-
-                        <DockPanel Margin="0,0,0,6">
-                            <ComboBox DockPanel.Dock="Left" SelectedIndex="{Binding DrugCategoryFilter}"
-                                      Width="110" Margin="0,0,8,0" VerticalContentAlignment="Center"
-                                      ToolTip="按药品分类筛选">
-                                <ComboBoxItem Content="全部药品"/>
-                                <ComboBoxItem Content="抗菌药"/>
-                                <ComboBoxItem Content="特殊管理"/>
-                                <ComboBoxItem Content="低库存"/>
-                            </ComboBox>
-                            <TextBlock DockPanel.Dock="Left" Text="🔍" FontSize="{StaticResource FontSizeSmall}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBox Text="{Binding DrugFilter, UpdateSourceTrigger=PropertyChanged}"
-                                     VerticalContentAlignment="Center"
-                                     AutomationProperties.Name="药品搜索"
-                                     ToolTip="输入药品名称或规格进行模糊搜索"/>
-                        </DockPanel>
-
-                        <DataGrid EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" x:Name="DrugDataGrid"
-                                  ItemsSource="{Binding Drugs}"
-                                  SelectedItem="{Binding SelectedDrug}"
-                                  IsReadOnly="True"
-                                  SelectionMode="Single"
-                                  AutoGenerateColumns="False"
-                                  Height="520"
-                                  MouseDoubleClick="DrugDataGrid_MouseDoubleClick">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="药品名称" Binding="{Binding GenericNameCn}" Width="*"/>
-                                <DataGridTextColumn Header="规格" Binding="{Binding Spec}" Width="80"/>
-                                <DataGridTextColumn Header="单位" Binding="{Binding Unit}" Width="50"/>
-                                <DataGridTextColumn Header="单价" Binding="{Binding RetailPriceRef, StringFormat=F2}" Width="70"/>
-                                <DataGridTemplateColumn Header="库存" Width="80">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding AvailableQty, StringFormat={}{0:0.##}}" FontSize="{StaticResource FontSizeCaption}"/>
-                                                <TextBlock Text=" 低库存" FontSize="{StaticResource FontSizeTiny}" FontWeight="SemiBold" Foreground="{StaticResource ErrorBrush}"
-                                                           Visibility="{Binding IsLowStock, Converter={StaticResource BoolToVisibility}}"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <TextBlock Text="提示：双击药品行可快速添加到处方明细，用法用量可在右侧处方单中直接修改"
-                                   Style="{StaticResource TextCaption}" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-
-            </StackPanel>
-        </ScrollViewer>
-
-        <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Stretch" Background="{StaticResource Gray200Brush}"/>
-
-        <!-- ════════════════ 右侧：模拟病历单 + 处方单 ════════════════ -->
-        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Background="{StaticResource SurfaceDarkBrush}">
-            <StackPanel Margin="12">
-
                 <!-- ── 门诊病历（医生核心工作区：主诉/病史/体征/诊断一站式输入） ── -->
                 <Border Background="White" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" CornerRadius="2"
                         Margin="0,0,0,10">
@@ -480,26 +498,95 @@
                         </DockPanel>
                         <Line X1="0" Y1="0" X2="1" Y2="0" Stretch="Fill" Stroke="#9CA3AF" StrokeThickness="1" Margin="0,0,0,8"/>
 
-                        <!-- 患者基本信息 -->
-                        <Grid Margin="0,0,0,4">
+                        <!-- 患者基本信息：姓名直接输入（联想已有患者）；未选已有患者时性别/电话可直接编辑，保存时自动建档 -->
+                        <Grid Margin="0,0,0,2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="50"/>
                                 <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="60"/>
                                 <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="姓名：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="1" Text="{Binding SelectedPatient.Name, FallbackValue='—'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                            <!-- 姓名：直接输入，下拉联想选择已有患者 -->
+                            <controls:AutoCompleteTextBox Grid.Column="1" x:Name="MedicalRecordPatientBox"
+                                                           Text="{Binding PatientSearchKeyword, UpdateSourceTrigger=PropertyChanged}"
+                                                           ItemsSource="{Binding FilteredPatients}"
+                                                           SelectedItem="{Binding SelectedPatient, Mode=TwoWay}"
+                                                           IsDropDownOpen="{Binding ShowPatientDropdown, Mode=TwoWay}"
+                                                           MinSearchLength="1"
+                                                           ToolTip="输入姓名或手机号，下拉联想选择已有患者；新患者直接输入姓名并填写性别电话">
+                                <controls:AutoCompleteTextBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock FontWeight="SemiBold" FontSize="11">
+                                                <Run Text="{Binding Name, Mode=OneWay}"/>
+                                                <Run Text="  "/>
+                                                <Run Text="{Binding Gender, Mode=OneWay}" Foreground="{StaticResource TextMutedBrush}"/>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding Phone}" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </controls:AutoCompleteTextBox.ItemTemplate>
+                            </controls:AutoCompleteTextBox>
                             <TextBlock Grid.Column="2" Text="性别：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                            <TextBlock Grid.Column="3" Text="{Binding SelectedPatient.Gender, FallbackValue='—'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                            <!-- 性别：已选患者只读显示；新患者可编辑 -->
+                            <Grid Grid.Column="3" Width="60">
+                                <TextBlock Text="{Binding SelectedPatient.Gender, FallbackValue='—'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"
+                                           Visibility="{Binding IsNewPatientMode, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}"/>
+                                <ComboBox SelectedValue="{Binding PatientGender, Mode=TwoWay}" SelectedValuePath="Content"
+                                          FontSize="{StaticResource FontSizeTiny}" Padding="8,2"
+                                          Height="26"
+                                          VerticalAlignment="Center"
+                                          Visibility="{Binding IsNewPatientMode, Converter={StaticResource BoolToVisibility}}">
+                                    <ComboBoxItem Content="男"/>
+                                    <ComboBoxItem Content="女"/>
+                                </ComboBox>
+                            </Grid>
                             <TextBlock Grid.Column="4" Text="电话：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                            <TextBlock Grid.Column="5" Text="{Binding SelectedPatient.Phone, FallbackValue='—'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                            <!-- 电话：已选患者只读显示；新患者可编辑 -->
+                            <Grid Grid.Column="5">
+                                <TextBlock Text="{Binding SelectedPatient.Phone, FallbackValue='—'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"
+                                           Visibility="{Binding IsNewPatientMode, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}"/>
+                                <TextBox Text="{Binding PatientPhone, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="110" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"
+                                         AutomationProperties.Name="新患者手机号"
+                                         ToolTip="新患者手机号（11位）；已有患者自动带出"
+                                         Visibility="{Binding IsNewPatientMode, Converter={StaticResource BoolToVisibility}}"/>
+                            </Grid>
                             <TextBlock Grid.Column="6" Text="日期：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             <TextBlock Grid.Column="7" Text="{Binding Source={x:Static sys:DateTime.Now}, StringFormat='yyyy-MM-dd'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                        </Grid>
+                        <!-- 新患者手机号错误提示 -->
+                        <TextBlock Text="{Binding PatientPhoneError}" FontSize="{StaticResource FontSizeMicro}" Foreground="{StaticResource ErrorBrush}" Margin="34,1,0,0"
+                                   Visibility="{Binding PatientPhoneError, Converter={StaticResource NullToCollapsed}}"/>
+
+                        <!-- 新患者补充信息（选填）：出生日期/过敏史/基础疾病，保存处方时随自动建档一并写入 -->
+                        <Grid Margin="0,2,0,0" Visibility="{Binding IsNewPatientMode, Converter={StaticResource BoolToVisibility}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="出生日期：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                            <DatePicker Grid.Column="1" SelectedDate="{Binding PatientDob, Mode=TwoWay}"
+                                        Height="28" Width="125" FontSize="{StaticResource FontSizeTiny}"
+                                        VerticalContentAlignment="Center" Language="zh-CN"
+                                        ToolTip="新患者出生日期（选填）"/>
+                            <TextBlock Grid.Column="2" Text="过敏史：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <TextBox Grid.Column="3" Text="{Binding PatientAllergies, UpdateSourceTrigger=PropertyChanged}"
+                                     FontSize="{StaticResource FontSizeTiny}" Padding="8,2" Height="26" VerticalContentAlignment="Center"
+                                     ToolTip="如有药物过敏请填写，如：青霉素、磺胺类"/>
+                            <TextBlock Grid.Column="4" Text="基础疾病：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <TextBox Grid.Column="5" Text="{Binding PatientChronicTags, UpdateSourceTrigger=PropertyChanged}"
+                                     FontSize="{StaticResource FontSizeTiny}" Padding="8,2" Height="26" VerticalContentAlignment="Center"
+                                     ToolTip="如有慢性病请填写，如：高血压、糖尿病、冠心病"/>
                         </Grid>
 
                         <!-- 主诉 -->
@@ -516,7 +603,8 @@
                                      MinHeight="24" VerticalContentAlignment="Center"
                                      GotFocus="ChiefComplaintTextBox_GotFocus"
                                      LostFocus="ChiefComplaintTextBox_LostFocus"
-                                     ToolTip="点击输入时显示常见主诉快捷选择"/>
+                                     PreviewKeyDown="ChiefComplaintTextBox_PreviewKeyDown"
+                                     ToolTip="点击输入时显示常见主诉快捷选择；弹出时按数字键 1~9 快捷添加，Esc 关闭后可直接输入"/>
                         </Grid>
 
                         <!-- 主诉悬浮辅助工具栏 -->
@@ -526,7 +614,7 @@
                             <Border Background="White" BorderBrush="#10B981" BorderThickness="1" CornerRadius="8"
                                     Padding="10,8" MaxWidth="420">
                                 <StackPanel>
-                                    <TextBlock Text="常见主诉（点击添加）" FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold"
+                                    <TextBlock Text="常见主诉（点击 或 按数字键 1~9 添加）" FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold"
                                                Foreground="{StaticResource SuccessBrush}" Margin="0,0,0,6"/>
                                     <ItemsControl ItemsSource="{Binding CommonChiefComplaints}">
                                         <ItemsControl.ItemsPanel>
@@ -659,7 +747,8 @@
                                      MinHeight="24" VerticalContentAlignment="Center"
                                      GotFocus="DiagnosisTextBox_GotFocus"
                                      LostFocus="DiagnosisTextBox_LostFocus"
-                                     ToolTip="点击输入时显示常见诊断快捷选择"/>
+                                     PreviewKeyDown="DiagnosisTextBox_PreviewKeyDown"
+                                     ToolTip="点击输入时显示常见诊断快捷选择；弹出时按数字键 1~9 快捷添加，Esc 关闭后可直接输入"/>
                         </Grid>
 
                         <!-- 诊断悬浮辅助工具栏 -->
@@ -669,7 +758,7 @@
                             <Border Background="White" BorderBrush="#3B82F6" BorderThickness="1" CornerRadius="8"
                                     Padding="10,8" MaxWidth="420">
                                 <StackPanel>
-                                    <TextBlock Text="常见诊断（点击添加）" FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold"
+                                    <TextBlock Text="常见诊断（点击 或 按数字键 1~9 添加）" FontSize="{StaticResource FontSizeMicro}" FontWeight="SemiBold"
                                                Foreground="#2563EB" Margin="0,0,0,6"/>
                                     <ItemsControl ItemsSource="{Binding CommonDiagnoses}">
                                         <ItemsControl.ItemsPanel>
@@ -777,9 +866,9 @@
                                 <ColumnDefinition Width="50"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="姓名：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="1" Text="{Binding SelectedPatient.Name, FallbackValue='—'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding PrescriptionPatientName, Mode=OneWay}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="2" Text="性别：" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                            <TextBlock Grid.Column="3" Text="{Binding SelectedPatient.Gender, FallbackValue='—'}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="3" Text="{Binding PrescriptionPatientGender, Mode=OneWay}" FontSize="{StaticResource FontSizeTiny}" VerticalAlignment="Center"/>
                         </Grid>
 
                         <!-- 主诉 + 诊断 -->

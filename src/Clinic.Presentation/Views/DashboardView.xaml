@@ -199,8 +199,28 @@
                                 <DataTemplate>
                                     <Border Background="#FFFBEB" CornerRadius="4" Padding="8,6" Margin="0,0,0,6">
                                         <StackPanel>
-                                            <TextBlock Text="{Binding PatientName}" FontSize="{StaticResource FontSizeCaption}" FontWeight="SemiBold" Foreground="#92400E"/>
+                                            <DockPanel>
+                                                <TextBlock Text="{Binding PatientName}" FontSize="{StaticResource FontSizeCaption}" FontWeight="SemiBold" Foreground="#92400E"/>
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding NoYearSeq}" FontSize="{StaticResource FontSizeMicro}" Foreground="#A8A29E"/>
+                                            </DockPanel>
                                             <TextBlock Text="{Binding DiagnosisText}" FontSize="{StaticResource FontSizeMicro}" Foreground="#78716C" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                            <!-- 进度条：开方完成（1/4）→ 下一步：药师审核 -->
+                                            <Grid Height="4" Margin="0,6,0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Background="#F59E0B" CornerRadius="2,0,0,2"/>
+                                                <Border Grid.Column="1" Background="#FFE4A3" Margin="2,0,0,0"/>
+                                                <Border Grid.Column="2" Background="#FFE4A3" Margin="2,0,0,0"/>
+                                                <Border Grid.Column="3" Background="#FFE4A3" Margin="2,0,0,0" CornerRadius="0,2,2,0"/>
+                                            </Grid>
+                                            <DockPanel>
+                                                <TextBlock Text="下一步：药师审核" FontSize="{StaticResource FontSizeMicro}" Foreground="#D97706" VerticalAlignment="Center"/>
+                                                <Button DockPanel.Dock="Right" Content="去审核" Style="{StaticResource BtnPrimarySm}"
+                                                        Height="22" Padding="10,0" FontSize="{StaticResource FontSizeMicro}"
+                                                        Command="{Binding DataContext.HandlePendingPrescriptionCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"/>
+                                            </DockPanel>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
@@ -227,9 +247,29 @@
                                         <StackPanel>
                                             <DockPanel>
                                                 <TextBlock Text="{Binding PatientName}" FontSize="{StaticResource FontSizeCaption}" FontWeight="SemiBold" Foreground="#5B21B6"/>
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding NoYearSeq}" FontSize="{StaticResource FontSizeMicro}" Foreground="#A78BFA"/>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,2,0,0">
+                                                <TextBlock Text="{Binding DiagnosisText}" FontSize="{StaticResource FontSizeMicro}" Foreground="#78716C" TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock DockPanel.Dock="Right" Text="{Binding TotalAmount, StringFormat=¥{0:F2}}" FontSize="{StaticResource FontSizeTiny}" FontWeight="Bold" Foreground="#7C3AED"/>
                                             </DockPanel>
-                                            <TextBlock Text="{Binding DiagnosisText}" FontSize="{StaticResource FontSizeMicro}" Foreground="#78716C" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                            <!-- 进度条：开方+审核完成（2/4）→ 下一步：收费 -->
+                                            <Grid Height="4" Margin="0,6,0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Background="#8B5CF6" CornerRadius="2,0,0,2"/>
+                                                <Border Grid.Column="1" Background="#8B5CF6" Margin="2,0,0,0"/>
+                                                <Border Grid.Column="2" Background="#EDE9FE" Margin="2,0,0,0"/>
+                                                <Border Grid.Column="3" Background="#EDE9FE" Margin="2,0,0,0" CornerRadius="0,2,2,0"/>
+                                            </Grid>
+                                            <DockPanel>
+                                                <TextBlock Text="下一步：收费结算" FontSize="{StaticResource FontSizeMicro}" Foreground="#6D28D9" VerticalAlignment="Center"/>
+                                                <Button DockPanel.Dock="Right" Content="去收费" Style="{StaticResource BtnPrimarySm}"
+                                                        Height="22" Padding="10,0" FontSize="{StaticResource FontSizeMicro}"
+                                                        Command="{Binding DataContext.HandlePendingPrescriptionCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"/>
+                                            </DockPanel>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
@@ -254,8 +294,28 @@
                                 <DataTemplate>
                                     <Border Background="#F0F9FF" CornerRadius="4" Padding="8,6" Margin="0,0,0,6">
                                         <StackPanel>
-                                            <TextBlock Text="{Binding PatientName}" FontSize="{StaticResource FontSizeCaption}" FontWeight="SemiBold" Foreground="#075985"/>
-                                            <TextBlock Text="{Binding NoYearSeq}" FontSize="{StaticResource FontSizeMicro}" Foreground="#78716C" Margin="0,2,0,0"/>
+                                            <DockPanel>
+                                                <TextBlock Text="{Binding PatientName}" FontSize="{StaticResource FontSizeCaption}" FontWeight="SemiBold" Foreground="#075985"/>
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding NoYearSeq}" FontSize="{StaticResource FontSizeMicro}" Foreground="#7DD3FC"/>
+                                            </DockPanel>
+                                            <TextBlock Text="{Binding DiagnosisText}" FontSize="{StaticResource FontSizeMicro}" Foreground="#78716C" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                            <!-- 进度条：开方+审核+收费完成（3/4）→ 下一步：确认发药 -->
+                                            <Grid Height="4" Margin="0,6,0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Background="#0EA5E9" CornerRadius="2,0,0,2"/>
+                                                <Border Grid.Column="1" Background="#0EA5E9" Margin="2,0,0,0"/>
+                                                <Border Grid.Column="2" Background="#0EA5E9" Margin="2,0,0,0"/>
+                                                <Border Grid.Column="3" Background="#E0F2FE" Margin="2,0,0,0" CornerRadius="0,2,2,0"/>
+                                            </Grid>
+                                            <DockPanel>
+                                                <TextBlock Text="下一步：确认发药" FontSize="{StaticResource FontSizeMicro}" Foreground="#0284C7" VerticalAlignment="Center"/>
+                                                <Button DockPanel.Dock="Right" Content="去发药" Style="{StaticResource BtnPrimarySm}"
+                                                        Height="22" Padding="10,0" FontSize="{StaticResource FontSizeMicro}"
+                                                        Command="{Binding DataContext.HandlePendingPrescriptionCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"/>
+                                            </DockPanel>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
@@ -300,6 +360,78 @@
                                               Title="收入趋势（元）" Height="180"
                                               LineColor="#16A34A" ValueFormat="F0"/>
                     </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ════ 药品销量 Top（阶段三 · 报表图表化） ════ -->
+            <Border Style="{StaticResource CardBorder}" Background="White">
+                <StackPanel Margin="12">
+                    <DockPanel Margin="0,0,0,8">
+                        <TextBlock Text="药品销量 Top" FontSize="{StaticResource FontSizeSmall}" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Gray900Brush}" VerticalAlignment="Center"/>
+                        <ComboBox DockPanel.Dock="Right" Width="96" Height="24" VerticalContentAlignment="Center"
+                                  SelectedIndex="{Binding SelectedSalesRange, Mode=TwoWay}">
+                            <ComboBoxItem Content="近7天"/>
+                            <ComboBoxItem Content="近30天"/>
+                            <ComboBoxItem Content="本月"/>
+                        </ComboBox>
+                    </DockPanel>
+
+                    <!-- 有数据：条形图列表 -->
+                    <Border>
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasTopDrugSales}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <ItemsControl ItemsSource="{Binding TopDrugSales}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4,0,4">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="5"/>
+                                        </Grid.RowDefinitions>
+                                        <DockPanel Grid.Row="0">
+                                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                                <TextBlock Text="{Binding Quantity, StringFormat=×{0:F0}}" FontSize="{StaticResource FontSizeMicro}"
+                                                           Foreground="{StaticResource TextMutedBrush}" Margin="4,0,0,0"/>
+                                                <TextBlock Text="{Binding Amount, StringFormat=¥{0:F1}}" FontSize="{StaticResource FontSizeMicro}"
+                                                           Foreground="{StaticResource PrimaryBrush}" FontWeight="SemiBold" Margin="6,0,0,0"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding DrugName}" FontSize="{StaticResource FontSizeMicro}"
+                                                       Foreground="{StaticResource Gray700Brush}" TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+                                        <ProgressBar Grid.Row="1" Height="5" Minimum="0"
+                                                     Maximum="{Binding DataContext.SalesMaxAmount, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                     Value="{Binding Amount}"
+                                                     Background="#F3F4F6" Foreground="#2563EB" BorderThickness="0"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+
+                    <!-- 无数据空态 -->
+                    <Border>
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasTopDrugSales}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="暂无销量数据" FontSize="{StaticResource FontSizeMicro}"
+                                   Foreground="{StaticResource TextMutedBrush}" Padding="0,12"/>
+                    </Border>
                 </StackPanel>
             </Border>
 

@@ -66,6 +66,25 @@ public sealed class LlamaServerProcessManager : ILlamaServerManager
             }
         }
 
+        var endpoint = $"http://{_settings.Host}:{_settings.Port}";
+
+        // 启动新进程前先检查端口是否已有 llama-server 在运行
+        // （可能是手动启动的实例或上次运行残留的进程）
+        try
+        {
+            using var probeHttp = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+            var probeResp = await probeHttp.GetAsync($"{endpoint}/health", ct);
+            if (probeResp.IsSuccessStatusCode)
+            {
+                _logger?.LogInformation("检测到端口 {Port} 上已有 llama-server 在运行，直接复用", _settings.Port);
+                return true;
+            }
+        }
+        catch
+        {
+            // 端口无服务，继续启动新进程
+        }
+
         // 验证可执行文件
         if (!File.Exists(_settings.ExecutablePath))
         {
@@ -143,7 +162,6 @@ public sealed class LlamaServerProcessManager : ILlamaServerManager
             _logger?.LogInformation("llama-server 已启动 (PID: {Pid})，等待就绪...", process.Id);
 
             // 轮询等待服务就绪
-            var endpoint = $"http://{_settings.Host}:{_settings.Port}";
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
 
             var deadline = DateTime.UtcNow.AddSeconds(_settings.StartupTimeoutSeconds);

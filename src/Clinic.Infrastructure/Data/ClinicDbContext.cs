@@ -65,7 +65,7 @@ public class ClinicDbContext : DbContext
         // ── SysUser ──
         modelBuilder.Entity<SysUser>(e =>
         {
-            e.HasIndex(u => u.Username).IsUnique();
+            e.HasIndex(u => u.Username).IsUnique().HasFilter("[deleted_at] IS NULL");
             e.Property(u => u.Username).HasMaxLength(50).IsRequired();
             e.Property(u => u.DisplayName).HasMaxLength(100).IsRequired();
             e.Property(u => u.PasswordHash).HasMaxLength(512).IsRequired();
@@ -74,7 +74,7 @@ public class ClinicDbContext : DbContext
         // ── DoctorProfile ──
         modelBuilder.Entity<DoctorProfile>(e =>
         {
-            e.HasIndex(d => d.UserId).IsUnique();
+            e.HasIndex(d => d.UserId).IsUnique().HasFilter("[deleted_at] IS NULL");
             e.Property(d => d.FullName).HasMaxLength(50).IsRequired();
             e.Property(d => d.Gender).HasMaxLength(10).IsRequired();
             e.Property(d => d.IdCard).HasMaxLength(18);
@@ -98,7 +98,7 @@ public class ClinicDbContext : DbContext
         // ── Patient ──
         modelBuilder.Entity<Patient>(e =>
         {
-            e.HasIndex(p => p.PhoneHash).IsUnique();
+            e.HasIndex(p => p.PhoneHash).IsUnique().HasFilter("[deleted_at] IS NULL");
             e.Property(p => p.Name).HasMaxLength(50).IsRequired();
             e.Property(p => p.Gender).HasMaxLength(10).IsRequired();
             e.Property(p => p.PhoneEncrypted).HasMaxLength(512).IsRequired();
@@ -128,7 +128,7 @@ public class ClinicDbContext : DbContext
         // ── Prescription ──
         modelBuilder.Entity<Prescription>(e =>
         {
-            e.HasIndex(p => p.NoYearSeq).IsUnique();
+            e.HasIndex(p => p.NoYearSeq).IsUnique().HasFilter("[deleted_at] IS NULL");
             e.HasIndex(p => p.PatientId);
             e.HasIndex(p => p.DoctorId);
             e.Property(p => p.NoYearSeq).HasMaxLength(20).IsRequired();
@@ -162,7 +162,7 @@ public class ClinicDbContext : DbContext
         // ── DrugMaster ──
         modelBuilder.Entity<DrugMaster>(e =>
         {
-            e.HasIndex(d => d.GenericNameEn).IsUnique();
+            e.HasIndex(d => d.GenericNameEn).IsUnique().HasFilter("[deleted_at] IS NULL");
             e.Property(d => d.GenericNameCn).HasMaxLength(100).IsRequired();
             // 英文名可空：国内药品清单（医保目录）无英文名；唯一索引不约束 NULL
             e.Property(d => d.GenericNameEn).HasMaxLength(100);

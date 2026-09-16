@@ -227,3 +227,22 @@ public record MedicalRecordListDto(
     string? PresentIllness,
     string? Exam,
     string? Plan);
+
+/// <summary>病历详情 DTO（含完整诊疗字段与患者/医生信息）</summary>
+public record MedicalRecordDetailDto(
+    long Id,
+    long PatientId,
+    string PatientName,
+    string PatientGender,
+    long DoctorId,
+    string DoctorName,
+    DateTime VisitAt,
+    string ChiefComplaint,
+    string? PresentIllness,
+    string? Exam,
+    bool ExamNa,
+    string? AuxiliaryExam,
+    bool AuxiliaryNa,
+    string Diagnosis,
+    string? Plan,
+    DateTime? UpdatedAt);

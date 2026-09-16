@@ -11,6 +11,16 @@
         Height="700" Width="1100"
         MinHeight="650" MinWidth="1000"
         WindowStartupLocation="CenterScreen">
+    <Window.InputBindings>
+        <!-- 阶段一：全局页面切换快捷键（键盘优先） -->
+        <KeyBinding Modifiers="Alt" Key="D1" Command="{Binding NavigateToDashboardCommand}"/>
+        <KeyBinding Modifiers="Alt" Key="D2" Command="{Binding NavigateToPrescriptionCommand}"/>
+        <KeyBinding Modifiers="Alt" Key="D3" Command="{Binding NavigateToBillingCommand}"/>
+        <KeyBinding Modifiers="Alt" Key="D4" Command="{Binding NavigateToInventoryCommand}"/>
+        <KeyBinding Modifiers="Alt" Key="D5" Command="{Binding NavigateToPrescriptionHistoryCommand}"/>
+        <KeyBinding Modifiers="Alt" Key="D6" Command="{Binding NavigateToPatientCommand}"/>
+        <KeyBinding Modifiers="Alt" Key="D7" Command="{Binding NavigateToMedicalRecordCommand}"/>
+    </Window.InputBindings>
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <conv:NullToCollapsedConverter x:Key="NullToCollapsed"
@@ -68,6 +78,10 @@
                                        Foreground="{StaticResource Gray400Brush}"/>
                         </StackPanel>
                     </DockPanel>
+                    <TextBlock Text="页面快键：Alt + 1~7"
+                               FontSize="{StaticResource FontSizeMicro}"
+                               Foreground="{StaticResource Gray400Brush}"
+                               HorizontalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- 用户信息卡 -->
@@ -363,6 +377,12 @@
             <ContentControl Grid.Row="1"
                             Content="{Binding CurrentViewModel}"
                             Margin="0,4,0,0"/>
+
+            <!-- ════ 全局 Toast（右下角悬浮，3 秒自动消失） ════ -->
+            <views:ToastHostControl Grid.Row="0" Grid.RowSpan="2"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                    Panel.ZIndex="100"
+                                    IsHitTestVisible="False"/>
         </Grid>
     </Grid>
 </Window>

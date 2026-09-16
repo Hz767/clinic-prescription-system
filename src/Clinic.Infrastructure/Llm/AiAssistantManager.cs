@@ -77,6 +77,33 @@ public sealed class AiAssistantManager : IAiAssistantManager, IDisposable
     {
         if (_isBusy) return false;
 
+        // 如果 llama-server 已经在运行（如手动启动或上次运行残留），
+        // 直接复用，跳过内存检查（模型已加载，内存已占用）
+        // 先检查管理器跟踪的进程，再通过 HTTP 健康检查检测外部启动的实例
+        bool serverRunning = false;
+        if (_llamaManager is not null)
+        {
+            if (_llamaManager.IsRunning)
+            {
+                serverRunning = true;
+            }
+            else
+            {
+                // 管理器没有跟踪到进程，但可能有外部启动的实例
+                serverRunning = await _llamaManager.HealthCheckAsync(ct);
+            }
+        }
+
+        if (serverRunning)
+        {
+            _isEnabled = true;
+            _isModelLoaded = true;
+            _statusMessage = "AI 辅助已就绪（检测到已加载的大模型）";
+            _logger?.LogInformation("检测到 llama-server 已在运行，直接复用");
+            OnStateChanged();
+            return true;
+        }
+
         _isBusy = true;
         _statusMessage = "正在执行系统自检...";
         OnStateChanged();

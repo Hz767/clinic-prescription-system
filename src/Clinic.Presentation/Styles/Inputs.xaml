@@ -268,7 +268,7 @@
                             <DatePickerTextBox Grid.Column="0"
                                                x:Name="PART_TextBox"
                                                VerticalAlignment="Center"
-                                               Padding="10,7"
+                                               Padding="8,2"
                                                BorderThickness="0"
                                                Background="Transparent"
                                                Focusable="True"/>

@@ -29,6 +29,13 @@
 *.db-wal
 clinic.db
 
+# ── 加密密钥 / 敏感配置（严禁提交版本库） ──
+secrets/
+*.key
+*.pem
+secrets.json
+appsettings.local.json
+
 # ── 备份文件 ──
 Backups/
 *.zip

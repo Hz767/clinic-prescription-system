@@ -203,6 +203,11 @@ public interface IBillingService
 
     /// <summary>获取收费流水记录（可按日期范围筛选）</summary>
     Task<IReadOnlyList<PaymentRecordDto>> GetPaymentHistoryAsync(DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// 药品销量排行：统计指定日期区间内成交处方（已收/已发药）的各药品销量与销售额，按销量降序取前 N 名。
+    /// </summary>
+    Task<IReadOnlyList<DrugSalesDto>> GetTopDrugSalesAsync(DateTime fromDate, DateTime toDate, int topN = 10, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -228,6 +233,19 @@ public interface IDoctorProfileService
     Task<IReadOnlyList<DoctorProfileDto>> GetAllDoctorsAsync(CancellationToken ct = default);
 }
 
+/// <summary>
+/// 病历管理服务接口。处理就诊病历的浏览与检索。
+/// 由表现层的病历管理页面调用，隔离对 IRepository 的直接访问。
+/// </summary>
+public interface IMedicalRecordService
+{
+    /// <summary>获取全部就诊病历（按就诊时间倒序，含患者/医生信息）</summary>
+    Task<IReadOnlyList<MedicalRecordListDto>> GetAllAsync(CancellationToken ct = default);
+
+    /// <summary>按 ID 获取病历详情（含患者/医生信息），不存在时返回 null</summary>
+    Task<MedicalRecordDetailDto?> GetByIdAsync(long id, CancellationToken ct = default);
+}
+
 // ── DTO 定义 ──
 
 public record PatientDto(
@@ -244,6 +262,11 @@ public record ExpiryAlertDto(
 public record DailyReportDto(
     DateTime Date, int PrescriptionCount, decimal TotalAmount,
     decimal CashAmount, decimal PosAmount);
+
+/// <summary>药品销量排行条目</summary>
+public record DrugSalesDto(
+    long DrugId, string DrugName, string Spec,
+    decimal Quantity, decimal Amount);
 
 /// <summary>国内药品清单条目（医保目录 CSV 一行：药品名称 / 类别剂型 / 来源地区）</summary>
 public record NationalDrugEntryDto(string MedName, string MedKind, string MedPlc);

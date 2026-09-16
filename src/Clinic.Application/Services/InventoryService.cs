@@ -17,12 +17,6 @@ public class InventoryService : IInventoryService
 {
     private const int ExpiryAlertDays = 30;
 
-    /// <summary>P1 H-09：入库批次合并互斥锁，防止并发导致批次重复创建</summary>
-    private static readonly SemaphoreSlim _stockInLock = new(1, 1);
-
-    /// <summary>P2：手动出库互斥锁，防止并发导致超卖</summary>
-    private static readonly SemaphoreSlim _stockOutLock = new(1, 1);
-
     private readonly IRepository<DrugIn> _drugInRepo;
     private readonly IRepository<DrugOut> _drugOutRepo;
     private readonly IRepository<DrugStock> _stockRepo;
@@ -78,8 +72,8 @@ public class InventoryService : IInventoryService
 
         var now = _clock.UtcNow;
 
-        // P1 H-09：使用互斥锁保护入库批次合并，防止并发创建重复批次
-        await _stockInLock.WaitAsync(ct);
+        // P0 修复：入库使用全应用共享库存锁，与出库/发药扣减/回退互斥，防止并发改写同一批次
+        await InventoryLock.Instance.WaitAsync(ct);
         try
         {
             await _unitOfWork.BeginTransactionAsync(ct);
@@ -141,7 +135,7 @@ public class InventoryService : IInventoryService
         }
         finally
         {
-            _stockInLock.Release();
+            InventoryLock.Instance.Release();
         }
     }
 
@@ -170,8 +164,8 @@ public class InventoryService : IInventoryService
         var now = _clock.UtcNow;
         var today = DateOnly.FromDateTime(now.Date);
 
-        // P2：使用互斥锁保护出库扣减，防止并发导致超卖
-        await _stockOutLock.WaitAsync(ct);
+        // P0 修复：出库扣减使用全应用共享库存锁，防止并发导致超卖
+        await InventoryLock.Instance.WaitAsync(ct);
         try
         {
             await _unitOfWork.BeginTransactionAsync(ct);
@@ -239,7 +233,7 @@ public class InventoryService : IInventoryService
         }
         finally
         {
-            _stockOutLock.Release();
+            InventoryLock.Instance.Release();
         }
     }
 

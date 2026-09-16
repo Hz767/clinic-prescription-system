@@ -66,6 +66,16 @@
                             </Button>
                         </DockPanel>
 
+                        <!-- 消息区 -->
+                        <StackPanel Margin="0,0,0,8">
+                            <TextBlock Text="{Binding ErrorMessage}"
+                                       Style="{StaticResource TextError}"
+                                       Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsed}}"/>
+                            <TextBlock Text="{Binding StatusMessage}"
+                                       Style="{StaticResource TextSuccess}"
+                                       Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}"/>
+                        </StackPanel>
+
                         <!-- 三列待办队列 -->
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -332,14 +342,14 @@
                                     </Button>
                                 </Grid>
 
-                                <!-- 消息区 -->
+                                <!-- 消息区（收费模块专用） -->
                                 <StackPanel Margin="0,12,0,0">
-                                    <TextBlock Text="{Binding ErrorMessage}"
+                                    <TextBlock Text="{Binding BillingErrorMessage}"
                                                Style="{StaticResource TextError}"
-                                               Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsed}}"/>
-                                    <TextBlock Text="{Binding StatusMessage}"
+                                               Visibility="{Binding BillingErrorMessage, Converter={StaticResource NullToCollapsed}}"/>
+                                    <TextBlock Text="{Binding BillingStatusMessage}"
                                                Style="{StaticResource TextSuccess}"
-                                               Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}"/>
+                                               Visibility="{Binding BillingStatusMessage, Converter={StaticResource NullToCollapsed}}"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -437,14 +447,14 @@
                                     </Button>
                                 </Grid>
 
-                                <!-- 消息区 -->
+                                <!-- 消息区（审核模块专用） -->
                                 <StackPanel Margin="0,12,0,0">
-                                    <TextBlock Text="{Binding ErrorMessage}"
+                                    <TextBlock Text="{Binding ReviewErrorMessage}"
                                                Style="{StaticResource TextError}"
-                                               Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsed}}"/>
-                                    <TextBlock Text="{Binding StatusMessage}"
+                                               Visibility="{Binding ReviewErrorMessage, Converter={StaticResource NullToCollapsed}}"/>
+                                    <TextBlock Text="{Binding ReviewStatusMessage}"
                                                Style="{StaticResource TextSuccess}"
-                                               Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}"/>
+                                               Visibility="{Binding ReviewStatusMessage, Converter={StaticResource NullToCollapsed}}"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -545,6 +555,16 @@
                                         </Button>
                                     </StackPanel>
                                 </Grid>
+
+                                <!-- 消息区（发药模块专用） -->
+                                <StackPanel Margin="0,12,0,0">
+                                    <TextBlock Text="{Binding DispenseErrorMessage}"
+                                               Style="{StaticResource TextError}"
+                                               Visibility="{Binding DispenseErrorMessage, Converter={StaticResource NullToCollapsed}}"/>
+                                    <TextBlock Text="{Binding DispenseStatusMessage}"
+                                               Style="{StaticResource TextSuccess}"
+                                               Visibility="{Binding DispenseStatusMessage, Converter={StaticResource NullToCollapsed}}"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 
@@ -580,6 +600,16 @@
                                             Style="{StaticResource BtnPrimary}"/>
                                 </StackPanel>
                             </DockPanel>
+
+                            <!-- 消息区 -->
+                            <StackPanel Margin="0,0,0,8">
+                                <TextBlock Text="{Binding ErrorMessage}"
+                                           Style="{StaticResource TextError}"
+                                           Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsed}}"/>
+                                <TextBlock Text="{Binding StatusMessage}"
+                                           Style="{StaticResource TextSuccess}"
+                                           Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}"/>
+                            </StackPanel>
 
                             <!-- 报表数据卡片 -->
                             <Grid Margin="0,4,0,0"
@@ -671,6 +701,16 @@
                                         Command="{Binding LoadPaymentHistoryCommand}"
                                         IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
                                         Style="{StaticResource BtnPrimary}"/>
+                            </StackPanel>
+
+                            <!-- 消息区 -->
+                            <StackPanel Margin="0,0,0,8">
+                                <TextBlock Text="{Binding ErrorMessage}"
+                                           Style="{StaticResource TextError}"
+                                           Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsed}}"/>
+                                <TextBlock Text="{Binding StatusMessage}"
+                                           Style="{StaticResource TextSuccess}"
+                                           Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}"/>
                             </StackPanel>
                             <DataGrid EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" ItemsSource="{Binding PaymentHistory}"
                                       SelectedItem="{Binding SelectedPaymentRecord}"

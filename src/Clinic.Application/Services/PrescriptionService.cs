@@ -28,9 +28,6 @@ public class PrescriptionService : IPrescriptionService
     /// <summary>P0 修复：处方明细添加互斥锁，防止并发突破药品品种上限</summary>
     private static readonly SemaphoreSlim _addItemLock = new(1, 1);
 
-    /// <summary>P0 修复：库存 FIFO 扣减互斥锁，防止并发导致超卖</summary>
-    private static readonly SemaphoreSlim _inventoryLock = new(1, 1);
-
     private readonly IRepository<Prescription> _prescriptionRepo;
     private readonly IRepository<PrescriptionItem> _itemRepo;
     private readonly IRepository<DrugMaster> _drugRepo;
@@ -1092,8 +1089,8 @@ public class PrescriptionService : IPrescriptionService
         var now = _clock.UtcNow;
         var today = now.Date;
 
-        // P0 修复：使用互斥锁保护库存扣减，防止并发导致超卖
-        await _inventoryLock.WaitAsync(ct);
+        // P0 修复：使用全应用共享互斥锁保护库存扣减，防止并发导致超卖
+        await InventoryLock.Instance.WaitAsync(ct);
         try
         {
             foreach (var item in items)
@@ -1146,7 +1143,7 @@ public class PrescriptionService : IPrescriptionService
         }
         finally
         {
-            _inventoryLock.Release();
+            InventoryLock.Instance.Release();
         }
     }
 
@@ -1217,44 +1214,53 @@ public class PrescriptionService : IPrescriptionService
         if (outRecords.Count == 0)
             return; // 处方未保存（无出库记录），无需回退
 
-        foreach (var outRecord in outRecords)
+        // P0 修复：回退库存同样使用全应用共享锁，与发药扣减/入库/出库互斥，防止并发改写同一批次
+        await InventoryLock.Instance.WaitAsync(ct);
+        try
         {
-            // 恢复对应库存批次
-            var stocks = await _stockRepo.FindAsync(
-                s => s.DrugId == outRecord.DrugId && s.BatchNo == outRecord.BatchNo, ct);
-            var stock = stocks.FirstOrDefault();
+            foreach (var outRecord in outRecords)
+            {
+                // 恢复对应库存批次
+                var stocks = await _stockRepo.FindAsync(
+                    s => s.DrugId == outRecord.DrugId && s.BatchNo == outRecord.BatchNo, ct);
+                var stock = stocks.FirstOrDefault();
 
-            if (stock is not null)
-            {
-                stock.QtyRemaining += outRecord.Qty;
-                _stockRepo.Update(stock);
-            }
-            else
-            {
-                // 库存批次不存在（可能已被清理），重新创建
-                stock = new DrugStock
+                if (stock is not null)
+                {
+                    stock.QtyRemaining += outRecord.Qty;
+                    _stockRepo.Update(stock);
+                }
+                else
+                {
+                    // 库存批次不存在（可能已被清理），重新创建
+                    stock = new DrugStock
+                    {
+                        DrugId = outRecord.DrugId,
+                        BatchNo = outRecord.BatchNo,
+                        ExpiryDate = DateOnly.FromDateTime(now.AddDays(365)),
+                        QtyRemaining = outRecord.Qty,
+                        CostPrice = 0m,
+                        ReceivedAt = now
+                    };
+                    await _stockRepo.AddAsync(stock, ct);
+                }
+
+                // 生成冲正出库记录
+                await _drugOutRepo.AddAsync(new DrugOut
                 {
                     DrugId = outRecord.DrugId,
                     BatchNo = outRecord.BatchNo,
-                    ExpiryDate = DateOnly.FromDateTime(now.AddDays(365)),
-                    QtyRemaining = outRecord.Qty,
-                    CostPrice = 0m,
-                    ReceivedAt = now
-                };
-                await _stockRepo.AddAsync(stock, ct);
+                    Qty = outRecord.Qty,
+                    PrescriptionId = prescriptionId,
+                    OccurredAt = now,
+                    OperatorId = operatorId,
+                    IsReversal = true
+                }, ct);
             }
-
-            // 生成冲正出库记录
-            await _drugOutRepo.AddAsync(new DrugOut
-            {
-                DrugId = outRecord.DrugId,
-                BatchNo = outRecord.BatchNo,
-                Qty = outRecord.Qty,
-                PrescriptionId = prescriptionId,
-                OccurredAt = now,
-                OperatorId = operatorId,
-                IsReversal = true
-            }, ct);
+        }
+        finally
+        {
+            InventoryLock.Instance.Release();
         }
     }
 

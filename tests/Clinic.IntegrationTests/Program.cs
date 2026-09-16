@@ -1,7 +1,17 @@
+using Clinic.Application;
 using Clinic.Application.Interfaces;
 using Clinic.Domain.Entities;
 using Clinic.Domain.Interfaces;
+using Clinic.Infrastructure.Common;
+using Clinic.Infrastructure.Data;
+using Clinic.Infrastructure.Encryption;
+using Clinic.Infrastructure.Llm;
+using Clinic.Infrastructure.Pdf;
+using Clinic.Infrastructure.Repositories;
+using Clinic.Infrastructure.Security;
 using Clinic.Shared.Enums;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Clinic.IntegrationTests;
@@ -19,6 +29,14 @@ public static class Program
     public static async Task Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
+
+        if (args.Length > 0 && args[0] == "--reproduce")
+        {
+            var prescriptionId = args.Length > 1 && long.TryParse(args[1], out var pid) ? pid : 483;
+            await ReproduceDispenseFailureAsync(prescriptionId);
+            return;
+        }
+
         Console.WriteLine("═══════════════════════════════════════════════════════════");
         Console.WriteLine("  个人诊所处方系统 — 集成测试运行器");
         Console.WriteLine("  覆盖 9 个业务场景，验证核心逻辑、合规规则、事务完整性");
@@ -33,6 +51,7 @@ public static class Program
         await RunTest("TC07", "重复药品拦截（同一药品添加两次）", TC07_DuplicateDrug);
         await RunTest("TC08", "药品品种上限（第6种药品拦截）", TC08_MaxDrugItems);
         await RunTest("TC09", "内联编辑持久化+删除明细+空处方拦截", TC09_InlineEditAndDelete);
+        await RunTest("TC10", "发药全流程（保存→审核→收费→发药→FIFO扣库存→出库流水）", TC10_DispenseWorkflow);
 
         Console.WriteLine("═══════════════════════════════════════════════════════════");
         Console.WriteLine($"  测试结果：{_passed + _failed} 项，通过 {_passed} 项，失败 {_failed} 项");
@@ -152,7 +171,7 @@ public static class Program
         });
         Assert(File.Exists(pdfPath), "PDF 文件应存在");
 
-        // 9. 验证处方详情
+        // 9. 验证处方详情（收费后、发药前）
         var final = await host.ExecuteInScopeAsync(async sp =>
         {
             var svc = sp.GetRequiredService<IPrescriptionService>();
@@ -162,6 +181,21 @@ public static class Program
         Assert(final.ChiefComplaint == "发热3天，咳嗽伴咽痛", "主诉应正确");
         Assert(final.Items.Count == 2, "应有 2 种药品");
 
+        // 9.5 保存/审核/收费阶段不扣库存，发药时才扣
+        var stockBeforeDispense = await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IInventoryService>();
+            return await svc.GetStockQuantityAsync(host.DrugIds[0]);
+        });
+        Assert(stockBeforeDispense == 100m, $"发药前库存应为 100（收费不扣减），实际 {stockBeforeDispense}");
+
+        // 9.6 发药（FIFO 扣减库存）
+        await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IPrescriptionService>();
+            Assert(await svc.DispensePrescriptionAsync(prescriptionId), "发药应返回 true");
+        });
+
         // 10. 验证库存扣减
         var stock = await host.ExecuteInScopeAsync(async sp =>
         {
@@ -169,6 +203,13 @@ public static class Program
             return await svc.GetStockQuantityAsync(host.DrugIds[0]);
         });
         Assert(stock == 79m, $"阿莫西林库存应为 79（100-21），实际 {stock}");
+
+        var finalDispensed = await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IPrescriptionService>();
+            return await svc.GetPrescriptionByIdAsync(prescriptionId);
+        });
+        Assert(finalDispensed!.Status == (int)PrescriptionStatus.Dispensed, "发药后状态应为 Dispensed");
 
         // 11. 验证体征保存
         var patient = await host.ExecuteInScopeAsync(async sp =>
@@ -207,16 +248,13 @@ public static class Program
                 null, (int)PrescriptionType.Normal, null);
         });
 
-        // 尝试添加阿莫西林 → 应被拦截
-        await AssertThrowsAsync<InvalidOperationException>(async () =>
+        // 添加阿莫西林（F-01 修复：添加阶段不硬拦截，由保存前统一检查）
+        await host.ExecuteInScopeAsync(async sp =>
         {
-            await host.ExecuteInScopeAsync(async sp =>
-            {
-                var svc = sp.GetRequiredService<IPrescriptionService>();
-                await svc.AddPrescriptionItemAsync(prescriptionId, host.DrugIds[0],
-                    2m, "粒", "每日三次", "口服", 7, 21);
-            });
-        }, "过敏史拦截");
+            var svc = sp.GetRequiredService<IPrescriptionService>();
+            await svc.AddPrescriptionItemAsync(prescriptionId, host.DrugIds[0],
+                2m, "粒", "每日三次", "口服", 7, 21);
+        });
 
         // 添加非过敏药品 → 应成功
         await host.ExecuteInScopeAsync(async sp =>
@@ -226,7 +264,25 @@ public static class Program
                 1m, "片", "每日三次", "口服", 5, 15);
         });
 
-        Console.WriteLine("    ✓ 青霉素过敏患者→阿莫西林被拦截→布洛芬添加成功");
+        // 保存处方 → 应被过敏史拦截（无临床覆盖理由时硬拦截）
+        await AssertThrowsAsync<InvalidOperationException>(async () =>
+        {
+            await host.ExecuteInScopeAsync(async sp =>
+            {
+                var svc = sp.GetRequiredService<IPrescriptionService>();
+                await svc.SavePrescriptionAsync(prescriptionId);
+            });
+        }, "过敏史拦截");
+
+        // 医生填写临床覆盖理由后可保存（F-01：专业判断优先）
+        await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IPrescriptionService>();
+            Assert(await svc.SavePrescriptionAsync(prescriptionId, "皮试阴性，临床评估可用"),
+                "填写临床覆盖理由后保存应返回 true");
+        });
+
+        Console.WriteLine("    ✓ 青霉素过敏→保存拦截→覆盖理由放行→布洛芬添加成功");
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -372,7 +428,14 @@ public static class Program
                 (int)PaymentMethod.Cash, amount, host.DoctorId, null, "测试收费");
         });
 
-        // 作废前库存
+        // 发药（发药时按 FIFO 扣减库存）
+        await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IPrescriptionService>();
+            Assert(await svc.DispensePrescriptionAsync(prescriptionId), "发药应返回 true");
+        });
+
+        // 作废前库存（发药已扣减 9）
         var stockBefore = await host.ExecuteInScopeAsync(async sp =>
         {
             var svc = sp.GetRequiredService<IInventoryService>();
@@ -654,7 +717,8 @@ public static class Program
         Assert(item.Frequency == "每日两次", $"频次应为每日两次，实际 {item.Frequency}");
         Assert(item.DurationDays == 3, $"疗程应为 3，实际 {item.DurationDays}");
         Assert(item.Qty == 6m, $"数量应为 6，实际 {item.Qty}");
-        Assert(item.Subtotal == 4.8m, $"小计应为 4.8（6×0.8），实际 {item.Subtotal}");
+        // 整盒计价：规格"0.25g*24粒"→包装数量24，ceil(6/24)=1盒 × 单价0.8 = 0.8
+        Assert(item.Subtotal == 0.8m, $"小计应为 0.8（ceil(6/24)盒×0.8），实际 {item.Subtotal}");
 
         // 删除明细
         await host.ExecuteInScopeAsync(async sp =>
@@ -685,6 +749,211 @@ public static class Program
     }
 
     // ── 断言辅助方法 ──
+
+    // ════════════════════════════════════════════════════════════════
+    // TC10: 发药全流程（保存→审核→收费→发药→FIFO扣库存→出库流水）
+    // ════════════════════════════════════════════════════════════════
+    private static async Task TC10_DispenseWorkflow()
+    {
+        using var host = new TestHost();
+        host.LoginAsDoctor();
+
+        var patientId = await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IPatientService>();
+            return await svc.CreatePatientAsync(
+                "王五", "男", new DateOnly(1980, 8, 1), "13800005555", null, null, null);
+        });
+        Assert(patientId > 0, "患者创建应返回有效 ID");
+
+        var prescriptionId = await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IPrescriptionService>();
+            return await svc.CreatePrescriptionAsync(
+                patientId, host.DoctorId, "咳嗽三天", "急性支气管炎",
+                null, (int)PrescriptionType.Normal, null);
+        });
+
+        await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IPrescriptionService>();
+            await svc.AddPrescriptionItemAsync(prescriptionId, host.DrugIds[0],
+                2m, "粒", "每日三次", "口服", 7, 21);
+        });
+
+        await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IPrescriptionService>();
+            Assert(await svc.SavePrescriptionAsync(prescriptionId), "保存应返回 true");
+        });
+
+        await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IPrescriptionService>();
+            Assert(await svc.ReviewPrescriptionAsync(prescriptionId, "审核通过"), "审核应返回 true");
+        });
+
+        var amount = await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IPrescriptionService>();
+            return (await svc.GetPrescriptionByIdAsync(prescriptionId))!.TotalAmount;
+        });
+
+        await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IBillingService>();
+            var pid = await svc.RecordPaymentAsync(prescriptionId,
+                (int)PaymentMethod.Cash, amount, host.DoctorId, null, "测试收费");
+            Assert(pid > 0, "收费应返回有效流水 ID");
+        });
+
+        // 发药前库存应为 100（保存/收费不扣减，发药时才扣）
+        var stockBefore = await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IInventoryService>();
+            return await svc.GetStockQuantityAsync(host.DrugIds[0]);
+        });
+        Assert(stockBefore == 100m, $"发药前库存应为 100，实际 {stockBefore}");
+
+        // 发药（核心：重现用户的 DbUpdateException）
+        var dispensed = await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IPrescriptionService>();
+            return await svc.DispensePrescriptionAsync(prescriptionId);
+        });
+        Assert(dispensed, "发药应返回 true");
+
+        // 验证库存 FIFO 扣减
+        var stockAfter = await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IInventoryService>();
+            return await svc.GetStockQuantityAsync(host.DrugIds[0]);
+        });
+        Assert(stockAfter == 79m, $"发药后库存应为 79（100-21），实际 {stockAfter}");
+
+        // 验证出库流水已生成
+        var outCount = await host.ExecuteInScopeAsync(async sp =>
+        {
+            var repo = sp.GetRequiredService<IRepository<DrugOut>>();
+            var outs = await repo.FindAsync(o => o.PrescriptionId == prescriptionId && !o.IsReversal);
+            return outs.Count;
+        });
+        Assert(outCount > 0, $"应生成出库流水，实际 {outCount} 条");
+
+        // 验证处方状态为已发药
+        var final = await host.ExecuteInScopeAsync(async sp =>
+        {
+            var svc = sp.GetRequiredService<IPrescriptionService>();
+            return await svc.GetPrescriptionByIdAsync(prescriptionId);
+        });
+        Assert(final!.Status == (int)PrescriptionStatus.Dispensed, "最终状态应为 Dispensed");
+
+        Console.WriteLine("    ✓ 保存→审核→收费→发药→FIFO扣库存→出库流水 全流程验证通过");
+    }
+
+    /// <summary>
+    /// 复现生产环境发药失败：复制 clinic.db 到临时文件，对指定处方执行发药。
+    /// 用法：dotnet run -- --reproduce [处方ID]
+    /// </summary>
+    private static async Task ReproduceDispenseFailureAsync(long prescriptionId)
+    {
+        var srcDb = @"E:\个人诊所处方系统\clinic.db";
+        var dbPath = Path.Combine(Path.GetTempPath(), $"clinic_repro_{Guid.NewGuid():N}.db");
+        File.Copy(srcDb, dbPath, true);
+        Console.WriteLine($"[Repro] 已复制生产数据库 → {dbPath}");
+        Console.WriteLine($"[Repro] 目标处方 ID：{prescriptionId}\n");
+
+        var services = new ServiceCollection();
+        services.AddScoped(_ =>
+        {
+            var conn = new SqliteConnection($"Data Source={dbPath}");
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText =
+                "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; " +
+                "PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;";
+            cmd.ExecuteNonQuery();
+            return conn;
+        });
+        services.AddDbContext<ClinicDbContext>((sp, options) =>
+            options.UseSqlite(sp.GetRequiredService<SqliteConnection>()));
+        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddSingleton<IEncryptionService>(_ => new AesGcmEncryptionService(new byte[32]));
+        services.AddSingleton<IPasswordHasher>(_ => new Pbkdf2PasswordHasher("test-pepper", null));
+        services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<IPdfService, QuestPdfService>();
+        services.AddSingleton<ILlmService, NoOpLlmService>();
+        services.AddApplication();
+        await using var provider = services.BuildServiceProvider();
+
+        // 查询 admin 用户并以其身份登录（Doctor 角色具备发药权限）
+        long adminId;
+        using (var scope = provider.CreateScope())
+        {
+            var userRepo = scope.ServiceProvider.GetRequiredService<IRepository<SysUser>>();
+            var admin = (await userRepo.FindAsync(u => u.Username == "admin")).FirstOrDefault();
+            adminId = admin?.Id ?? 1;
+        }
+        var session = provider.GetRequiredService<IUserSession>();
+        session.SetAuthenticated(adminId, "admin", "管理员", UserRole.Doctor);
+        Console.WriteLine($"[Repro] 已以 admin（ID={adminId}）Doctor 角色登录\n");
+
+        // 发药前状态
+        using (var scope = provider.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ClinicDbContext>();
+            var rx = await db.Prescriptions.FindAsync(prescriptionId);
+            if (rx is null)
+            {
+                Console.WriteLine($"[Repro] 处方 {prescriptionId} 不存在，退出");
+                return;
+            }
+            Console.WriteLine($"[Repro] 发药前状态：{(PrescriptionStatus)rx.Status}");
+            var items = await db.PrescriptionItems.Where(i => i.PrescriptionId == prescriptionId).ToListAsync();
+            foreach (var item in items)
+                Console.WriteLine($"[Repro]   明细：{item.DrugName} Qty={item.Qty} PackQty={item.PackQuantity}");
+            var stocks = await db.DrugStocks.Where(s => items.Select(i => i.DrugId).Contains(s.DrugId)).ToListAsync();
+            foreach (var s in stocks)
+                Console.WriteLine($"[Repro]   库存：DrugId={s.DrugId} Batch={s.BatchNo} 到期={s.ExpiryDate} 余量={s.QtyRemaining}");
+        }
+
+        // 执行发药
+        Console.WriteLine("\n[Repro] 开始发药……");
+        try
+        {
+            using var scope = provider.CreateScope();
+            var svc = scope.ServiceProvider.GetRequiredService<IPrescriptionService>();
+            var success = await svc.DispensePrescriptionAsync(prescriptionId);
+            Console.WriteLine($"[Repro] DispensePrescriptionAsync 返回：{success}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"\n[Repro] ✗ 发药抛出异常：");
+            for (var e = (Exception?)ex; e is not null; e = e.InnerException)
+                Console.WriteLine($"[Repro]   {e.GetType().Name}: {e.Message}");
+        }
+
+        // 发药后状态
+        using (var scope = provider.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ClinicDbContext>();
+            var rx = await db.Prescriptions.FindAsync(prescriptionId);
+            Console.WriteLine($"\n[Repro] 发药后状态：{(PrescriptionStatus)rx!.Status} DispensedAt={rx.DispensedAt}");
+            var outs = await db.DrugOuts.Where(o => o.PrescriptionId == prescriptionId).ToListAsync();
+            Console.WriteLine($"[Repro] 出库流水：{outs.Count} 条");
+            foreach (var o in outs)
+                Console.WriteLine($"[Repro]   DrugId={o.DrugId} Batch={o.BatchNo} Qty={o.Qty} IsReversal={o.IsReversal}");
+            var stocks = await db.DrugStocks.Where(s => s.QtyRemaining > 0 &&
+                db.PrescriptionItems.Where(i => i.PrescriptionId == prescriptionId)
+                    .Select(i => i.DrugId).Contains(s.DrugId)).ToListAsync();
+            foreach (var s in stocks)
+                Console.WriteLine($"[Repro]   扣减后库存：DrugId={s.DrugId} Batch={s.BatchNo} 余量={s.QtyRemaining}");
+        }
+
+        provider.Dispose();
+        try { File.Delete(dbPath); } catch { }
+    }
 
     private static void Assert(bool condition, string message)
     {

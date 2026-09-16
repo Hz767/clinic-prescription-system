@@ -5,6 +5,7 @@ using System.Linq;
 using Clinic.Application.DTOs;
 using Clinic.Application.Interfaces;
 using Clinic.Presentation.Helpers;
+using Clinic.Presentation.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Configuration;
@@ -47,12 +48,9 @@ public partial class PrescriptionViewModel : ViewModelBase
     private string _patientSearchKeyword = string.Empty;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SearchPatientCommand))]
     [NotifyCanExecuteChangedFor(nameof(SavePrescriptionCommand))]
     [NotifyCanExecuteChangedFor(nameof(SaveAndReviewCommand))]
     private bool _isBusy;
-
-    public ObservableCollection<PatientDto> MatchedPatients { get; } = new();
 
     /// <summary>实时过滤后的患者列表（用于下拉联想）</summary>
     public ObservableCollection<PatientDto> FilteredPatients { get; } = new();
@@ -83,41 +81,6 @@ public partial class PrescriptionViewModel : ViewModelBase
     /// <summary>是否显示下拉联想框</summary>
     [ObservableProperty]
     private bool _showPatientDropdown;
-
-    /// <summary>搜索无匹配结果时显示"新建患者"入口</summary>
-    [ObservableProperty]
-    private bool _hasNoResults;
-
-    /// <summary>是否处于快速建档模式</summary>
-    [ObservableProperty]
-    private bool _isQuickRegistration;
-
-    [ObservableProperty]
-    private string _newPatientName = string.Empty;
-
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(CreateNewPatientCommand))]
-    private string _newPatientPhone = string.Empty;
-
-    [ObservableProperty]
-    private string _newPatientGender = "男";
-
-    /// <summary>快速建档手机号验证错误提示（null 表示无错误）</summary>
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(CreateNewPatientCommand))]
-    private string? _newPatientPhoneError;
-
-    /// <summary>快速建档 - 出生日期（可选，用于计算年龄和儿科用药；DatePicker 使用 DateTime）</summary>
-    [ObservableProperty]
-    private DateTime? _newPatientDob;
-
-    /// <summary>快速建档 - 过敏史（可选，处方保存时用于药物过敏检查）</summary>
-    [ObservableProperty]
-    private string? _newPatientAllergies;
-
-    /// <summary>快速建档 - 慢病标签（可选，如高血压、糖尿病等，用于药物禁忌检查）</summary>
-    [ObservableProperty]
-    private string? _newPatientChronicTags;
 
     private CancellationTokenSource? _searchCts;
 
@@ -244,6 +207,36 @@ public partial class PrescriptionViewModel : ViewModelBase
         "缺铁性贫血", "焦虑状态", "失眠", "维生素D缺乏", "低钾血症",
     };
 
+    // ── 常用处方模板（阶段一） ──
+    /// <summary>当前医生的常用处方模板列表（按登录名本地存储）</summary>
+    public ObservableCollection<PrescriptionTemplate> Templates { get; } = new();
+
+    [ObservableProperty]
+    private PrescriptionTemplate? _selectedTemplate;
+
+    [ObservableProperty]
+    private string _templateNameInput = "";
+
+    partial void OnSelectedTemplateChanged(PrescriptionTemplate? value)
+    {
+        ApplySelectedTemplateCommand.NotifyCanExecuteChanged();
+        DeleteSelectedTemplateCommand.NotifyCanExecuteChanged();
+    }
+
+    private void LoadTemplates()
+    {
+        var loginName = _session.UserName ?? _session.UserId?.ToString() ?? "default";
+        Templates.Clear();
+        foreach (var t in PrescriptionTemplateStore.Load(loginName))
+            Templates.Add(t);
+    }
+
+    private void PersistTemplates()
+    {
+        var loginName = _session.UserName ?? _session.UserId?.ToString() ?? "default";
+        PrescriptionTemplateStore.Save(loginName, Templates);
+    }
+
     [ObservableProperty]
     private int _prescriptionType;
 
@@ -285,6 +278,9 @@ public partial class PrescriptionViewModel : ViewModelBase
         _configuration = configuration;
         _llmService = llmService;
 
+        LoadTemplates();
+        LoadPersonalization();
+
         PrescriptionItems.CollectionChanged += (_, _) =>
         {
             OnPropertyChanged(nameof(TotalAmount));
@@ -296,13 +292,12 @@ public partial class PrescriptionViewModel : ViewModelBase
     /// <summary>输入关键词变化时触发防抖自动搜索（300ms 延迟）</summary>
     partial void OnPatientSearchKeywordChanged(string value)
     {
+        OnPropertyChanged(nameof(PrescriptionPatientName));
         _searchCts?.Cancel();
         if (string.IsNullOrWhiteSpace(value))
         {
             FilteredPatients.Clear();
             ShowPatientDropdown = false;
-            HasNoResults = false;
-            IsQuickRegistration = false;
             return;
         }
 
@@ -339,9 +334,7 @@ public partial class PrescriptionViewModel : ViewModelBase
                     foreach (var p in results)
                         FilteredPatients.Add(p);
 
-                    HasNoResults = FilteredPatients.Count == 0;
                     ShowPatientDropdown = true;
-                    IsQuickRegistration = false;
                 });
             }
             catch (OperationCanceledException) { }
@@ -509,9 +502,13 @@ public partial class PrescriptionViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanCreatePrescription))]
     private async Task CreatePrescriptionAsync()
     {
+        // 病历上直接输入的新患者 → 自动建档后再创建处方
+        if (!await EnsurePatientSelectedAsync())
+            return;
+
         if (SelectedPatient is null || _session.UserId is null)
         {
-            ErrorMessage = "请先选择患者并确认已登录";
+            ErrorMessage = "请先填写患者信息并确认已登录";
             return;
         }
 
@@ -550,7 +547,7 @@ public partial class PrescriptionViewModel : ViewModelBase
     }
 
     private bool CanCreatePrescription()
-        => !IsBusy && _draftPrescriptionId is null && SelectedPatient is not null && !string.IsNullOrWhiteSpace(DiagnosisText);
+        => !IsBusy && _draftPrescriptionId is null && !string.IsNullOrWhiteSpace(DiagnosisText);
 
     /// <summary>添加处方明细</summary>
     [RelayCommand(CanExecute = nameof(CanAddItem))]
@@ -564,43 +561,15 @@ public partial class PrescriptionViewModel : ViewModelBase
 
         try
         {
-            using var scope = _scopeFactory.CreateScope();
-            var prescriptionService = scope.ServiceProvider.GetRequiredService<IPrescriptionService>();
+            var packQty = PrescriptionItemDto.ParsePackQuantity(SelectedDrug.Spec);
+            var added = await AddItemToDraftAsync(
+                SelectedDrug.Id, Dose, DoseUnit, Frequency, Route, DurationDays, Qty,
+                SelectedDrug.GenericNameCn, SelectedDrug.Spec,
+                SelectedDrug.RetailPriceRef ?? 0m, packQty);
 
-            var itemId = await prescriptionService.AddPrescriptionItemAsync(
-                _draftPrescriptionId.Value,
-                SelectedDrug.Id,
-                Dose,
-                DoseUnit,
-                Frequency,
-                Route,
-                DurationDays,
-                Qty);
-
-            if (itemId > 0)
+            if (added)
             {
-                // 本地添加到列表（使用服务返回的真实明细 ID）
-                var unitPrice = SelectedDrug.RetailPriceRef ?? 0m;
-                var packQty = PrescriptionItemDto.ParsePackQuantity(SelectedDrug.Spec);
-                var item = new PrescriptionItemDto
-                {
-                    Id = itemId,
-                    DrugId = SelectedDrug.Id,
-                    DrugName = SelectedDrug.GenericNameCn,
-                    Spec = SelectedDrug.Spec,
-                    Dose = Dose,
-                    DoseUnit = DoseUnit,
-                    Frequency = Frequency,
-                    Route = Route,
-                    DurationDays = DurationDays,
-                    Qty = Qty,
-                    UnitPrice = unitPrice,
-                    PackQuantity = packQty
-                };
-                item.RecalculateSubtotalOnly();
-                PrescriptionItems.Add(item);
-
-                StatusMessage = $"已添加：{SelectedDrug.GenericNameCn} × {Qty}{DoseUnit}（{packQty}{DoseUnit}/盒，¥{unitPrice}/盒）";
+                StatusMessage = $"已添加：{SelectedDrug.GenericNameCn} × {Qty}{DoseUnit}（{packQty}{DoseUnit}/盒，¥{SelectedDrug.RetailPriceRef ?? 0m}/盒）";
             }
             else
             {
@@ -617,8 +586,205 @@ public partial class PrescriptionViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// 向当前草稿添加一条明细（写入数据库 + 本地列表）。
+    /// 供「添加明细」「套用模板」「复制上次处方」复用，保证三处走同一完整路径。
+    /// </summary>
+    private async Task<bool> AddItemToDraftAsync(
+        long drugId, decimal dose, string doseUnit, string frequency, string route,
+        int durationDays, decimal qty,
+        string drugName, string spec, decimal unitPrice, decimal packQty)
+    {
+        if (_draftPrescriptionId is null)
+            return false;
+
+        using var scope = _scopeFactory.CreateScope();
+        var prescriptionService = scope.ServiceProvider.GetRequiredService<IPrescriptionService>();
+
+        var itemId = await prescriptionService.AddPrescriptionItemAsync(
+            _draftPrescriptionId.Value, drugId, dose, doseUnit, frequency, route, durationDays, qty);
+
+        if (itemId <= 0)
+            return false;
+
+        var item = new PrescriptionItemDto
+        {
+            Id = itemId,
+            DrugId = drugId,
+            DrugName = drugName,
+            Spec = spec,
+            Dose = dose,
+            DoseUnit = doseUnit,
+            Frequency = frequency,
+            Route = route,
+            DurationDays = durationDays,
+            Qty = qty,
+            UnitPrice = unitPrice,
+            PackQuantity = packQty
+        };
+        item.RecalculateSubtotalOnly();
+        PrescriptionItems.Add(item);
+        return true;
+    }
+
     private bool CanAddItem()
         => !IsBusy && SelectedDrug is not null && _draftPrescriptionId is not null;
+
+    // ── 快捷开方（阶段一）：复制上次处方 + 常用处方模板 ──
+
+    /// <summary>复制所选患者最近一次处方的诊断与全部药品，一键带到当前草稿</summary>
+    [RelayCommand(CanExecute = nameof(CanCopyLast))]
+    private async Task CopyLastPrescriptionAsync()
+    {
+        IsBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            if (!await EnsurePatientSelectedAsync())
+                return;
+
+            PrescriptionDto? last = null;
+            using (var scope = _scopeFactory.CreateScope())
+            {
+                var service = scope.ServiceProvider.GetRequiredService<IPrescriptionService>();
+                var history = await service.GetPrescriptionHistoryAsync(SelectedPatient!.Name);
+                var candidate = history.Where(h => h.PatientId == SelectedPatient.Id)
+                                       .OrderByDescending(h => h.CreatedAt).FirstOrDefault();
+                if (candidate is not null)
+                    last = await service.GetPrescriptionByIdAsync(candidate.Id);
+            }
+
+            if (last is null)
+            {
+                StatusMessage = $"患者「{SelectedPatient.Name}」暂无历史处方，无法复制";
+                return;
+            }
+
+            DiagnosisText = last.DiagnosisText;
+            PrescriptionType = last.Type;
+
+            if (!await EnsureDraftPrescriptionAsync())
+                return;
+
+            foreach (var it in last.Items)
+            {
+                await AddItemToDraftAsync(it.DrugId, it.Dose, it.DoseUnit, it.Frequency, it.Route,
+                    it.DurationDays, it.Qty, it.DrugName, it.Spec, it.UnitPrice, it.PackQuantity);
+            }
+
+            StatusMessage = $"已复制上次处方（{last.NoYearSeq}）：带入 {last.Items.Count} 项药品";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"复制上次处方失败：{ExceptionFormatter.GetMessage(ex)}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private bool CanCopyLast() => SelectedPatient is not null;
+
+    /// <summary>套用所选模板：带入诊断、处方类型与全部药品</summary>
+    [RelayCommand(CanExecute = nameof(CanApplySelectedTemplate))]
+    private async Task ApplySelectedTemplateAsync()
+    {
+        if (SelectedTemplate is null)
+            return;
+
+        IsBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            DiagnosisText = SelectedTemplate.DiagnosisText;
+            PrescriptionType = SelectedTemplate.PrescriptionType;
+
+            if (!await EnsureDraftPrescriptionAsync())
+                return;
+
+            foreach (var ti in SelectedTemplate.Items)
+            {
+                await AddItemToDraftAsync(ti.DrugId, ti.Dose, ti.DoseUnit, ti.Frequency, ti.Route,
+                    ti.DurationDays, ti.Qty, ti.DrugName, ti.Spec, ti.UnitPrice, ti.PackQuantity);
+            }
+
+            StatusMessage = $"已套用模板「{SelectedTemplate.Name}」：{SelectedTemplate.Items.Count} 项药品";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"套用模板失败：{ExceptionFormatter.GetMessage(ex)}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private bool CanApplySelectedTemplate() => SelectedTemplate is not null;
+
+    /// <summary>将当前处方（诊断+类型+全部药品用法用量）保存为常用模板</summary>
+    [RelayCommand]
+    private void SaveCurrentAsTemplate()
+    {
+        if (PrescriptionItems.Count == 0)
+        {
+            ErrorMessage = "当前处方没有药品明细，无法保存为模板";
+            return;
+        }
+
+        var name = TemplateNameInput.Trim();
+        if (name.Length == 0)
+        {
+            ErrorMessage = "请先在上方输入模板名称";
+            return;
+        }
+
+        var existing = Templates.FirstOrDefault(t => t.Name == name);
+        if (existing is not null)
+            Templates.Remove(existing);
+
+        Templates.Add(new PrescriptionTemplate
+        {
+            Name = name,
+            DiagnosisText = DiagnosisText?.Trim() ?? "",
+            PrescriptionType = PrescriptionType,
+            Items = PrescriptionItems.Select(i => new PrescriptionTemplateItem
+            {
+                DrugId = i.DrugId,
+                DrugName = i.DrugName,
+                Spec = i.Spec,
+                Dose = i.Dose,
+                DoseUnit = i.DoseUnit,
+                Frequency = i.Frequency,
+                Route = i.Route,
+                DurationDays = i.DurationDays,
+                Qty = i.Qty,
+                PackQuantity = i.PackQuantity,
+                UnitPrice = i.UnitPrice
+            }).ToList()
+        });
+
+        PersistTemplates();
+        SelectedTemplate = Templates.Last();
+        TemplateNameInput = string.Empty;
+        StatusMessage = $"已保存模板「{name}」";
+    }
+
+    [RelayCommand(CanExecute = nameof(CanDeleteSelectedTemplate))]
+    private void DeleteSelectedTemplate()
+    {
+        if (SelectedTemplate is null)
+            return;
+
+        var name = SelectedTemplate.Name;
+        Templates.Remove(SelectedTemplate);
+        SelectedTemplate = null;
+        PersistTemplates();
+        StatusMessage = $"已删除模板「{name}」";
+    }
+
+    private bool CanDeleteSelectedTemplate() => SelectedTemplate is not null;
 
     /// <summary>确保处方草稿已创建（自动创建，无需医生手动操作）</summary>
     private async Task<bool> EnsureDraftPrescriptionAsync()
@@ -626,11 +792,9 @@ public partial class PrescriptionViewModel : ViewModelBase
         if (_draftPrescriptionId is not null)
             return true;
 
-        if (SelectedPatient is null)
-        {
-            ErrorMessage = "请先选择患者";
+        // 病历上直接输入的新患者（未从联想列表选择）→ 自动建档
+        if (!await EnsurePatientSelectedAsync())
             return false;
-        }
 
         if (string.IsNullOrWhiteSpace(DiagnosisText))
         {
@@ -813,6 +977,7 @@ public partial class PrescriptionViewModel : ViewModelBase
                 StatusMessage = overrideReason is null
                     ? $"处方已保存，总金额：{TotalAmount:F2} 元。PDF已自动生成，可点击「前往收费」完成收费"
                     : $"处方已保存（含临床覆盖，理由已记入审计日志），总金额：{TotalAmount:F2} 元。可点击「前往收费」";
+                ToastService.Instance.Success($"处方已保存，总金额 ¥{TotalAmount:F2}，打印单已生成");
                 CanGoToBilling = true;
             }
             else
@@ -983,6 +1148,20 @@ public partial class PrescriptionViewModel : ViewModelBase
 
     private bool CanGeneratePdf() => !IsBusy && IsPdfAvailable;
 
+    // ── 双屏布局（阶段三）：把药品选择开到副屏，共享本 ViewModel，数据实时同步 ──
+    // 由 PrescriptionView.xaml.cs 订阅，打开 DrugPickerSecondaryWindow
+
+    /// <summary>是否已打开副屏药品选择窗口</summary>
+    [ObservableProperty]
+    private bool _isDrugPickerSecondaryOpen;
+
+    public event Action? OpenDrugPickerSecondaryRequested;
+
+    /// <summary>打开/关闭副屏药品选择窗口</summary>
+    [RelayCommand]
+    private void ToggleDrugPickerSecondary()
+        => OpenDrugPickerSecondaryRequested?.Invoke();
+
     /// <summary>新建处方：清空所有输入，开始新的处方开具</summary>
     [RelayCommand]
     private void NewPrescription()
@@ -999,16 +1178,13 @@ public partial class PrescriptionViewModel : ViewModelBase
         SelectedPatient = null;
         SelectedDrug = null;
         DrugFilter = string.Empty;
-        MatchedPatients.Clear();
         FilteredPatients.Clear();
         ShowPatientDropdown = false;
-        HasNoResults = false;
-        IsQuickRegistration = false;
-        NewPatientName = string.Empty;
-        NewPatientPhone = string.Empty;
-        NewPatientDob = null;
-        NewPatientAllergies = null;
-        NewPatientChronicTags = null;
+        PatientGender = "男";
+        PatientPhone = string.Empty;
+        PatientDob = null;
+        PatientAllergies = null;
+        PatientChronicTags = null;
         LlmPrescriptionInput = string.Empty;
         AiDiagnosisResult = null;
         HasAiDiagnosisResult = false;
@@ -1024,6 +1200,7 @@ public partial class PrescriptionViewModel : ViewModelBase
         HasPatientHistory = false;
         StatusMessage = null;
         ErrorMessage = null;
+        ResetMedicationToPersonalizedDefaults();
     }
 
     /// <summary>点击常见主诉标签，添加到主诉文本（可多选累积，自动用分号分隔）</summary>

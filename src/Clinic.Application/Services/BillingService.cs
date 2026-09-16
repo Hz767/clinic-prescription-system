@@ -24,6 +24,8 @@ public class BillingService : IBillingService
     private readonly IRepository<Prescription> _prescriptionRepo;
     private readonly IRepository<DrugOut> _drugOutRepo;
     private readonly IRepository<DrugStock> _stockRepo;
+    private readonly IRepository<PrescriptionItem> _prescriptionItemRepo;
+    private readonly IRepository<DrugMaster> _drugRepo;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IClock _clock;
     private readonly IValidator<RecordPaymentRequest> _recordPaymentValidator;
@@ -36,6 +38,8 @@ public class BillingService : IBillingService
         IRepository<Prescription> prescriptionRepo,
         IRepository<DrugOut> drugOutRepo,
         IRepository<DrugStock> stockRepo,
+        IRepository<PrescriptionItem> prescriptionItemRepo,
+        IRepository<DrugMaster> drugRepo,
         IUnitOfWork unitOfWork,
         IClock clock,
         IValidator<RecordPaymentRequest> recordPaymentValidator,
@@ -47,6 +51,8 @@ public class BillingService : IBillingService
         _prescriptionRepo = prescriptionRepo;
         _drugOutRepo = drugOutRepo;
         _stockRepo = stockRepo;
+        _prescriptionItemRepo = prescriptionItemRepo;
+        _drugRepo = drugRepo;
         _unitOfWork = unitOfWork;
         _clock = clock;
         _recordPaymentValidator = recordPaymentValidator;
@@ -267,44 +273,54 @@ public class BillingService : IBillingService
         if (outRecords.Count == 0)
             return; // 处方未出库（理论上不应发生），无需恢复
 
-        foreach (var outRecord in outRecords)
+        // P0 修复：退费回退库存同样使用全应用共享锁，与发药扣减/入库/出库/作废回退互斥。
+        // 外层 _refundLock 保护退费业务流程，本锁保护跨服务的库存批次串行访问。
+        await InventoryLock.Instance.WaitAsync(ct);
+        try
         {
-            // 恢复对应库存批次
-            var stocks = await _stockRepo.FindAsync(
-                s => s.DrugId == outRecord.DrugId && s.BatchNo == outRecord.BatchNo, ct);
-            var stock = stocks.FirstOrDefault();
+            foreach (var outRecord in outRecords)
+            {
+                // 恢复对应库存批次
+                var stocks = await _stockRepo.FindAsync(
+                    s => s.DrugId == outRecord.DrugId && s.BatchNo == outRecord.BatchNo, ct);
+                var stock = stocks.FirstOrDefault();
 
-            if (stock is not null)
-            {
-                stock.QtyRemaining += outRecord.Qty;
-                _stockRepo.Update(stock);
-            }
-            else
-            {
-                // 库存批次不存在（可能已被清理），重新创建
-                stock = new DrugStock
+                if (stock is not null)
+                {
+                    stock.QtyRemaining += outRecord.Qty;
+                    _stockRepo.Update(stock);
+                }
+                else
+                {
+                    // 库存批次不存在（可能已被清理），重新创建
+                    stock = new DrugStock
+                    {
+                        DrugId = outRecord.DrugId,
+                        BatchNo = outRecord.BatchNo,
+                        ExpiryDate = DateOnly.FromDateTime(now.AddDays(365)),
+                        QtyRemaining = outRecord.Qty,
+                        CostPrice = 0m,
+                        ReceivedAt = now
+                    };
+                    await _stockRepo.AddAsync(stock, ct);
+                }
+
+                // 生成冲正出库记录
+                await _drugOutRepo.AddAsync(new DrugOut
                 {
                     DrugId = outRecord.DrugId,
                     BatchNo = outRecord.BatchNo,
-                    ExpiryDate = DateOnly.FromDateTime(now.AddDays(365)),
-                    QtyRemaining = outRecord.Qty,
-                    CostPrice = 0m,
-                    ReceivedAt = now
-                };
-                await _stockRepo.AddAsync(stock, ct);
+                    Qty = outRecord.Qty,
+                    PrescriptionId = prescriptionId,
+                    OccurredAt = now,
+                    OperatorId = operatorId,
+                    IsReversal = true
+                }, ct);
             }
-
-            // 生成冲正出库记录
-            await _drugOutRepo.AddAsync(new DrugOut
-            {
-                DrugId = outRecord.DrugId,
-                BatchNo = outRecord.BatchNo,
-                Qty = outRecord.Qty,
-                PrescriptionId = prescriptionId,
-                OccurredAt = now,
-                OperatorId = operatorId,
-                IsReversal = true
-            }, ct);
+        }
+        finally
+        {
+            InventoryLock.Instance.Release();
         }
     }
 
@@ -392,6 +408,49 @@ public class BillingService : IBillingService
                     p.Note,
                     p.IsReversal);
             })
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<DrugSalesDto>> GetTopDrugSalesAsync(
+        DateTime fromDate, DateTime toDate, int topN = 10, CancellationToken ct = default)
+    {
+        // 读取药品销量排行需 Doctor/Nurse/Pharmacist/Readonly 角色
+        _permissionChecker.RequireRole(UserRole.Doctor, UserRole.Nurse, UserRole.Pharmacist, UserRole.Readonly);
+
+        var start = fromDate.Date;
+        var end = toDate.Date.AddDays(1);
+
+        // 成交处方口径：已收费(Paid) 或 已发药(Dispensed)；作废/已退费处方自动排除
+        var prescriptions = await _prescriptionRepo.FindAsync(
+            p => p.CreatedAt >= start && p.CreatedAt < end &&
+                 (p.Status == PrescriptionStatus.Paid || p.Status == PrescriptionStatus.Dispensed),
+            ct);
+        if (prescriptions.Count == 0)
+            return Array.Empty<DrugSalesDto>();
+
+        var rxIds = prescriptions.Select(p => p.Id).ToHashSet();
+        var items = await _prescriptionItemRepo.FindAsync(
+            i => rxIds.Contains(i.PrescriptionId), ct);
+        if (items.Count == 0)
+            return Array.Empty<DrugSalesDto>();
+
+        var drugs = await _drugRepo.GetAllAsync(ct);
+
+        return items
+            .GroupBy(i => i.DrugId)
+            .Select(g =>
+            {
+                var drug = drugs.FirstOrDefault(d => d.Id == g.Key);
+                return new DrugSalesDto(
+                    g.Key,
+                    drug?.GenericNameCn ?? $"药品#{g.Key}",
+                    drug?.Spec ?? string.Empty,
+                    Math.Round(g.Sum(i => i.Qty), 0, MidpointRounding.AwayFromZero),
+                    Math.Round(g.Sum(i => i.Subtotal), 2, MidpointRounding.AwayFromZero));
+            })
+            .OrderByDescending(s => s.Quantity)
+            .ThenByDescending(s => s.Amount)
+            .Take(topN)
             .ToList();
     }
 }

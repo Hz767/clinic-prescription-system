@@ -1,0 +1,91 @@
+<UserControl x:Class="Clinic.Presentation.Views.ToastHostControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:sd="clr-namespace:Clinic.Presentation.Services"
+             mc:Ignorable="d"
+             d:DataContext="{x:Static sd:ToastService.Instance}"
+             IsHitTestVisible="False">
+    <UserControl.Resources>
+        <!-- Toast 消息样式：按类型切换配色 -->
+        <Style x:Key="ToastCard" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E5E7EB"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,8,16,0"/>
+            <Setter Property="MaxWidth" Value="360"/>
+            <Setter Property="MinWidth" Value="220"/>
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,1"/>
+            <!-- 淡入 + 上移动画 -->
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TranslateTransform Y="8"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsVisible" Value="True">
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 From="0" To="1" Duration="0:0:0.2"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                 From="8" To="0" Duration="0:0:0.2">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 左侧色条，按消息类型变色 -->
+        <Style x:Key="ToastAccent" TargetType="Border">
+            <Setter Property="Width" Value="4"/>
+            <Setter Property="Background" Value="#0EA5E9"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Type}" Value="Success">
+                    <Setter Property="Background" Value="#16A34A"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Warning">
+                    <Setter Property="Background" Value="#F59E0B"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Error">
+                    <Setter Property="Background" Value="#EF4444"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- 右下角纵向堆叠 Toast 消息 -->
+    <ItemsControl ItemsSource="{Binding Toasts}"
+                  HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                  Effect="{x:Null}">
+        <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+                <StackPanel/>
+            </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+            <DataTemplate>
+                <Border Style="{StaticResource ToastCard}">
+                    <Grid>
+                        <Border Style="{StaticResource ToastAccent}" HorizontalAlignment="Left"/>
+                        <TextBlock Text="{Binding Message}"
+                                   FontSize="{StaticResource FontSizeTiny}"
+                                   Foreground="{StaticResource Gray900Brush}"
+                                   TextWrapping="Wrap"
+                                   Margin="12,10"
+                                   VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+    </ItemsControl>
+</UserControl>

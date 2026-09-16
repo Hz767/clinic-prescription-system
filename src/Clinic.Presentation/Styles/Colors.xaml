@@ -63,6 +63,7 @@
     <!-- Surface -->
     <SolidColorBrush x:Key="SurfaceBrush" Color="White"/>
     <SolidColorBrush x:Key="SurfaceDarkBrush" Color="#F3F4F6"/>
+    <SolidColorBrush x:Key="SurfaceBgBrush" Color="#F3F4F6"/>
     <SolidColorBrush x:Key="SidebarBrush" Color="#F3F4F6"/>
     <SolidColorBrush x:Key="SidebarBorderBrush" Color="#E5E7EB"/>
 

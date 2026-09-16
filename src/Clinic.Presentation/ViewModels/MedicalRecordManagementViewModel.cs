@@ -1,7 +1,5 @@
 ﻿using Clinic.Application.DTOs;
 using Clinic.Application.Interfaces;
-using Clinic.Domain.Entities;
-using Clinic.Domain.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +10,7 @@ namespace Clinic.Presentation.ViewModels;
 /// <summary>
 /// 病历管理 ViewModel。
 /// 浏览和检索所有患者的就诊病历记录。
+/// 通过 Application 层 IMedicalRecordService 访问数据，不直连持久化层。
 /// </summary>
 public partial class MedicalRecordManagementViewModel : ViewModelBase
 {
@@ -46,35 +45,13 @@ public int TotalCount => AllRecords.Count;
         try
         {
             using var scope = _scopeFactory.CreateScope();
-            var recordRepo = scope.ServiceProvider.GetRequiredService<IRepository<MedicalRecord>>();
-            var patientRepo = scope.ServiceProvider.GetRequiredService<IRepository<Patient>>();
-            var userRepo = scope.ServiceProvider.GetRequiredService<IRepository<SysUser>>();
+            var service = scope.ServiceProvider.GetRequiredService<IMedicalRecordService>();
 
-            // 加载所有病历
-            var records = await recordRepo.GetAllAsync();
-            var patients = (await patientRepo.GetAllAsync()).ToDictionary(p => p.Id, p => p);
-            var doctors = (await userRepo.GetAllAsync()).ToDictionary(u => u.Id, u => u);
+            var records = await service.GetAllAsync();
 
             AllRecords.Clear();
-            foreach (var r in records.OrderByDescending(r => r.VisitAt))
-            {
-                var patient = patients.TryGetValue(r.PatientId, out var p) ? p : null;
-                var doctor = doctors.TryGetValue(r.DoctorId, out var d) ? d : null;
-
-                AllRecords.Add(new MedicalRecordListDto(
-                    r.Id,
-                    r.PatientId,
-                    patient?.Name ?? "—",
-                    patient?.Gender ?? "—",
-                    doctor?.DisplayName ?? "—",
-                    r.VisitAt,
-                    r.ChiefComplaint,
-                    r.Diagnosis,
-                    r.PresentIllness,
-                    r.Exam,
-                    r.Plan
-                ));
-            }
+            foreach (var r in records)
+                AllRecords.Add(r);
 
             ApplyFilter();
             StatusMessage = $"共加载 {AllRecords.Count} 条病历记录";

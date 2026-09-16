@@ -63,9 +63,20 @@ public partial class DashboardViewModel : ViewModelBase
     /// <summary>导航到收费管理</summary>
     public event Action? NavigateToBillingRequested;
 
+    /// <summary>从待办队列跳转处理某一处方（跳到收费页并预填对应办理区），由 MainViewModel 订阅</summary>
+    public event Action<PrescriptionHistoryDto>? NavigateToPendingHandleRequested;
+
     public DashboardViewModel(IServiceScopeFactory scopeFactory)
     {
         _scopeFactory = scopeFactory;
+    }
+
+    /// <summary>点击待办项"下一步"：跳转到收费页对应办理区并预填（审核→收费→发药一条龙）</summary>
+    [RelayCommand]
+    private void HandlePendingPrescription(PrescriptionHistoryDto? prescription)
+    {
+        if (prescription is not null)
+            NavigateToPendingHandleRequested?.Invoke(prescription);
     }
 
     /// <summary>加载 Dashboard 全部数据</summary>
@@ -155,6 +166,9 @@ public partial class DashboardViewModel : ViewModelBase
             WeekTotalPrescriptions = weekRx;
             WeekTotalRevenue = weekRev;
 
+            // 6. 药品销量 Top（按所选范围）
+            await LoadTopDrugSalesCoreAsync(scope, today);
+
             StatusMessage = "数据已更新";
         }
         catch (Exception ex)
@@ -180,4 +194,57 @@ public partial class DashboardViewModel : ViewModelBase
 
     [RelayCommand]
     private void NavigateToBilling() => NavigateToBillingRequested?.Invoke();
+
+    // ── 药品销量 Top（阶段三 · 报表图表化） ──
+
+    /// <summary>销量范围：0=近7天，1=近30天，2=本月</summary>
+    [ObservableProperty]
+    private int _selectedSalesRange;
+
+    /// <summary>当前范围的销量 Top 列表</summary>
+    public ObservableCollection<DrugSalesDto> TopDrugSales { get; } = new();
+
+    /// <summary>销量榜中最高销售额（用于条形图最大值归一化）</summary>
+    [ObservableProperty]
+    private decimal _salesMaxAmount;
+
+    /// <summary>销量榜是否为空</summary>
+    public bool HasTopDrugSales => TopDrugSales.Count > 0;
+
+    partial void OnSelectedSalesRangeChanged(int value)
+        => _ = RefreshTopDrugSalesAsync();
+
+    /// <summary>范围切换后仅重载销量榜（不刷新整个看板）</summary>
+    private async Task RefreshTopDrugSalesAsync()
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            await LoadTopDrugSalesCoreAsync(scope, DateTime.Today);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"加载药品销量排行失败：{ExceptionFormatter.GetMessage(ex)}";
+        }
+    }
+
+    private async Task LoadTopDrugSalesCoreAsync(IServiceScope scope, DateTime today)
+    {
+        var billingSvc = scope.ServiceProvider.GetRequiredService<IBillingService>();
+
+        var (from, to) = SelectedSalesRange switch
+        {
+            1 => (today.AddDays(-29), today),   // 近30天
+            2 => (new DateTime(today.Year, today.Month, 1), today), // 本月
+            _ => (today.AddDays(-6), today)     // 近7天
+        };
+
+        var result = await billingSvc.GetTopDrugSalesAsync(from, to, topN: 10);
+        TopDrugSales.Clear();
+        foreach (var s in result)
+            TopDrugSales.Add(s);
+
+        SalesMaxAmount = result.Count == 0 ? 0m : result.Max(s => s.Amount);
+        OnPropertyChanged(nameof(HasTopDrugSales));
+    }
 }

@@ -268,8 +268,11 @@ public sealed class LlamaCppLlmService : ILlmService, IDisposable
     public void Dispose() => _http.Dispose();
 
     /// <summary>
-    /// 调用 llama-server 的 /v1/chat/completions 端点（OpenAI 兼容）。
-    /// 使用 chat messages 格式，temperature=0.1 以获得确定性输出。
+    /// 调用 llama-server 的 /v1/completions 端点（OpenAI 兼容）。
+    /// 使用原始 prompt 格式而非 chat messages，因为 Q4 量化 7B 模型
+    /// 在 chat template 模式下指令遵循能力较差，raw completion + few-shot
+    /// 示例方式能显著提升 JSON 输出质量。
+    /// temperature=0.1 以获得确定性输出。
     /// </summary>
     private async Task<string?> CallChatCompletionAsync(string prompt, CancellationToken ct)
     {
@@ -277,15 +280,14 @@ public sealed class LlamaCppLlmService : ILlmService, IDisposable
         {
             var request = new
             {
-                model = "gpt-3.5-turbo", // llama-server 忽略此字段但要求存在
-                messages = new[]
-                {
-                    new { role = "user", content = prompt }
-                },
-                temperature = 0.1
+                prompt,
+                temperature = 0.1,
+                max_tokens = 300,
+                repeat_penalty = 1.2,
+                stop = new[] { "输入：", "示例：", "\n\n\n", "```" }
             };
 
-            var response = await _http.PostAsJsonAsync("/v1/chat/completions", request, ct);
+            var response = await _http.PostAsJsonAsync("/v1/completions", request, ct);
             response.EnsureSuccessStatusCode();
 
             var content = await response.Content.ReadAsStringAsync(ct);
@@ -298,8 +300,7 @@ public sealed class LlamaCppLlmService : ILlmService, IDisposable
                 return null;
             }
 
-            var message = choices[0].GetProperty("message");
-            var rawResponse = message.GetProperty("content").GetString();
+            var rawResponse = choices[0].GetProperty("text").GetString();
 
             if (string.IsNullOrWhiteSpace(rawResponse))
             {
@@ -327,8 +328,10 @@ public sealed class LlamaCppLlmService : ILlmService, IDisposable
     }
 
     /// <summary>
-    /// 从模型输出中提取 JSON 内容。
+    /// 从模型输出中提取第一个完整 JSON 对象。
     /// 处理模型可能附加的 markdown 代码块标记（```json ... ```）。
+    /// 通过花括号深度匹配确保只提取第一个完整 JSON 对象，
+    /// 避免模型重复输出时拼接多个对象导致解析失败。
     /// </summary>
     private static string ExtractJson(string raw)
     {
@@ -346,11 +349,49 @@ public sealed class LlamaCppLlmService : ILlmService, IDisposable
         }
 
         var start = trimmed.IndexOf('{');
-        var last = trimmed.LastIndexOf('}');
-        if (start >= 0 && last > start)
-            return trimmed[start..(last + 1)];
+        if (start < 0)
+            return trimmed;
 
-        return trimmed;
+        var depth = 0;
+        var inString = false;
+        var escaped = false;
+
+        for (var i = start; i < trimmed.Length; i++)
+        {
+            var c = trimmed[i];
+
+            if (escaped)
+            {
+                escaped = false;
+                continue;
+            }
+
+            if (c == '\\')
+            {
+                escaped = true;
+                continue;
+            }
+
+            if (c == '"')
+            {
+                inString = !inString;
+                continue;
+            }
+
+            if (inString)
+                continue;
+
+            if (c == '{')
+                depth++;
+            else if (c == '}')
+            {
+                depth--;
+                if (depth == 0)
+                    return trimmed[start..(i + 1)];
+            }
+        }
+
+        return trimmed[start..];
     }
 
     private static string? GetString(JsonElement root, string property)

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>医护交互优化 · 检查结果与方案</title>
+<style>
+  :root{
+    --teal:#0d9488; --teal-dark:#0f766e; --teal-bg:#e6f7f5;
+    --bg:#f5f7f9; --card:#ffffff; --line:#e5e7eb;
+    --text:#1f2937; --muted:#6b7280;
+    --ok:#059669; --warn:#d97706; --err:#dc2626; --info:#2563eb;
+    --ok-bg:#ecfdf5; --warn-bg:#fffbeb; --err-bg:#fef2f2; --info-bg:#eff6ff;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;color:var(--text);background:var(--bg);line-height:1.7}
+  .wrap{max-width:1040px;margin:0 auto;padding:32px 24px 64px}
+
+  /* Header */
+  .hero{background:linear-gradient(135deg,#0d9488 0%,#115e59 100%);color:#fff;border-radius:var(--radius);padding:34px 36px;margin-bottom:28px}
+  .hero h1{margin:0 0 8px;font-size:26px}
+  .hero p{margin:0;opacity:.92;font-size:14px}
+  .tags{margin-top:16px}
+  .tags span{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:3px 12px;font-size:12px;margin-right:8px}
+
+  h2{font-size:20px;margin:40px 0 4px;color:var(--teal-dark)}
+  h3{font-size:16px;margin:26px 0 8px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+
+  /* KPI */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0 8px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .kpi .n{font-size:26px;font-weight:700;color:var(--teal)}
+  .kpi .l{font-size:12px;color:var(--muted)}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:12px 0}
+
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);font-size:13px}
+  th{background:#f3f4f6;color:#374151;text-align:left;padding:10px 12px;font-weight:600;white-space:nowrap;border-bottom:1px solid var(--line)}
+  td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td .mono{font-family:Consolas,monospace;font-size:12px;color:var(--teal-dark)}
+
+  .sev{display:inline-block;border-radius:5px;padding:1px 8px;font-size:11px;font-weight:600;white-space:nowrap}
+  .p0{background:var(--err-bg);color:var(--err);border:1px solid #fecaca}
+  .p1{background:var(--warn-bg);color:var(--warn);border:1px solid #fde68a}
+  .p2{background:var(--info-bg);color:var(--info);border:1px solid #bfdbfe}
+
+  .pill{display:inline-block;border-radius:6px;padding:1px 8px;font-size:11px;font-weight:600}
+  .pill.good{background:var(--ok-bg);color:var(--ok);border:1px solid #a7f3d0}
+  .pill.gap{background:var(--err-bg);color:var(--err);border:1px solid #fecaca}
+
+  .flow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .flow .step{background:var(--teal-bg);border:1px solid #99f6e4;color:var(--teal-dark);border-radius:20px;padding:4px 14px;font-size:12px}
+  .flow .arr{color:var(--muted)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+
+  .dir{background:#fff;border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:8px;padding:14px 16px;margin:10px 0}
+  .dir .t{font-weight:700;margin-bottom:4px}
+  .dir ol{margin:6px 0 0;padding-left:20px}
+  .dir li{margin:4px 0;font-size:13px}
+
+  .metric{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+  .metric div{background:var(--teal-bg);border-radius:8px;padding:10px 14px;flex:1;min-width:150px}
+  .metric b{color:var(--teal-dark);display:block;font-size:15px}
+  .metric span{font-size:12px;color:var(--muted)}
+
+  ul{font-size:13.5px}
+  li{margin:4px 0}
+  .foot{margin-top:40px;color:var(--muted);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>医护交互优化 · 检查结果与方案</h1>
+    <p>面向「陈医生诊所处方系统」WPF 客户端的人机交互（HCI）专项评估 —— 基于当前代码实况核对，非旧版快照</p>
+    <div class="tags">
+      <span>处方开具</span><span>待办工作台</span><span>键盘优先</span><span>语音/扫码多模态</span><span>AI 辅助</span>
+    </div>
+  </div>
+
+  <!-- 总览 -->
+  <h2>一、评估总览</h2>
+  <p class="sub">本次重新核对了当前源码（PrescriptionView / BillingView / MainWindow 等）的实际实现，结论与历史测评报告不同：核心开方体验已显著进化。</p>
+  <div class="kpis">
+    <div class="kpi"><div class="n">8</div><div class="l">当前已具备的良好交互</div></div>
+    <div class="kpi"><div class="n">11</div><div class="l">仍待优化的交互短板</div></div>
+    <div class="kpi"><div class="n">6</div><div class="l">优化方向（按优先级）</div></div>
+    <div class="kpi"><div class="n">3</div><div class="l">分阶段落地路线</div></div>
+  </div>
+
+  <div class="card">
+    <p><strong>综合结论：</strong>当前系统在「所见即所得的处方预览、体征实时校验、AI 问诊辅助、待办工作台」等交互上已超过同类单机诊所系统水平。<strong>主要瓶颈已不再是"缺功能"，而是"从鼠标高频点击、输入、切页中解放医护双手"</strong>——即交互范式的升级，而非补按钮。</p>
+  </div>
+
+  <!-- 二、已具备 -->
+  <h2>二、检查结果 A：当前已具备的良好交互（予以保留）</h2>
+  <div class="card">
+    <table>
+      <tr><th style="width:34%">交互能力</th><th>实现方式（代码依据）</th><th style="width:14%">状态</th></tr>
+      <tr><td><strong>处方所见即所得</strong></td><td class="mono">PrescriptionView 左侧输入、右侧同步渲染模拟病历单+处方单（7*+3* 分栏）</td><td><span class="pill good">成熟</span></td></tr>
+      <tr><td><strong>折叠区块 + 快捷词</strong></td><td class="mono">体征/历史病历/主诉/诊断折叠；主诉&诊断 Popup 快捷词（发热3天、咳嗽…）</td><td><span class="pill good">成熟</span></td></tr>
+      <tr><td><strong>体征实时分级校验</strong></td><td class="mono">体检输入即验证：黄=越界警告，红=阻断保存，参考范围常驻提示</td><td><span class="pill good">成熟</span></td></tr>
+      <tr><td><strong>药品分类筛选 + 模糊搜索</strong></td><td class="mono">分类下拉（抗菌/低库存…）+关键词搜索 + 库存列 + 双击行快速加药</td><td><span class="pill good">成熟</span></td></tr>
+      <tr><td><strong>AI 问诊口述转写</strong></td><td class="mono">工具栏 🎙开始问诊 → 停止生成病历，录音时长+红点动画指示</td><td><span class="pill good">成熟</span></td></tr>
+      <tr><td><strong>保存并打印</strong></td><td class="mono">处方保存成功后一键"保存并打印"直达 PDF</td><td><span class="pill good">成熟</span></td></tr>
+      <tr><td><strong>患者自动建档 + 联想搜索</strong></td><td class="mono">姓名/电话 300ms 防抖联想，无匹配自动建档（姓名或电话精确）</td><td><span class="pill good">成熟</span></td></tr>
+      <tr><td><strong>收费待办工作台</strong></td><td class="mono">BillingView 三队列（待审核/待收费/待发药）+点击待办项自动跳转对应办理区并预置</td><td><span class="pill good">成熟</span></td></tr>
+    </table>
+  </div>
+
+  <!-- 三、待优化短板 -->
+  <h2>三、检查结果 B：仍待优化的交互短板</h2>
+  <p class="sub">依据当前代码逐项核对，P0=影响核心效率，P1=显著改善体验，P2=锦上添花。</p>
+
+  <h3>3.1 处方开具（核心高频）</h3>
+  <div class="card">
+    <table>
+      <tr><th style="width:8%">编号</th><th style="width:22%">问题</th><th style="width:8%">级别</th><th>影响</th></tr>
+      <tr><td>RX-A</td><td><strong>复诊开方仍是"从零做起"</strong></td><td><span class="sev p0">P0</span></td><td>同诊断复诊（如高血压、感冒）每次都要重新选药、填用法。无"上次处方复制 / 常用处方模板 / 一键套餐"。</td></tr>
+      <tr><td>RX-B</td><td><strong>药品搜索依赖拼音/汉字输入</strong></td><td><span class="sev p1">P1</span></td><td>导入 3,878 种药后，纯文本搜索慢；不支持首字母（azx→阿莫西林）、条码、近用/高频药品记忆排序。</td></tr>
+      <tr><td>RX-C</td><td><strong>快捷键与键盘流转不足</strong></td><td><span class="sev p1">P1</span></td><td>未发现全局快捷键体系（F2 处方/F3 收费、Ctrl+S 保存）；Tab 顺序为默认，焦点不自动跳向"明细—处方单"。</td></tr>
+      <tr><td>RX-D</td><td><strong>快捷词仅鼠标点击</strong></td><td><span class="sev p2">P2</span></td><td>主诉/诊断快捷词 Popup 只能鼠标点选，未支持键盘数字 1/2/3 选择、Enter 确认。</td></tr>
+    </table>
+  </div>
+
+  <h3>3.2 收费 / 审核 / 发药</h3>
+  <div class="card">
+    <table>
+      <tr><th style="width:8%">编号</th><th style="width:22%">问题</th><th style="width:8%">级别</th><th>影响</th></tr>
+      <tr><td>BIL-A</td><td><strong>处方定位仍以"手动输入 ID"兜底</strong></td><td><span class="sev p1">P1</span></td><td>虽有待办队列，但队列之外的处方需手动输编号；无扫码枪（扫处方单条形码定位）、无最近/常用列表。</td></tr>
+      <tr><td>BIL-B</td><td><strong>工作流"方向感"弱</strong></td><td><span class="sev p1">P1</span></td><td>虽能跳转，但医护不清楚"下一步该去哪"。缺"当前处方进度条（草稿→已审→待收→待发→已发）"与下一步引导。</td></tr>
+      <tr><td>BIL-C</td><td><strong>POS 序列号 &amp; 收据细节每次重输</strong></td><td><span class="sev p2">P2</span></td><td>固定 POS 机的序列号、常用收费方式应记忆，减少重复输入。</td></tr>
+    </table>
+  </div>
+
+  <h3>3.3 整体框架 / 全局</h3>
+  <div class="card">
+    <table>
+      <tr><th style="width:8%">编号</th><th style="width:22%">问题</th><th style="width:8%">级别</th><th>影响</th></tr>
+      <tr><td>NAV-A</td><td><strong>导航无当前页高亮、无快捷键</strong></td><td><span class="sev p1">P1</span></td><td class="mono">MainWindow 用 Button+Tag 导航，无选中态；F2/F3 等高频切页只能鼠标点。</td></tr>
+      <tr><td>NAV-B</td><td><strong>反馈依赖页面内消息，距离操作焦点远</strong></td><td><span class="sev p1">P1</span></td><td>状态消息/ErrorMessage 在侧边栏或区块内，医生在处方区操作后视线要下移/右移，易漏看。缺全局 Toast。</td></tr>
+      <tr><td>NAV-C</td><td><strong>窗口最小宽 1000px</strong></td><td><span class="sev p2">P2</span></td><td class="mono">MainWindow MinWidth=1000；1366×768 笔记本上内容偏挤，未利用双屏。</td></tr>
+      <tr><td>NAV-D</td><td><strong>危险操作确认方式不统一</strong></td><td><span class="sev p2">P2</span></td><td>作废/退费/手动出库等减库存操作的二次确认风格不一，建议统一确认对话框。</td></tr>
+      <tr><td>NAV-E</td><td><strong>无医生个性化配置</strong></td><td><span class="sev p2">P2</span></td><td>常用套餐、快捷词库、默认频次/用法/就诊科室为系统写死，无法按医生定制。</td></tr>
+    </table>
+  </div>
+
+  <!-- 四、优化方案 -->
+  <h2>四、优化方案：让医护"少点击、少输入、少切页"</h2>
+  <p class="sub">六个方向，按对医护效率的影响排序；均以"当前系统已具备的基础设施（待办队列、AI、快捷词、自动建档）"为底座扩展，改动可控。</p>
+
+  <div class="grid2">
+    <div class="dir">
+      <div class="t">方向 1 · 键盘优先（Keyboard-First）— 最高性价比</div>
+      <ol>
+        <li>全局快捷键：<span class="mono">F2</span>处方、<span class="mono">F3</span>收费、<span class="mono">F4</span>库存、<span class="mono">F5</span>保存、<span class="mono">Ctrl+P</span>打印、<span class="mono">Ctrl+N</span>新处方、<span class="mono">Esc</span>关闭。</li>
+        <li>表单 Tab 流转 + 关键域自动聚焦：患者搜索→体征→主诉→诊断→药品，回车即下一步。</li>
+        <li>快捷词 Popup 支持数字 1-9 选择 + Enter 确认，全程免鼠标。</li>
+        <li>导航栏高亮当前页（ListBox+选中态），并用快捷键指示标注。</li>
+      </ol>
+    </div>
+
+    <div class="dir">
+      <div class="t">方向 2 · 一次开方点击次数最小化</div>
+      <ol>
+        <li><strong>常用处方模板 / 套餐</strong>：医生可保存"感冒套餐""高血压常规"为模板，一键带入明细，再改用量。</li>
+        <li><strong>复制上次处方</strong>：选中同患者/同诊断的历史处方，一键带入全部明细。</li>
+        <li><strong>默认值预填</strong>：频次(每日两次)、疗程(3天)、效期类型等给默认值，少量覆盖。</li>
+        <li><strong>高频/近用药品智能排序</strong>：搜索框对最近 10 次用过的药品置顶。</li>
+      </ol>
+    </div>
+
+    <div class="dir">
+      <div class="t">方向 3 · 待办工作台 + 全流程串联</div>
+      <ol>
+        <li>把待办工作台提升为"医生首页"：待审核→待收费→待发药一条龙，点击即办。</li>
+        <li>为每张处方显示<strong>进度条</strong>（草稿→已审→待收→待发→已发）与"下一步操作"按钮（蓝色引导）。</li>
+        <li>审核通过→自动带收费并预填；收费完成→自动提示发药，形成一条主线。</li>
+      </ol>
+    </div>
+
+    <div class="dir">
+      <div class="t">方向 4 · 多模态录入（解放双手/视线）</div>
+      <ol>
+        <li><strong>扫码枪</strong>：扫码定位药品（条码）/患者（就诊号）/处方（处方单条码），一次扫入即查询/进明细。</li>
+        <li><strong>语音问诊扩展</strong>：已有口述转写，可扩展体征/过敏史口述、语音复述医嘱自动生成说明。</li>
+        <li><strong>触屏/大字体</strong>：药师与收费员可切换大按钮布局，适配触摸屏与验光卡位。</li>
+      </ol>
+    </div>
+
+    <div class="dir">
+      <div class="t">方向 5 · 注意焦点与反馈管理</div>
+      <ol>
+        <li>引入<strong>全局 Toast</strong>（右下角 3s 自动消失），替代侧边栏消息，反馈始终在视线附近。</li>
+        <li>危险操作（作废/退费/出库/覆盖理由）统一确认对话框，风格与主系统一致。</li>
+        <li>关键信息大字体条带：已选患者姓名/年龄/过敏置顶常驻（已有），可进一步加大字号便于远视。</li>
+      </ol>
+    </div>
+
+    <div class="dir">
+      <div class="t">方向 6 · 双屏 / 个性化 / 可配置</div>
+      <ol>
+        <li><strong>双屏布局</strong>：处方预览/药品选择可分到副屏，主屏专注录入（开更大窗或复制窗口）。</li>
+        <li><strong>医生个人配置</strong>：套餐库、快捷词库、默认频次/科室可个性化，多医生各自保存。</li>
+        <li><strong>报表图表化</strong>：日结增加药品销量 Top、月度趋势图，辅助经营决策。</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- 五、路线图 -->
+  <h2>五、分阶段落地路线</h2>
+  <div class="card">
+    <div class="flow" style="margin-bottom:14px">
+      <span class="step">阶段一 · 快捷键+模板</span><span class="arr">→</span>
+      <span class="step">阶段二 · 待办串联+Toast</span><span class="arr">→</span>
+      <span class="step">阶段三 · 扫码+个性化+双屏</span>
+    </div>
+    <table>
+      <tr><th style="width:14%">阶段</th><th style="width:22%">交付内容</th><th>说明 / 预计工时</th><th style="width:14%">面向角色</th></tr>
+      <tr><td rowspan="3"><strong>阶段一</strong><br>(1-2 天)</td><td>全局快捷键体系 + 导航高亮</td><td>MainWindow 引入 InputBindings；把导航改 ListBox 选中态。约 6h</td><td>医生/护士</td></tr>
+      <tr><td>常用处方模板 &amp; 复制上次处方</td><td>处方保存页提供"存为模板"，明细页"一键带入"。约 10h</td><td>医生</td></tr>
+      <tr><td>快捷词数字选择</td><td>主诉/诊断 Popup 键盘响应。约 3h</td><td>医生</td></tr>
+      <tr><td><strong>阶段二</strong><br>(3-5 天)</td><td>待办工作台升级为首页 + 处方进度条</td><td>进单一处方显示状态步骤与"下一步"按钮。约 8h</td><td>收费/药师/护士</td></tr>
+      <tr><td>全局 Toast + 统一确认框</td><td>复用 DialogService 封装 Confirm。约 4h</td><td>全员</td></tr>
+      <tr><td><strong>阶段三</strong><br>(1 周内)</td><td>扫码枪支持 + 医生个性化配置 + 双屏 + 报表图表</td><td>约 20-30h，按需裁剪</td><td>全员/经营</td></tr>
+    </table>
+  </div>
+
+  <!-- 六、原则与指标 -->
+  <h2>六、交互原则与验收指标</h2>
+  <div class="card">
+    <ul>
+      <li><strong>原则 1 · 少操作</strong>：一张常规处方（选患者→选药→保存→打印）应在 <b>6 次操作内</b>完成。</li>
+      <li><strong>原则 2 · 少输入</strong>：能选不填、能默认不手输、能扫码不敲键盘、能口述不打字。</li>
+      <li><strong>原则 3 · 少切页</strong>：高频状态转换（审→收→发）在同一工作台内串成一条线。</li>
+      <li><strong>原则 4 · 反馈即达</strong>：操作反馈（Toast）出现在视线中心附近，3 秒内可感知。</li>
+    </ul>
+    <div class="metric">
+      <div><b>单张处方平均操作数</b><span>目标 ≤ 6 次 / 当前约 12+</span></div>
+      <div><b>平均开方耗时</b><span>目标 ≤ 60s（常规）</span></div>
+      <div><b>键盘可达操作占比</b><span>目标 ≥ 70%</span></div>
+      <div><b>手动输入 ID 次数</b><span>目标趋近 0</span></div>
+    </div>
+  </div>
+
+  <div class="foot">本报告基于当前源码实况核对生成 · 建议在每个阶段完成后进行一次真实门诊实机走查（GUI 点击测试）再决定是否放量</div>
+</div>
+</body>
+</html>

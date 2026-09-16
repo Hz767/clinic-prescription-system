@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>陈医生诊所处方系统 — 全面系统审查报告</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --card2:#16213a; --border:#334155;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#14b8a6;
+    --sev-high:#f87171; --sev-mid:#fbbf24; --sev-low:#60a5fa;
+    --ok:#4ade80; --badge-bg:#334155;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;line-height:1.6;padding:32px 16px}
+  .wrap{max-width:980px;margin:0 auto}
+  header{border-bottom:2px solid var(--accent);padding-bottom:18px;margin-bottom:28px}
+  .kicker{color:var(--accent);font-size:13px;letter-spacing:2px;font-weight:600}
+  h1{font-size:30px;margin:6px 0 4px}
+  .sub{color:var(--muted);font-size:14px}
+  .meta{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
+  .chip{background:var(--badge-bg);border-radius:6px;padding:4px 12px;font-size:12px;color:var(--muted)}
+  h2{font-size:21px;margin:34px 0 14px;color:var(--accent);display:flex;align-items:center;gap:10px}
+  h2::before{content:"";width:5px;height:20px;background:var(--accent);border-radius:2px}
+  h3{font-size:16px;margin:20px 0 8px}
+  p{color:var(--text);margin-bottom:10px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:18px 0}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+  .stat .num{font-size:34px;font-weight:700}
+  .stat .lbl{color:var(--muted);font-size:13px;margin-top:4px}
+  .stat.s-h{background:linear-gradient(180deg,#3b0f17,#2a0f16)}
+  .stat.s-h .num{color:var(--sev-high)}
+  .stat.s-m{background:linear-gradient(180deg,#3d2f12,#2e2410)}
+  .stat.s-m .num{color:var(--sev-mid)}
+  .stat.s-l{background:var(--card2)}
+  .stat.s-l .num{color:var(--sev-low)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  .sev{display:inline-block;font-size:11px;font-weight:700;border-radius:5px;padding:2px 9px;margin-right:8px;vertical-align:1px}
+  .sev.high{background:rgba(248,113,113,.15);color:var(--sev-high)}
+  .sev.mid{background:rgba(251,191,36,.14);color:var(--sev-mid)}
+  .sev.low{background:rgba(96,165,250,.15);color:var(--sev-low)}
+  .sev.ok{background:rgba(74,222,128,.15);color:var(--ok)}
+  .id{font-family:Consolas,monospace;color:var(--muted);font-size:12px;margin-right:6px}
+  .card h4{font-size:15px;margin-bottom:6px;display:inline}
+  .ref{font-family:Consolas,monospace;font-size:12px;color:var(--low);background:var(--badge-bg);padding:1px 6px;border-radius:4px;margin:0 2px}
+  .loc{color:var(--accent)}
+  ul{margin:8px 0 8px 20px}
+  li{margin-bottom:5px}
+  .fix{background:#0b1524;border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 8px 8px 0;font-size:14px;margin-top:10px}
+  .fix b{color:var(--accent)}
+  .tag{font-size:11px;color:var(--muted);font-style:italic}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--border);padding:9px 12px;text-align:left}
+  th{background:#25405a;font-weight:600}
+  tr:nth-child(even) td{background:#1a2536}
+  .okline{color:var(--ok)}
+  .summary{background:linear-gradient(135deg,#0b3b35,#0f172a);border:1px solid #14532d;border-radius:12px;padding:20px 22px;margin:20px 0}
+  .footer{border-top:1px solid var(--border);margin-top:40px;padding-top:16px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  code{font-family:Consolas,monospace;background:var(--badge-bg);padding:1px 5px;border-radius:4px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">CODE REVIEW REPORT</div>
+  <h1>陈医生诊所处方系统 — 全面系统审查报告</h1>
+  <div class="sub">覆盖：架构合规 · 业务逻辑 · 安全 · 数据库/EF · 前端/MVVM · 测试与工程质量</div>
+  <div class="meta">
+    <span class="chip">目标框架 .NET 9（net9.0-windows）</span>
+    <span class="chip">数据库 SQLite WAL</span>
+    <span class="chip">架构 Clean Architecture</span>
+    <span class="chip">审查日期 2026-09-15</span>
+    <span class="chip">构建 0 错误 · 单测 11/11 · 集成 10/10</span>
+  </div>
+</header>
+
+<div class="summary">
+  <strong>总评：</strong>系统整体质量中等偏上。核心业务能力（金额按整盒计价、FIFO 扣库存、事务原子性、权限检查、审计哈希链、PDF 生成、备份恢复）均已实现且通过自动化验证；分层主体清晰。但存在 <strong style="color:#f87171">1 项上线阻断级安全风险（对称加密密钥与 Pepper 明文入库）</strong>、多处 <strong style="color:#f87171">Presentation 层绕过 Application 直连持久化层的架构违规</strong>，以及手写迁移策略脆弱、审计哈希链缺少外部锚点、关键合规能力缺自动化回归测试等问题，建议在上线前优先整改。
+</div>
+
+<div class="grid">
+  <div class="stat s-h"><div class="num">4</div><div class="lbl">严重（High）</div></div>
+  <div class="stat s-m"><div class="num">10</div><div class="lbl">中等（Medium）</div></div>
+  <div class="stat s-l"><div class="num">6</div><div class="lbl">低（Low）</div></div>
+  <div class="stat" style="background:#123"><div class="num" style="color:var(--ok)">20</div><div class="lbl">合规项确认通过</div></div>
+</div>
+
+<h2>一、严重问题（建议上线前整改）</h2>
+
+<div class="card">
+  <span class="sev high">严重</span><span class="id">S1</span><h4>加密密钥与 Pepper 硬编码并提交进版本库</h4>
+  <div class="tag">安全 · 上线阻断</div>
+  <p style="margin-top:6px">
+    <span class="ref">src/Clinic.Presentation/appsettings.json</span> 第 6/9/10 行硬编码 AES-256 Base64 加密主密钥
+    <code>JQqOAFkXsovwPnF2co89Xh3of3UXBPJ8rQxNtP3wOoo=</code>、Pepper
+    <code>ClinicPrescriptionPepper2026-ChangeInProduction</code>，且<b>已被 git 跟踪（git ls-files 确认）</b>。
+    所有加密数据（含敏感字段 + 手机号哈希）的安全性依赖这两把可被任何读到仓库的人获取的密钥。历史版本已入库即不可撤回。
+  </p>
+  <div class="fix"><b>修复建议：</b>密钥/Pepper 从环境变量、DPAPI 或外部密钥文件读取（复用 <code>DependencyInjection.cs</code> 的密钥回退机制）。从仓库摘除明文并轮换密钥，用 <code>git filter-branch</code>/BFG 清理历史。若为单机离线部署，至少将密钥置于受 ACL 保护的文件，gitignore 排除。已加密的存量数据需在轮换密钥时统一重加密。</div>
+</div>
+
+<div class="card">
+  <span class="sev high">严重</span><span class="id">S2</span><h4>Presentation 层绕过 Application 直连持久化层</h4>
+  <div class="tag">架构违规 · 权限缺失 · 无审计</div>
+  <ul style="margin-top:6px">
+    <li><b>MedicalRecordManagementViewModel</b>（<span class="ref">ViewModels/MedicalRecordManagementViewModel.cs:48-56</span>）直接经 <code>IServiceScopeFactory</code> 解析 <code>IRepository&lt;MedicalRecord&gt;/&lt;Patient&gt;/&lt;SysUser&gt;</code> 并 <code>GetAllAsync()</code> 装载全表 —— 该"病历管理"模块<b>在 Application 层根本没有服务封装</b>，读取入口<b>无权限检查</b>、无审计、无分页。</li>
+    <li><b>PrescriptionDetailWindow.xaml.cs</b>（第 33–97 行）与 <b>MedicalRecordDetailWindow.xaml.cs</b>（第 33–59 行）直接 <code>using Clinic.Infrastructure.Data</code> 并 <code>db.Prescriptions.FirstOrDefault(...)</code> 查询 <code>ClinicDbContext</code>，绕过服务层，违反 AGENTS.md"xaml.cs 不得写业务逻辑"与分层约束。</li>
+  </ul>
+  <div class="fix"><b>修复建议：</b>为病历管理补 <code>IMedicalRecordService</code>（含权限检查 <code>RequireCanModify()</code> 或只读角色判定 + 分页 + 审计）。两个明细弹窗改为注入 Application 服务查询，删除 <code>ClinicDbContext</code> 直接引用。</div>
+</div>
+
+<div class="card">
+  <span class="sev high">严重</span><span class="id">S3</span><h4>库存冲正路径未加互斥锁 · 并发竞态可致超卖/丢更新</h4>
+  <div class="tag">并发 · 数据一致性</div>
+  <p style="margin-top:6px">
+    扣减库存 <code>DeductInventoryAsync</code>（<span class="ref">PrescriptionService.cs:1096</span>）持有 <code>_inventoryLock</code>，
+    但作废回退 <code>ReverseInventoryAsync</code>（<span class="ref">L1208</span>）与退费回退 <code>RestoreInventoryAsync</code>（<span class="ref">BillingService.cs:259</span>）<b>均未加同一把锁</b>。
+    并发"发药扣减"与"作废/退费恢复"同一药品时会发生竞态，可能在 SQLite WAL 下触发 <code>SQLITE_BUSY</code> 或丢更新/超卖。
+  </p>
+  <div class="fix"><b>修复建议：</b>将三处库存增减收敛到统一 Gateway，共用同一互斥锁（或原子行级 <code>UPDATE ... SET qty_remaining=qty_remaining-? WHERE drug_id=? AND qty_remaining&gt;=?</code>），并用显式 <code>BEGIN IMMEDIATE</code> 事务替代 DEFERRED。</div>
+</div>
+
+<div class="card">
+  <span class="sev high">严重</span><span class="id">S4</span><h4>软删除与唯一索引冲突</h4>
+  <div class="tag">数据模型</div>
+  <p style="margin-top:6px">
+    唯一索引未按 <code>DeletedAt</code> 过滤（<span class="ref">ClinicDbContext.cs:68/101/166</span>），如 <code>Patient.PhoneHash</code>、<code>Prescription.NoYearSeq</code>、<code>DrugMaster.GenericNameEn</code>。<code>Repository.SoftDelete()</code> 只置 <code>DeletedAt</code> 不清空唯一键 → 软删患者后同手机号再建档会触发唯一约束异常；<code>NoYearSeq</code> 序号会被软删记录永久占用。
+  </p>
+  <div class="fix"><b>修复建议：</b>改为部分索引 <code>HasIndex(...).IsUnique().HasFilter("[deleted_at] IS NULL")</code>（SQLite 支持），或软删除时把唯一键置 NULL。</div>
+</div>
+
+<h2>二、中等问题</h2>
+
+<div class="card">
+  <span class="sev mid">中</span><span class="id">M1</span><h4>手写迁移策略脆弱，每次启动重跑，且空 catch 吞掉异常</h4>
+  <div class="tag">数据库 · 迁移</div>
+  <p style="margin-top:8px"><span class="ref">App.xaml.cs:135-300</span> 用 <code>EnsureCreatedAsync</code>（不改造已存在库）+ 三套手写 <code>ALTER TABLE ADD COLUMN</code> 与"双重重命名修外键"。三处 <code>catch{}</code> 吞掉所有异常（含磁盘满/语法错），一旦某轮 ALTER 失败，schema 与实体模型静默漂移，后续 EF 查询报错；且无 schema 版本表，字段类型（如 Weight 落库为 TEXT）无法演进。日志中已出现因列缺失导致的查询失败（历史旧实例）。</p>
+  <div class="fix"><b>修复建议：</b>引入正规 EF <code>MigrateAsync()</code> + 迁移文件夹；至少维护 schema 版本号，空 catch 记日志并显式跳过。</div>
+</div>
+
+<div class="card">
+  <span class="sev mid">中</span><span class="id">M2</span><h4>审计哈希链无外部可信锚点，整链可被重算</h4>
+  <div class="tag">安全 · 审计</div>
+  <p style="margin-top:8px"><code>AuditService.VerifyChainAsync</code>（<span class="ref">AuditService.cs:133-175</span>）仅依赖库内 <code>PrevHash/HashChain</code> 自检验；原始 <code>Payload</code> 未存储，<code>PayloadHash</code> 无法重算验证字段真实性。攻击者获 DB 写权限后可自某节点重算整条链而不被检测。</p>
+  <div class="fix"><b>修复建议：</b>引入离线独立完整性锚点（如每日摘要签名），并存储原始明文用于重算校验。</div>
+</div>
+
+<div class="card">
+  <span class="sev mid">中</span><span class="id">M3</span><h4>固定默认弱口令 admin123 且无强制改密保障</h4>
+  <div class="tag">安全 · 认证</div>
+  <p style="margin-top:8px"><span class="ref">DbSeeder.cs:48-90</span> 四个账户共用 <code>admin123</code>，<code>MustChangePassword=true</code> 缓解但依赖 UI 强制流程执行，跳过则长期弱口令。</p>
+  <div class="fix"><b>修复建议：</b>首次登录强制改密成功才放行，未能改密则禁用账户。</div>
+</div>
+
+<div class="card">
+  <span class="sev mid">中</span><span class="id">M4</span><h4>问诊对话明文送本地 LLM，未脱敏</h4>
+  <div class="tag">隐私合规</div>
+  <p style="margin-top:8px"><code>Clinic.AiScribe/Services/MedicalRecordExtractor.cs:27-30</code> 将完整医患对话原文 POST 至 LLM。本地 127.0.0.1 尚可，但建议在传输前去除可识别患者信息，或在提示词中约束模型不保留持久化敏感字段。</p>
+</div>
+
+<div class="card">
+  <span class="sev mid">中</span><span class="id">M5</span><h4>小数输入中间状态未处理（规则失效）</h4>
+  <div class="tag">前端 · 功能 bug 风险</div>
+  <p style="margin-top:8px"><code>PrescriptionView.xaml.cs:106</code> 的 <code>NumericOnly_PreviewTextInput</code> 为死代码 —— 全项目 XAML 从未接线（grep <code>InputMethod/IsInputMethodEnabled</code> 无命中），即体温/体重/数量输入既无 IME 禁用也无过滤；且 <code>PrescriptionView.xaml:492-512</code> 体征 TextBox 绑定 <code>decimal?/int?</code> 仅 <code>LostFocus</code>，输入中间态"36."可能触发绑定转换异常。</p>
+  <div class="fix"><b>修复建议：</b>接线 <code>InputMethod.IsInputMethodEnabled=False</code> + <code>PreviewTextInput</code> 过滤，或改用项目已有的 <code>DecimalInputConverter</code> 统一处理。</div>
+</div>
+
+<div class="card">
+  <span class="sev mid">中</span><span class="id">M6</span><h4>ViewModel 内直接 MessageBox.show / 手写日志文件</h4>
+  <div class="tag">前端 · 违反规范</div>
+  <p style="margin-top:8px"><code>PrescriptionViewModel.AiScribe.cs</code> 第 91/112/138/164/186 行共 5 处 <code>MessageBox.Show</code>；<code>MainViewModel.cs:320</code> 亦直用 MessageBox，均违反"用 IDialogService"。另有 <code>MainWindow.xaml.cs</code>、<code>App.xaml.cs:318-353</code>、<code>PrescriptionViewModel.Drug.cs:39-53</code> 手写 <code>*.log</code> 替代 ILogger。</p>
+</div>
+
+<div class="card">
+  <span class="sev mid">中</span><span class="id">M7</span><h4>异步/线程隐患</h4>
+  <div class="tag">前端 · 线程安全</div>
+  <ul style="margin-top:8px">
+    <li><code>MainViewModel.cs:516</code> 在 <code>Task.Run</code> 内设置可观察属性 <code>LlmIsAvailable</code>（跨线程改绑定属性，UI 线程外改 WPF binding 项有隐患）。</li>
+    <li>多处 <code>_ = xxxAsync()</code> 未 await（<code>MainViewModel:108/184/486</code>、<code>PrescriptionViewModel.Drug.cs:176</code>）；<code>MainViewModel.cs:228</code> <code>async void</code>。</li>
+  </ul>
+</div>
+
+<div class="card">
+  <span class="sev mid">中</span><span class="id">M8</span><h4>关键合规能力零自动化测试</h4>
+  <div class="tag">测试覆盖</div>
+  <ul style="margin-top:8px">
+    <li>审计哈希链 <code>VerifyChainAsync</code>：单测/集成均无覆盖。</li>
+    <li>备份/还原（<code>BackupService.cs</code>：WAL checkpoint + Zip + SHA256 + 需重启）：12 单测 + 10 TC 完全无覆盖。</li>
+    <li>权限矩阵 <code>PermissionChecker</code>、FIFO 多批次出库顺序：无自动化测试。</li>
+    <li>仅"单批 100 扣减"被 TC 覆盖，未测多个批次按到期日先后出库。</li>
+  </ul>
+</div>
+
+<div class="card">
+  <span class="sev mid">中</span><span class="id">M9</span><h4>迁移事务/连接策略</h4>
+  <div class="tag">数据库 · 并发</div>
+  <p style="margin-top:8px"><code>EF BeginTransactionAsync</code> 为 DEFERRED 事务；多位写入（Scoped 每次新建独立 <code>SqliteConnection</code>，无池）在 WAL 下靠 <code>busy_timeout=5000</code> 缓解，多 DbContext 并发写可反复触发 <code>SQLITE_BUSY</code>。建议写场景显式 <code>BEGIN IMMEDIATE</code>，并保证一个操作范围只 new 一个 <code>UnitOfWork</code>。</p>
+</div>
+
+<div class="card">
+  <span class="sev mid">中</span><span class="id">M10</span><h4>decimal 精度配置不全</h4>
+  <div class="tag">数据库</div>
+  <p style="margin-top:8px"><span class="ref">ClinicDbContext.cs:140-159</span> <code>ConsultationFee</code>、<code>Qty</code>、<code>Dose</code>、<code>PackQuantity</code> 未配 precision。SQLite 下 decimal 实际存为 TEXT，精度仅名义约束，需在应用层统一 <code>AwayFromZero</code> 舍入（已在服务层做到）。</p>
+</div>
+
+<h2>三、低风险 / 代码质量</h2>
+
+<div class="card">
+  <span class="sev low">低</span><span class="id">L1</span><h4>版本信息混乱：文档宣称 .NET 10，代码实为 .NET 9</h4>
+  <p style="margin-top:8px"><code>Directory.Build.props</code> 注释、"CHANGELOG.md"、测试报告均称 ".NET 10 / EF Core 10"，实际 csproj 为 <code>net9.0</code>、<code>global.json</code> 锁定 SDK 9.0.308。<code>tests/bin/Debug/net10.0</code> 残留印证曾升级后回退但未同步文档。</p>
+</div>
+<div class="card">
+  <span class="sev low">低</span><span class="id">L2</span><h4>CHANGELOG 严重滞后</h4>
+  <p style="margin-top:8px">止于 1.1.0（2026-08-13），未记录：发药时才扣库存、审核/发药状态流转（Reviewed=4/Dispensed=5）、外键修复、net10→net9 回退、3,878 种药品清单导入、LlamaCpp 切换。</p>
+</div>
+<div class="card">
+  <span class="sev low">低</span><span class="id">L3</span><h4>超大数据线段落</h4>
+  <p style="margin-top:8px"><code>PrescriptionView.xaml</code> 75KB、<code>BillingView.xaml</code> 61KB；VM 中 <code>_isBusy</code> 在多个 VM 内重复声明遮蔽基类；<code>BillingViewModel</code>/<code>PrescriptionViewModel</code>/<code>MainViewModel</code> 均各 900+ 行 —— 建议拆分。</p>
+</div>
+<div class="card">
+  <span class="sev low">低</span><span class="id">L4</span><h4>原生 SQL 字符串拼接 / 无上限金额校验</h4>
+  <p style="margin-top:8px"><code>App.xaml.cs:180/213</code> 的 <code>ExecuteSqlRawAsync</code> 用内插字符串拼表/列名（当前为硬编码常量，无注入风险）；<code>ServiceValidators.cs:195</code> <code>RecordPaymentValidator.Amount</code> 仅要求 &gt;0 无上限。均为可改进项。</p>
+</div>
+<div class="card">
+  <span class="sev low">低</span><span class="id">L5</span><h4>死代码与冗余</h4>
+  <p style="margin-top:8px"><code>UnitTest1.cs</code> 空测试模板；集成测试注释虚报"9 个场景"实为 10 个 TC；<code>PrescriptionHistoryView.xaml.cs</code> 未用 using；<code>Patient.cs:185</code> 拉全量再内存 Take(10)；<code>AiScribe.cs:69</code> 用 <code>TryFindResource</code> 取服务地址（VM 与资源耦合）；<code>MainViewModel:37</code> 等 <code>_isBusy</code> 遮蔽基类。</p>
+</div>
+<div class="card">
+  <span class="sev low">低</span><span class="id">L6</span><h4>诊断编号生成进程内锁</h4>
+  <p style="margin-top:8px"><code>GeneratePrescriptionNoAsync</code>（<span class="ref">L1296</span>）全表 Count + 进程内 static 锁，多进程实例时编号可能重复（单机单实例风险低）。</p>
+</div>
+
+<h2>四、合规性确认（通过项）</h2>
+<div class="card">
+  <ul>
+    <li class="okline">✔ 金额计算：后端 <code>Save</code> 时重算每条 Subtotal，不信任前端；全程 <code>decimal</code> + <code>MidpointRounding.AwayFromZero</code>，前端未用 double。</li>
+    <li class="okline">✔ 整盒计价：<code>ceil(qty/packQty)×unitPrice</code>，添加/更新明细处一致（TC09 已验证）。</li>
+    <li class="okline">✔ 事务原子性：发药+扣库存、收费、作废+冲正各自在单事务内（收费 TC05/发药 TC10 验证）。</li>
+    <li class="okline">✔ 权限检查：PrescriptionService/BillingService/InventoryService/PatientService 所有写入口均有 <code>Require*</code>。</li>
+    <li class="okline">✔ 业务规则：≤5 种药、天数限制（急3/普7/延84）、重复药拦截、过敏可覆盖阻断。</li>
+    <li class="okline">✔ SQL 注入：EF 查询均参数化，无 WebBrowser XSS 加载点。</li>
+    <li class="okline">✔ 加密实现：AES-GCM（随机 nonce + 16B tag）、PBKDF2(60 万次)+ FixedTimeEquals、手机号 HMAC 哈希实现正确。</li>
+    <li class="okline">✔ 登录/审计日志未记录密码或明文密钥。</li>
+    <li class="okline">✔ ComboBox/DatePicker 均显式 Mode=TwoWay；资源字典无重复隐式样式。</li>
+    <li class="okline">✔ 集成测试宿主用临时库隔离，10 个 TC 质量良好；测试均通过（10/10，单测 11/11）。</li>
+    <li class="okline">✔ .gitignore 正确忽略 clinic.db、*-wal/shm、bin/obj、Backups/。</li>
+  </ul>
+</div>
+
+<h2>五、整改优先级建议</h2>
+<div class="card" style="overflow:auto">
+  <table>
+    <thead><tr><th>优先级</th><th>编号</th><th>事项</th><th>风险</th></tr></thead>
+    <tbody>
+      <tr><td style="color:var(--sev-high)">P0 上线前</td><td>S1</td><td>移除并轮换硬编码密钥，改外部注入</td><td class="loc">加密数据可被解密</td></tr>
+      <tr><td style="color:var(--sev-high)">P0</td><td>S2</td><td>消除 Presentation 直连持久化；补病历服务+权限+审计</td><td class="loc">越权直达数据</td></tr>
+      <tr><td style="color:var(--sev-high)">P0</td><td>S3</td><td>库存增减统一加锁 + BEGIN IMMEDIATE</td><td class="loc">并发超卖</td></tr>
+      <tr><td style="color:var(--sev-high)">P0</td><td>S4</td><td>唯一索引按 deleted_at 过滤</td><td class="loc">软删后无法重登手机号/序号</td></tr>
+      <tr><td style="color:var(--sev-mid)">P1 近期</td><td>M1</td><td>迁移改为正规 EF Migrate + schema 版本号</td><td class="loc">schema 漂移</td></tr>
+      <tr><td style="color:var(--sev-mid)">P1</td><td>M2/M3/M4</td><td>审计哈希锚点 / 强制改密 / LLM 脱敏</td><td class="loc">合规与隐私</td></tr>
+      <tr><td style="color:var(--sev-mid)">P1</td><td>M5/M6/M7</td><td>小数输入接线 / IDialogService / 线程安全</td><td class="loc">功能与稳定性</td></tr>
+      <tr><td style="color:var(--sev-mid)">P1</td><td>M8</td><td>补审计链/备份/权限/FIFO-多批自动化测试</td><td class="loc">回归保障</td></tr>
+      <tr><td style="color:var(--sev-low)">P2 持续</td><td>L1-L6</td><td>文档/版本对齐、CHANGELOG、拆大文件、清死代码</td><td class="loc">可维护性</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="footer">
+  <span>陈医生诊所处方系统 · 全面系统审查报告</span>
+  <span>审查范围：架构 / 业务逻辑 / 安全 / 数据库 / 前端 / 测试与工程</span>
+</div>
+
+</div>
+</body>
+</html>

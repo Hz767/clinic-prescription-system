@@ -179,6 +179,8 @@ public partial class MainViewModel : ViewModelBase
         vm.NavigateToBillingRequested += OnDashboardNavigateToBilling;
         vm.NavigateToInventoryRequested -= OnDashboardNavigateToInventory;
         vm.NavigateToInventoryRequested += OnDashboardNavigateToInventory;
+        vm.NavigateToPendingHandleRequested -= OnDashboardNavigateToPendingHandle;
+        vm.NavigateToPendingHandleRequested += OnDashboardNavigateToPendingHandle;
         CurrentViewModel = vm;
         CurrentNavKey = "Dashboard";
         _ = vm.LoadDataCommand.ExecuteAsync(null);
@@ -188,6 +190,15 @@ public partial class MainViewModel : ViewModelBase
     private void OnDashboardNavigateToPatient() => NavigateToPatient();
     private void OnDashboardNavigateToBilling() => NavigateToBilling();
     private void OnDashboardNavigateToInventory() => NavigateToInventory();
+
+    /// <summary>从首页待办队列跳到收费页办理指定处方（按状态预填审核/收费/发药区）</summary>
+    private async void OnDashboardNavigateToPendingHandle(Clinic.Application.DTOs.PrescriptionHistoryDto prescription)
+    {
+        var billingVm = _services.GetRequiredService<BillingViewModel>();
+        CurrentViewModel = billingVm;
+        CurrentNavKey = "Billing";
+        await billingVm.ProcessPendingPrescription(prescription);
+    }
 
     [RelayCommand]
     private void NavigateToPatient()
@@ -278,6 +289,7 @@ public partial class MainViewModel : ViewModelBase
             var backupPath = await backupService.CreateBackupAsync(fullDir);
 
             StatusMessage = $"备份成功：{Path.GetFileName(backupPath)}";
+            ToastService.Instance.Success($"备份成功：{Path.GetFileName(backupPath)}");
         }
         catch (Exception ex)
         {
@@ -481,6 +493,8 @@ public partial class MainViewModel : ViewModelBase
                 vm.NavigateToBillingRequested += OnDashboardNavigateToBilling;
                 vm.NavigateToInventoryRequested -= OnDashboardNavigateToInventory;
                 vm.NavigateToInventoryRequested += OnDashboardNavigateToInventory;
+                vm.NavigateToPendingHandleRequested -= OnDashboardNavigateToPendingHandle;
+                vm.NavigateToPendingHandleRequested += OnDashboardNavigateToPendingHandle;
                 CurrentViewModel = vm;
                 CurrentNavKey = "Dashboard";
                 _ = vm.LoadDataCommand.ExecuteAsync(null);
