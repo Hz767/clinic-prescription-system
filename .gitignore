@@ -66,3 +66,9 @@ Pdf/
 clinic-delivery-report/
 clinic-test-report/
 .trae-html-share-packages/
+
+# ── 调试与临时产物（不入库） ──
+query_*.py
+patients_out.txt
+docs/llamacpp-test-report/
+testdata/*.png

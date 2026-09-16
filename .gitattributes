@@ -52,3 +52,33 @@
 *.user binary
 *.userosscache binary
 *.sln.docstates binary
+
+# 程序集与可执行文件
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+
+# AI 模型（大体积二进制）
+*.gguf binary
+*.onnx binary
+*.safetensors binary
+
+# 媒体与 Office 文档
+*.mp3 binary
+*.wav binary
+*.mp4 binary
+*.mov binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+
+# 证书与密钥（即使被忽略，也不做行尾转换）
+*.p12 binary
+*.pfx binary
+*.pem binary
+*.crt binary
+
+# 编辑器配置与数据文件
+*.editorconfig text eol=lf
+*.csv text eol=lf
